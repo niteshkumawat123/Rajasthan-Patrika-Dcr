@@ -1,0 +1,3 @@
+﻿@using DCRSupplyApp
+@using DCRSupplyApp.Models
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers

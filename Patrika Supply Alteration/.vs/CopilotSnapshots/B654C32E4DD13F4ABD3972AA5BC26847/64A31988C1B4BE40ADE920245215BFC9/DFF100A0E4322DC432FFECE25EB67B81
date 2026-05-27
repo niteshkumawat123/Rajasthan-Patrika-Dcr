@@ -1,0 +1,29 @@
+﻿@{
+    Layout = "_LoginLayout";
+}
+<div class="login-box">
+    <div class="login-header fade-in">
+        <div style="font-size:52px;margin-bottom:12px;">??</div>
+        <h1>Forgot Password</h1>
+        <p>Enter your Employee ID to receive your password via email</p>
+    </div>
+    <div class="fade-in-2">
+        @if (ViewBag.Success != null)
+        {
+            <div style="color:var(--green);font-size:13px;margin-bottom:12px;padding:10px;background:rgba(42,157,143,0.1);border-radius:8px;">@ViewBag.Success</div>
+        }
+        @if (ViewBag.Error != null)
+        {
+            <div class="login-error" style="display:block;">@ViewBag.Error</div>
+        }
+        <form method="post" asp-action="ForgotPassword">
+            @Html.AntiForgeryToken()
+            <div class="login-field">
+                <label>Employee ID</label>
+                <input type="text" name="employeeId" placeholder="Enter your Employee ID" autocomplete="off">
+            </div>
+            <button type="submit" class="btn btn-primary btn-icon" style="margin-top:4px;"><span>Send Password</span><span>?</span></button>
+        </form>
+        <a asp-controller="Account" asp-action="Login" class="btn btn-secondary" style="margin-top:10px;display:block;text-align:center;text-decoration:none;">? Back to Login</a>
+    </div>
+</div>

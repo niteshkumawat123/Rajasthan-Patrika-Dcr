@@ -1,0 +1,33 @@
+Get Order Details
+
+When a customer asks about their order status, delivery date, tracking, payment status, or provides an order number or provides their email or phone number to look up an order.
+
+order_number
+
+The order number provided by the customer. Order number always starts with BF followed  by digits e.g. BF1718207871. Collect this in Step 1 before calling the action. Do not call the action without this.
+
+
+sender_email
+
+Email address provided by customer for identity  verification e.g. customer@gmail.com. Collect this in Step 2 after getting order number. Use this to verify customer identity before  showing order details.
+
+sender_phone
+
+Phone number provided by customer for identity  verification. Any country format accepted  e.g. +971501234567, 9988776655. Collect this in Step 2 after getting order number. Use this if customer does not provide email. Either sender_email OR sender_phone is required  for verification — not both.
+
+
+
+
+https://apis.dev.jamfox14.com/chatbot/order
+
+
+
+Content-Type  application/json
+
+Authorization  Bearer b6d5cae53887015f8f050017a64a2a8fd4b0da0c8c89fd49cf7c49da2f144d99
+
+{
+  "order_number": "{{order_number}}",
+  "sender_email": "{{sender_email}}",
+  "sender_phone": "{{sender_phone}}"
+}

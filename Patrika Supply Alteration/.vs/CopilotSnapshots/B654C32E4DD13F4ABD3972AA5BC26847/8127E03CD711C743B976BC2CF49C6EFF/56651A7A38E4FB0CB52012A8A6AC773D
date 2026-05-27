@@ -1,0 +1,22 @@
+﻿<div class="modal-overlay" id="detail-modal" onclick="closeModalOutside(event,'detail-modal')">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title" id="modal-title">Request Details</div>
+        <div id="modal-body"></div>
+        <div id="modal-actions"></div>
+    </div>
+</div>
+<div class="modal-overlay" id="remarks-modal" onclick="closeModalOutside(event,'remarks-modal')">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title" id="remarks-modal-title">Add Remarks</div>
+        <div class="field remarks-field">
+            <label id="remarks-modal-label">Remarks</label>
+            <textarea id="remarks-modal-input" placeholder="Enter your remarks..."></textarea>
+        </div>
+        <div class="action-row">
+            <button class="btn btn-secondary" onclick="closeModal('remarks-modal')">Cancel</button>
+            <button class="btn" id="remarks-confirm-btn" onclick="confirmRemarksAction()">Confirm</button>
+        </div>
+    </div>
+</div>

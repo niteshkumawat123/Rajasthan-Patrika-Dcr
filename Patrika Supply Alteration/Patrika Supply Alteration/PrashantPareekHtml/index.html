@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0a0f1e">
+<title>DCR Supply App — Full Multi-Role</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<style>
+/* ── PNG NAV ICONS ── */
+.nav-btn .nav-icon { display:flex; align-items:center; justify-content:center; }
+.nav-btn .nav-icon img { opacity:0.38; transition:opacity .2s, filter .2s; }
+.nav-btn.active .nav-icon img { opacity:1; }
+
+/* ── ROLE CARD ICONS ── */
+.role-emoji { display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.role-emoji img { display:block; transition:opacity .2s; }
+.role-card:not(.selected) .role-emoji img { opacity:0.55; }
+.role-card.selected .role-emoji img { opacity:1; }
+
+/* ── DARK MODE ── */
+body.dark-mode .nav-btn .nav-icon img { filter:invert(1) brightness(2); opacity:0.38; }
+body.dark-mode .nav-btn.active .nav-icon img { filter:invert(1) brightness(2); opacity:1; }
+body.dark-mode .role-emoji img { filter:invert(1) brightness(2); }
+body.dark-mode .profile-he-icon img { filter:invert(1) brightness(2); }
+
+/* ── LOGIN FORM ── */
+.login-field { display:flex; flex-direction:column; gap:5px; margin-bottom:14px; }
+.login-field label { font-size:12px; color:var(--muted); font-weight:600; }
+.login-field input { background:var(--surface); border:1.5px solid var(--border); border-radius:10px; padding:12px 14px; color:var(--paper); font-size:14px; font-family:'Sora',sans-serif; outline:none; transition:border-color .2s; }
+.login-field input:focus { border-color:var(--blue); }
+.login-error { color:var(--accent); font-size:12px; margin-bottom:8px; padding:8px 12px; background:rgba(231,76,60,0.08); border-radius:8px; display:none; }
+.forgot-link { font-size:12px; color:var(--blue); cursor:pointer; text-align:right; margin-top:-8px; margin-bottom:14px; }
+.forgot-link:hover { opacity:.7; }
+
+/* ── CHANGE PASSWORD SCREEN ── */
+.cp-notice { background:rgba(78,140,255,0.1); border:1px solid rgba(78,140,255,0.3); border-radius:10px; padding:12px 14px; font-size:12px; color:var(--muted); margin-bottom:16px; line-height:1.6; }
+
+/* ── QUICK APPROVE BUTTON ── */
+.quick-approve-btn { background:rgba(42,157,143,0.15); border:1px solid rgba(42,157,143,0.4); color:var(--green); border-radius:8px; padding:5px 10px; font-size:16px; cursor:pointer; transition:background .2s; }
+.quick-approve-btn:hover { background:rgba(42,157,143,0.3); }
+
+/* ── DETAIL HIGHLIGHTED FIELDS ── */
+.detail-highlight-field { background:rgba(231,111,81,0.08); border:1.5px solid rgba(231,111,81,0.3); border-radius:10px; padding:10px 14px; }
+.detail-highlight-field.remark-highlight { background:rgba(78,140,255,0.08); border-color:rgba(78,140,255,0.3); }
+.detail-field-label { display:block; font-size:11px; color:var(--muted); font-weight:700; margin-bottom:3px; text-transform:uppercase; letter-spacing:.5px; }
+.detail-field-value { font-size:13px; color:var(--paper); }
+
+/* ── HO DASHBOARD DATE FILTER ── */
+.ho-date-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; padding:10px 14px; background:var(--surface); border-radius:12px; border:1px solid var(--border); }
+.ho-date-row label { font-size:12px; color:var(--muted); font-weight:600; white-space:nowrap; }
+.ho-date-row input[type=date] { flex:1; background:transparent; border:none; color:var(--paper); font-size:13px; font-family:'Sora',sans-serif; outline:none; }
+
+/* ── HO COPY COUNTS ── */
+.copy-counts-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+.copy-count-box { background:var(--surface); border:1.5px solid var(--border); border-radius:14px; padding:16px; text-align:center; cursor:pointer; transition:border-color .2s, transform .1s; }
+.copy-count-box:hover { border-color:var(--blue); transform:scale(1.02); }
+.copy-count-box.increase-box { border-color:rgba(42,157,143,0.4); background:rgba(42,157,143,0.06); }
+.copy-count-box.decrease-box { border-color:rgba(231,76,60,0.3); background:rgba(231,76,60,0.05); }
+.copy-count-num { font-size:28px; font-weight:800; font-family:'JetBrains Mono',monospace; }
+.copy-count-num.increase { color:var(--green); }
+.copy-count-num.decrease { color:var(--accent); }
+.copy-count-label { font-size:11px; color:var(--muted); margin-top:4px; }
+
+/* ── REPORT BRANCH ROW ── */
+.report-branch-row { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:10px; cursor:pointer; transition:border-color .2s; }
+.report-branch-row:hover { border-color:var(--blue); }
+
+/* ── HO DETAIL SCREEN FILTERS ── */
+.detail-filters { display:flex; gap:8px; padding:12px 16px; background:var(--surface); border-bottom:1px solid var(--border); }
+.detail-filters select { flex:1; background:var(--bg); border:1.5px solid var(--border); border-radius:8px; color:var(--paper); padding:8px 10px; font-size:12px; font-family:'Sora',sans-serif; outline:none; }
+</style>
+</head>
+<body>
+<button id="theme-fab" title="Toggle theme">🌙</button>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-icon">📰</div>
+  <div class="splash-title">DCR Supply App</div>
+  <div class="splash-sub">Jaipur HO · Multi-Role System</div>
+  <div class="splash-bar"><div class="splash-prog"></div></div>
+</div>
+
+<div id="app">
+
+<!-- ═══════════ LOGIN ═══════════ -->
+<div id="screen-login" class="screen active">
+  <div class="login-box">
+    <div class="login-header fade-in">
+      <div style="font-size:52px;margin-bottom:12px;">📰</div>
+      <h1>DCR Supply App</h1>
+      <p>Newspaper Circulation Management · Jaipur HO</p>
+    </div>
+
+    <!-- Step 1: Role Select (click role → auto-proceed) -->
+    <div id="step-role" class="fade-in-2">
+      <div class="card-title" style="margin-bottom:10px;">Select Your Role</div>
+      <div class="role-select-grid">
+        <div class="role-card" id="rc-se" onclick="selectRole('se')">
+          <div class="role-emoji"><img src="data:image/png;base64,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" width="44" height="44" alt="" style="display:block;"></div>
+          <div class="role-info"><b>Sales Executive</b><span>Submit supply change requests</span></div>
+        </div>
+        <div class="role-card" id="rc-zh" onclick="selectRole('zh')">
+          <div class="role-emoji"><img src="data:image/png;base64,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" width="44" height="44" alt="" style="display:block;"></div>
+          <div class="role-info"><b>Zonal Head</b><span>First-level approval authority</span></div>
+        </div>
+        <div class="role-card" id="rc-ho" onclick="selectRole('ho')">
+          <div class="role-emoji"><img src="data:image/png;base64,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" width="44" height="44" alt="" style="display:block;"></div>
+          <div class="role-info"><b>Jaipur HO</b><span>Final approval &amp; ERP push</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Username / Password Login -->
+    <div id="step-login" style="display:none;">
+      <div class="card-title" style="margin-bottom:14px;">Login</div>
+      <div class="login-field">
+        <label>Employee ID (Username)</label>
+        <input type="text" id="login-username" placeholder="e.g. SE-001, ZH-001, HO-001" autocomplete="off">
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="forgot-link" onclick="doForgotPassword()">Forgot Password?</div>
+      <div class="login-error" id="login-error"></div>
+      <button class="btn btn-primary btn-icon" style="margin-top:4px;" onclick="doLogin()"><span>Login</span><span>→</span></button>
+      <button class="btn btn-secondary" style="margin-top:10px;" onclick="backToRoleFromLogin()">← Back to Roles</button>
+      <div class="divider"><div class="divider-line"></div><div class="divider-text">Demo Credentials</div><div class="divider-line"></div></div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.9;text-align:center;">
+        SE: <b style="color:var(--paper)">SE-001</b> · ZH: <b style="color:var(--paper)">ZH-001</b> · HO: <b style="color:var(--paper)">HO-001</b><br>
+        Default password: <b style="color:var(--paper)">password123</b>
+      </div>
+    </div>
+
+    <!-- Step 3: Change Password (mandatory first login) -->
+    <div id="step-change-pw" style="display:none;">
+      <div class="card-title" style="margin-bottom:12px;">Change Password</div>
+      <div class="cp-notice">🔒 This is your first login. Please set a new password before continuing.</div>
+      <div class="login-field">
+        <label>New Password</label>
+        <input type="password" id="cp-new" placeholder="Minimum 6 characters">
+      </div>
+      <div class="login-field">
+        <label>Confirm New Password</label>
+        <input type="password" id="cp-confirm" placeholder="Re-enter new password">
+      </div>
+      <div class="login-error" id="cp-error"></div>
+      <button class="btn btn-primary btn-icon" style="margin-top:4px;" onclick="doChangePassword()"><span>Set Password &amp; Continue</span><span>→</span></button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════ SE: DASHBOARD ═══════════ -->
+<div id="screen-se-dashboard" class="screen">
+  <div class="topbar">
+    <div class="topbar-logo">📰 <span>DCR</span></div>
+    <div class="topbar-user">
+      <b id="se-name-disp">Rajesh Sharma</b>
+      <span class="role-badge role-se">Sales Executive</span>
+    </div>
+  </div>
+  <div class="scroll-area">
+    <div class="cutoff-banner fade-in" id="se-cutoff-banner">
+      <div style="font-size:18px;flex-shrink:0;">⏰</div>
+      <div class="cutoff-text" id="se-cutoff-text">Loading...</div>
+    </div>
+    <div class="stats-row fade-in-2">
+      <div class="stat-card orange"><div class="stat-num orange" id="se-stat-pending">0</div><div class="stat-label">Pending</div></div>
+      <div class="stat-card green"><div class="stat-num green" id="se-stat-approved">0</div><div class="stat-label">Approved</div></div>
+      <div class="stat-card blue"><div class="stat-num blue" id="se-stat-today">0</div><div class="stat-label">Today</div></div>
+      <div class="stat-card red"><div class="stat-num red" id="se-stat-rejected">0</div><div class="stat-label">Rejected</div></div>
+    </div>
+    <button class="btn btn-primary btn-icon fade-in-3" onclick="seNav('new-request')" style="padding:15px;">
+      <span>➕</span><span>New Supply Change Request</span>
+    </button>
+    <div class="fade-in-3">
+      <div class="section-header">
+        <div class="section-title">Recent Requests</div>
+        <button class="btn btn-secondary btn-sm" onclick="seNav('history')">View All</button>
+      </div>
+      <div id="se-recent-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-btn active" onclick="seBottomNav('se-dashboard',this)"><span class="nav-icon"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAABHNCSVQICAgIfAhkiAAABZFJREFUeF7tW91OG0cUPrMGIrXQOndRjRQqtaZ3oU9QI6VVVVzVeYKYJ4j7BDFPEPMEMU9QR3GqqkmF/QSFu8bthStB1bv8ABcU706/2bWNf2Z2Z9a7ixE7EsgyO7PnfOc7Z87MOTC64YPdcP0pBSBlwA1HIHWBpAlw54tv1xb4wg94b4k4bbjvZ3SA340e6z37949fuknKlBgDVj8rFihDj6FcIUDBFtm0c/RXs5UEELEDYKD4pL6JABEbAILqGSfzmDFWnsWSnPO6bdk7cblGLACs5ouC6hX4dlahfJs7Tv3sYqkh/v7Bkl2wGK/g41fS5zm9xfe1o05zZxYwZXMjBUDQnWf4U0ZsTaU4Al1ZZc1+gKyrgODEu8xm21HGh0gAyK6Vsh8uXTzxoXsbga2qK3g/blSVQMAtzv5b/PFttyGYMdOYGYBcfushLF6T0p3zd/DhyvGfPwurGo/c59+VASrWZh9PTYZbgBGV486LPeOFRyaEBqBP16dYqyATgBPtnp0vVGe1ksuuW70qBH2kULQFt9oOGyRDAbC6XnyEJKYqszrndMgcqujSXdd6bnyxqMYY3ZOxAbJUj143d3XXGzxnBICwxvKt3k9Sq4PuSOlEpBa+G9vADoP1sWPI3IKodXq+8MCEddoAwB83GLP2FVtb2y+6R42G724hYgN3NhF3RHodOLQAcIORZQl/Hx8zBrlA6QIe+CT/fckipy5jA/KMbZ3gGwiAUnmiNuhWMqHbrArL5vfdUiRUU0mUDgi+AChpz3FYidnXTcHKrW9VsB0/GZun4Q6+AKzmtxqglzi6euOKKR8EijRv4PzZUedFSTVXCUCfWm9GJ+pQKkjIuP8uc1kE6E9VeYISgH46un9pfDo87jS9C4w5H7l88WA0X3A4e/BP57l78JocagDEfsvcC4w+/efP71V2cHMFTdl9ABj3/+tA/wEg7vbIuEjYBrFLGQfUAKwXW5h9ubXYtBl1ehuXJ026L97TRppcMHOBawyAu31b1u8jCocCAAe6ywEEA5OmuCwaZl0c2LTk93MBrQXCCJfEnBSAlAGpC2i5cBoDlNmUpg8lEdDCvCMNgpoGTF0gdQEFAro+FMY/k5ijK3/8LvDb+zI5rEtfr4jDlf54eVIgxu/S/Y9CVX7mA4BXJzXcow0qOi3ibCcQCE/xkUYKtkv3V0Tl2GhEDoDftZJUsn2eJftk7Eqt/xyYwBtkWQfElg/d7/jpPXL4Gj6V8VOYWi+zcps2mVEhNHIAUN01vw949V4UJ6ZLWUa2pEO4gdFVnOQ+gFSnWe0YEAoAjwVwA3popvPw6T3KgP6m1vf6kYb3mWK1MACIoDW8EfK7WAxU7tfTDWKOKKHLO0AmF+DUJm5V6JtlrfLW5PSpK7FIboSiKIa4QNgl1BrWUF2Gz/M+tRniAXVRd8BPphFW8QEQU5eicwNAIFWieSASAHLrxdpEU4LyXi0asaNbBTvAmPuiS2UPnSRih5kayiAo8SNlIIlO9GhWAgPejJbxQxVGFKWxL3Xr7tGoYr6K5EaYUMW+rapi+1eHJ0pMflQyFzWeGWjaqqOxarjtipYdv5JeQHV4osQEmVEhmlsWyKyP3ca3lO8LgNehdXGAuvvdob1i7NqchROy7lS00f19dr644dfEEVjskKWVrqAeEC0EGzQ1Yx8XXzH7Xdwxwu0P6i16Bskgj+Du2QEHKElbrkb6HgiAeI9kX53FWInMFX2Kx6+bgadILQBcELw+4PqYOySiiuFLRLuew0q6hVxtAIQYg65NkL00b0AIf0efYsO0O9UIgFFbuP8PYFsFbDkit3fb4rHlZKWdnIZG9HtcKArwu14c4ugJ5A0747QSbZWNUJ8rXyo0A65c8ogESAGICMhru0zKgGtruogE/x8eEuFfqWh4swAAAABJRU5ErkJggg==" width="24" height="24" alt="" style="display:block;"></span>Home</button>
+    <button class="nav-btn" onclick="seBottomNav('se-new-request',this)"><span class="nav-icon">➕</span>New</button>
+    <button class="nav-btn" onclick="seBottomNav('se-history',this)"><span class="nav-icon"><img src="data:image/png;base64,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" width="24" height="24" alt="" style="display:block;"></span>History</button>
+    <button class="nav-btn" onclick="seBottomNav('se-profile',this)"><span class="nav-icon">👤</span>Profile</button>
+  </div>
+</div>
+
+<!-- ═══════════ SE: NEW REQUEST ═══════════ -->
+<div id="screen-se-new-request" class="screen">
+  <div class="topbar">
+    <button class="btn btn-secondary btn-sm" onclick="seNav('dashboard')" style="width:auto;padding:4px 8px;">← Back</button>
+    <div style="font-size:15px;font-weight:800;">New Request</div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="scroll-area">
+    <div class="card fade-in">
+      <div class="card-title">Request Type</div>
+      <div class="chip-row">
+        <div class="chip increase active" id="chip-increase" onclick="selectType('increase')">📈 Increase</div>
+        <div class="chip decrease" id="chip-decrease" onclick="selectType('decrease')">📉 Decrease</div>
+      </div>
+    </div>
+
+    <div class="card fade-in-2">
+      <div class="card-title">Agency Details (from ERP)</div>
+      <div class="field">
+        <label>Agency Code *</label>
+        <input type="text" id="agent-code" placeholder="e.g. JP-1021" oninput="lookupAgent(this.value)">
+        <div class="erp-loading" id="erp-loading">⌛ Fetching from ERP...</div>
+        <div class="erp-ok" id="erp-ok">✅ Agency found in ERP</div>
+      </div>
+      <div class="field">
+        <label>Agency Name (auto-filled)</label>
+        <input type="text" id="agent-name" placeholder="Auto-filled on code entry" readonly style="opacity:0.7;">
+      </div>
+      <div class="input-row">
+        <div class="field">
+          <label>Zone</label>
+          <input type="text" id="agent-zone-disp" placeholder="Auto-filled" readonly style="opacity:0.7;">
+        </div>
+        <div class="field">
+          <label>Effective Date *</label>
+          <input type="date" id="eff-date">
+        </div>
+      </div>
+    </div>
+
+    <div class="card fade-in-3">
+      <div class="card-title">Supply Details</div>
+      <div class="input-row">
+        <div class="field">
+          <label>Current Supply (ERP)</label>
+          <input type="number" id="old-supply" placeholder="Auto-filled" min="0" oninput="calcDiff()" style="opacity:0.8;background:rgba(78,140,255,0.06);border-color:rgba(78,140,255,0.2);">
+        </div>
+        <div class="field">
+          <label>New Supply *</label>
+          <input type="number" id="new-supply" placeholder="Enter new qty" min="0" oninput="calcDiff()">
+        </div>
+      </div>
+      <div class="supply-diff">
+        <div style="text-align:center"><div class="supply-num" id="prev-old">—</div><div class="supply-sub">Current</div></div>
+        <div class="arrow">→</div>
+        <div style="text-align:center"><div class="supply-num" id="prev-new">—</div><div class="supply-sub">New</div></div>
+        <div style="text-align:center"><div class="supply-num" id="prev-diff" style="font-size:18px;">—</div><div class="supply-sub">Diff</div></div>
+      </div>
+    </div>
+
+    <div class="card fade-in-3">
+      <div class="card-title">Reason & Remarks</div>
+      <div class="field">
+        <label>Reason for Change *</label>
+        <select id="reason-select" onchange="toggleOtherReason()">
+          <option value="">Select reason</option>
+          <option>New residential colony opened</option>
+          <option>Subscriber base increased</option>
+          <option>Agency's area expanded</option>
+          <option>Festival / seasonal demand</option>
+          <option>Previous supply insufficient</option>
+          <option>Subscriber base decreased</option>
+          <option>Agency area reduced / split</option>
+          <option>Competition impact</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field" id="other-reason-field" style="display:none;">
+        <label>Specify Reason *</label>
+        <textarea id="other-reason" placeholder="Describe in detail..."></textarea>
+      </div>
+      <div class="field">
+        <label>Remarks for Approver (optional)</label>
+        <textarea id="remarks" placeholder="Any notes for Zonal Head..."></textarea>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-icon" onclick="submitRequest()"><span>🚀</span><span>Submit for Approval</span></button>
+    <div style="height:8px;"></div>
+  </div>
+</div>
+
+<!-- ═══════════ SE: HISTORY ═══════════ -->
+<div id="screen-se-history" class="screen">
+  <div class="topbar">
+    <button class="btn btn-secondary btn-sm" onclick="seNav('dashboard')" style="width:auto;padding:4px 8px;">← Back</button>
+    <div style="font-size:15px;font-weight:800;">All Requests</div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="search-wrap"><input type="text" placeholder="🔍  Search agency / zone..." oninput="seFilterHistory(this.value)"></div>
+  <div class="scroll-area" id="se-history-list" style="padding-top:12px;gap:8px;"></div>
+</div>
+
+<!-- ═══════════ SE: PROFILE ═══════════ -->
+<div id="screen-se-profile" class="screen">
+  <div class="topbar">
+    <button class="btn btn-secondary btn-sm" onclick="seNav('dashboard')" style="width:auto;padding:4px 8px;">← Back</button>
+    <div style="font-size:15px;font-weight:800;">My Profile</div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="scroll-area">
+    <div class="card fade-in" style="text-align:center;padding:28px 20px;">
+      <div style="font-size:48px;margin-bottom:10px;">👤</div>
+      <div style="font-size:19px;font-weight:800;" id="se-profile-name">—</div>
+      <div style="margin-top:10px;"><span class="role-badge role-se" style="font-size:11px;padding:5px 14px;">Sales Executive</span></div>
+    </div>
+    <div class="card fade-in-2">
+      <div class="card-title">Account Info</div>
+      <div class="profile-row"><span>Employee ID</span><span id="se-emp-id" style="font-family:'JetBrains Mono',monospace;">—</span></div>
+      <div class="profile-row"><span>Zone</span><span id="se-zone-prof">—</span></div>
+      <div class="profile-row"><span>Reporting To</span><span id="se-reporting">—</span></div>
+      <div class="profile-row"><span>ERP Access</span><span style="color:var(--green);">● Active</span></div>
+    </div>
+    <button class="btn btn-secondary" onclick="logout()">🚪 Logout</button>
+    <div style="height:8px;"></div>
+  </div>
+</div>
+
+<!-- ═══════════ ZH: DASHBOARD ═══════════ -->
+<div id="screen-zh-dashboard" class="screen">
+  <div class="topbar">
+    <div class="topbar-logo">📰 <span>DCR</span></div>
+    <div class="topbar-user">
+      <b id="zh-name-disp">Vikram Singh</b>
+      <span class="role-badge role-zh">Zonal Head</span>
+    </div>
+  </div>
+  <div class="scroll-area">
+    <div class="stats-row fade-in">
+      <div class="stat-card orange"><div class="stat-num orange" id="zh-stat-pending">0</div><div class="stat-label">Awaiting Me</div></div>
+      <div class="stat-card green"><div class="stat-num green" id="zh-stat-approved">0</div><div class="stat-label">I Approved</div></div>
+      <div class="stat-card blue"><div class="stat-num blue" id="zh-stat-ho">0</div><div class="stat-label">At HO</div></div>
+      <div class="stat-card red"><div class="stat-num red" id="zh-stat-rejected">0</div><div class="stat-label">Rejected</div></div>
+    </div>
+    <div class="fade-in-2">
+      <div class="section-header">
+        <div class="section-title">Pending My Approval</div>
+        <span class="status-pill pending" id="zh-pending-count-badge">0</span>
+      </div>
+      <div id="zh-pending-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+    <div class="fade-in-3">
+      <div class="section-header" style="margin-top:4px;">
+        <div class="section-title">Recently Reviewed</div>
+        <button class="btn btn-secondary btn-sm" onclick="zhNav('history')">All</button>
+      </div>
+      <div id="zh-recent-reviewed" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-btn active" onclick="zhBottomNav('zh-dashboard',this)"><span class="nav-icon">🏠</span>Home</button>
+    <button class="nav-btn" onclick="zhBottomNav('zh-history',this)"><span class="nav-icon">📋</span>History</button>
+    <button class="nav-btn" onclick="zhBottomNav('zh-profile',this)"><span class="nav-icon">👤</span>Profile</button>
+  </div>
+</div>
+
+<!-- ═══════════ ZH: HISTORY ═══════════ -->
+<div id="screen-zh-history" class="screen">
+  <div class="topbar">
+    <button class="btn btn-secondary btn-sm" onclick="zhNav('dashboard')" style="width:auto;padding:4px 8px;">← Back</button>
+    <div style="font-size:15px;font-weight:800;">All Requests</div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="search-wrap"><input type="text" placeholder="🔍  Search..." oninput="zhFilterHistory(this.value)"></div>
+  <div class="scroll-area" id="zh-history-list" style="padding-top:12px;gap:8px;"></div>
+</div>
+
+<!-- ═══════════ ZH: PROFILE ═══════════ -->
+<div id="screen-zh-profile" class="screen">
+  <div class="topbar">
+    <button class="btn btn-secondary btn-sm" onclick="zhNav('dashboard')" style="width:auto;padding:4px 8px;">← Back</button>
+    <div style="font-size:15px;font-weight:800;">My Profile</div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="scroll-area">
+    <div class="card fade-in" style="text-align:center;padding:28px 20px;">
+      <div style="font-size:48px;margin-bottom:10px;">👤</div>
+      <div style="font-size:19px;font-weight:800;" id="zh-profile-name">—</div>
+      <div style="margin-top:10px;"><span class="role-badge role-zh" style="font-size:11px;padding:5px 14px;">Zonal Head</span></div>
+    </div>
+    <div class="card fade-in-2">
+      <div class="card-title">Account Info</div>
+      <div class="profile-row"><span>Employee ID</span><span id="zh-emp-id" style="font-family:'JetBrains Mono',monospace;">—</span></div>
+      <div class="profile-row"><span>Zone</span><span id="zh-zone-prof">—</span></div>
+      <div class="profile-row"><span>Reporting To</span><span>Jaipur HO</span></div>
+      <div class="profile-row"><span>Executives Under</span><span id="zh-exec-count">—</span></div>
+    </div>
+    <button class="btn btn-secondary" onclick="logout()" style="margin-top:4px;">🚪 Logout</button>
+    <div style="height:8px;"></div>
+  </div>
+</div>
+
+<!-- ═══════════ HO: DASHBOARD ═══════════ -->
+<div id="screen-ho-dashboard" class="screen">
+  <div class="topbar">
+    <div class="topbar-logo">📰 <span>DCR</span></div>
+    <div class="topbar-user">
+      <b id="ho-name-disp">Anand Mathur</b>
+      <span class="role-badge role-ho">Jaipur HO</span>
+    </div>
+  </div>
+  <div class="scroll-area">
+    <!-- Date Filter -->
+    <div class="ho-date-row fade-in">
+      <label>📅 Date</label>
+      <input type="date" id="ho-date-filter" onchange="hoSetDate(this.value)">
+    </div>
+    <!-- Copies Count Boxes (clickable) -->
+    <div class="copy-counts-row fade-in">
+      <div class="copy-count-box increase-box" onclick="openHODetail('increase')">
+        <div class="copy-count-num increase" id="ho-stat-increased">0</div>
+        <div class="copy-count-label">📈 Total Increased Copies</div>
+      </div>
+      <div class="copy-count-box decrease-box" onclick="openHODetail('decrease')">
+        <div class="copy-count-num decrease" id="ho-stat-decreased">0</div>
+        <div class="copy-count-label">📉 Total Decreased Copies</div>
+      </div>
+    </div>
+    <!-- Pending/Approved stats -->
+    <div class="stats-row fade-in-2">
+      <div class="stat-card purple"><div class="stat-num purple" id="ho-stat-pending">0</div><div class="stat-label">Awaiting HO</div></div>
+      <div class="stat-card green"><div class="stat-num green" id="ho-stat-approved">0</div><div class="stat-label">HO Approved</div></div>
+    </div>
+    <div class="fade-in-3">
+      <div class="section-header">
+        <div class="section-title">Pending HO Approval</div>
+        <span class="status-pill ho_review" id="ho-pending-count-badge">0</span>
+      </div>
+      <div id="ho-pending-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+    <div class="fade-in-3">
+      <div class="section-header" style="margin-top:4px;">
+        <div class="section-title">Recently Finalized</div>
+        <button class="btn btn-secondary btn-sm" onclick="hoNav('history')">All</button>
+      </div>
+      <div id="ho-recent-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-btn active" onclick="hoBottomNav('ho-dashboard',this)"><span class="nav-icon">🏠</span>Home</button>
+    <button class="nav-btn" onclick="hoBottomNav('ho-history',this)"><span class="nav-icon">📋</span>History</button>
+    <button class="nav-btn" onclick="hoBottomNav('ho-reports',this)"><span class="nav-icon">📊</span>Reports</button>
+    <button class="nav-btn" onclick="hoBottomNav('ho-profile',this)"><span class="nav-icon">👤</span>Profile</button>
+  </div>
+</div>
+
+<!-- ═══════════ HO: DETAIL SCREEN (Increase/Decrease Listing) ═══════════ -->
+<div id="screen-ho-detail" class="screen">
+  <div class="topbar">
+    <button class="btn btn-secondary btn-sm" onclick="hoNav('dashboard')" style="width:auto;padding:4px 8px;">← Back</button>
+    <div style="font-size:15px;font-weight:800;" id="ho-detail-title">Details</div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="detail-filters">
+    <select id="ho-detail-zone-filter" onchange="applyHODetailFilters()">
+      <option value="">All Zones</option>
+    </select>
+    <select id="ho-detail-branch-filter" onchange="applyHODetailFilters()">
+      <option value="">All Branches</option>
+    </select>
+  </div>
+  <div class="scroll-area" id="ho-detail-list" style="padding-top:12px;gap:8px;"></div>
+</div>
+
+<!-- ═══════════ HO: HISTORY ═══════════ -->
+<div id="screen-ho-history" class="screen">
+  <div class="topbar">
+    <button class="btn btn-secondary btn-sm" onclick="hoNav('dashboard')" style="width:auto;padding:4px 8px;">← Back</button>
+    <div style="font-size:15px;font-weight:800;">All Requests</div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="search-wrap"><input type="text" placeholder="🔍  Search..." oninput="hoFilterHistory(this.value)"></div>
+  <div class="scroll-area" id="ho-history-list" style="padding-top:12px;gap:8px;"></div>
+</div>
+
+<!-- ═══════════ HO: REPORTS ═══════════ -->
+<div id="screen-ho-reports" class="screen">
+  <div class="topbar">
+    <button class="btn btn-secondary btn-sm" onclick="hoNav('dashboard')" style="width:auto;padding:4px 8px;">← Back</button>
+    <div style="font-size:15px;font-weight:800;">Reports</div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="scroll-area">
+    <!-- Date Filter in Reports -->
+    <div class="ho-date-row fade-in" style="margin-bottom:14px;">
+      <label>📅 Date</label>
+      <input type="date" id="report-date-filter" onchange="setReportDate(this.value)">
+    </div>
+    <div class="card fade-in">
+      <div class="card-title">Branch-wise Summary</div>
+      <div id="ho-branch-summary" style="display:flex;flex-direction:column;gap:0;"></div>
+    </div>
+    <div class="card fade-in-3">
+      <div class="card-title">ERP Push Log</div>
+      <div id="ho-erp-log" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-btn" onclick="hoBottomNav('ho-dashboard',this)"><span class="nav-icon">🏠</span>Home</button>
+    <button class="nav-btn" onclick="hoBottomNav('ho-history',this)"><span class="nav-icon">📋</span>History</button>
+    <button class="nav-btn active" onclick="hoBottomNav('ho-reports',this)"><span class="nav-icon">📊</span>Reports</button>
+    <button class="nav-btn" onclick="hoBottomNav('ho-profile',this)"><span class="nav-icon">👤</span>Profile</button>
+  </div>
+</div>
+
+<!-- ═══════════ HO: PROFILE ═══════════ -->
+<div id="screen-ho-profile" class="screen">
+  <div class="topbar">
+    <button class="btn btn-secondary btn-sm" onclick="hoNav('dashboard')" style="width:auto;padding:4px 8px;">← Back</button>
+    <div style="font-size:15px;font-weight:800;">My Profile</div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="scroll-area">
+    <div class="card fade-in" style="text-align:center;padding:28px 20px;">
+      <div style="font-size:48px;margin-bottom:10px;">👤</div>
+      <div style="font-size:19px;font-weight:800;" id="ho-profile-name">—</div>
+      <div style="margin-top:10px;"><span class="role-badge role-ho" style="font-size:11px;padding:5px 14px;">Jaipur HO</span></div>
+    </div>
+    <div class="card fade-in-2">
+      <div class="card-title">System Access</div>
+      <div class="profile-row"><span>Employee ID</span><span id="ho-emp-id" style="font-family:'JetBrains Mono',monospace;">—</span></div>
+      <div class="profile-row"><span>Office</span><span>Jaipur Head Office</span></div>
+      <div class="profile-row"><span>ERP Push Authority</span><span style="color:var(--green);">● Enabled</span></div>
+      <div class="profile-row"><span>Zones Under</span><span>All Jaipur Zones</span></div>
+    </div>
+    <button class="btn btn-secondary" onclick="logout()" style="margin-top:4px;">🚪 Logout</button>
+    <div style="height:8px;"></div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL: REQUEST DETAIL ═══════════ -->
+<div class="modal-overlay" id="detail-modal" onclick="closeModalOutside(event,'detail-modal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title">Request Details</div>
+    <div id="modal-body"></div>
+    <div id="modal-actions"></div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL: REMARKS ═══════════ -->
+<div class="modal-overlay" id="remarks-modal" onclick="closeModalOutside(event,'remarks-modal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="remarks-modal-title">Add Remarks</div>
+    <div class="field remarks-field">
+      <label id="remarks-modal-label">Remarks</label>
+      <textarea id="remarks-modal-input" placeholder="Enter your remarks..."></textarea>
+    </div>
+    <div class="action-row">
+      <button class="btn btn-secondary" onclick="closeModal('remarks-modal')">Cancel</button>
+      <button class="btn" id="remarks-confirm-btn" onclick="confirmRemarksAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script src="assets/js/app.js"></script>
+<script src="assets/js/theme.js"></script>
+</body>
+</html>

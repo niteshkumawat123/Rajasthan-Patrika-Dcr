@@ -1,0 +1,28 @@
+﻿<div class="modal-overlay" id="detail-modal" style="background:rgba(0,0,0,0.6);" onclick="closeModalOutside(event,'detail-modal')">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="modal-title" id="modal-title" style="margin-bottom:0;">Request Details</div>
+            <button onclick="closeModal('detail-modal')" style="background:none;border:none;color:var(--paper);font-size:20px;cursor:pointer;">&#x2715;</button>
+        </div>
+        <div id="modal-body" style="margin-top:14px;"></div>
+        <div id="modal-actions" style="margin-top:14px;"></div>
+    </div>
+</div>
+<div class="modal-overlay" id="remarks-modal" onclick="closeModalOutside(event,'remarks-modal')">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="modal-title" id="remarks-modal-title" style="margin-bottom:0;">Add Remarks</div>
+            <button onclick="closeModal('remarks-modal')" style="background:none;border:none;color:var(--paper);font-size:20px;cursor:pointer;">&#x2715;</button>
+        </div>
+        <div class="field remarks-field" style="margin-top:14px;">
+            <label id="remarks-modal-label">Remarks</label>
+            <textarea id="remarks-modal-input" placeholder="Enter your remarks..."></textarea>
+        </div>
+        <div class="action-row">
+            <button class="btn btn-secondary" onclick="closeModal('remarks-modal')">Cancel</button>
+            <button class="btn btn-primary" id="remarks-confirm-btn" onclick="confirmRemarksAction()">Confirm</button>
+        </div>
+    </div>
+</div>

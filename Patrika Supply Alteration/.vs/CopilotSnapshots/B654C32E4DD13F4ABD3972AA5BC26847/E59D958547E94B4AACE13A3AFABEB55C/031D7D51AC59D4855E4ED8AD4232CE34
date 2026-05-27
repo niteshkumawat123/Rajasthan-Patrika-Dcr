@@ -1,0 +1,24 @@
+﻿@model ProfileViewModel
+<div class="topbar">
+    <a href="javascript:history.back()" class="btn btn-secondary btn-sm" style="width:auto;padding:4px 8px;text-decoration:none;">? Back</a>
+    <div style="font-size:15px;font-weight:800;">My Profile</div>
+    <div style="width:60px;"></div>
+</div>
+<div class="scroll-area">
+    <div class="card fade-in" style="text-align:center;padding:28px 20px;">
+        <div style="font-size:48px;margin-bottom:10px;">??</div>
+        <div style="font-size:19px;font-weight:800;">@Model?.Name</div>
+        <div style="margin-top:10px;"><span class="role-badge role-se" style="font-size:11px;padding:5px 14px;">@Model?.RolePosition</span></div>
+    </div>
+    <div class="card fade-in-2">
+        <div class="card-title">Account Info</div>
+        <div class="profile-row"><span>Employee ID</span><span style="font-family:'JetBrains Mono',monospace;">@Model?.EmpCode</span></div>
+        <div class="profile-row"><span>Branch</span><span>@Model?.Branch</span></div>
+        <div class="profile-row"><span>Department</span><span>@Model?.Department</span></div>
+        <div class="profile-row"><span>Zone</span><span>@Model?.Zone</span></div>
+        <div class="profile-row"><span>Reporting To</span><span>@Model?.ReportingPersonName</span></div>
+        <div class="profile-row"><span>Status</span><span style="color:var(--green);">@(Model?.EmpCurrentStatus == 1 ? "? Active" : "? Inactive")</span></div>
+    </div>
+    <a href="@Url.Action("Logout","Account")" class="btn btn-secondary" style="margin-top:4px;display:block;text-align:center;text-decoration:none;">?? Logout</a>
+    <div style="height:8px;"></div>
+</div>

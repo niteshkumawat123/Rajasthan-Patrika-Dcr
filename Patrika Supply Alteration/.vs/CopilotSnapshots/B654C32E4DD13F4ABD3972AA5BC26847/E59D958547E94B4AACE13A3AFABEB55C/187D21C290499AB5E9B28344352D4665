@@ -1,0 +1,42 @@
+﻿@model List<SupplyRequestViewModel>
+<div class="topbar">
+    <a href="@Url.Action("Dashboard","HO")" class="btn btn-secondary btn-sm" style="width:auto;padding:4px 8px;text-decoration:none;">? Back</a>
+    <div style="font-size:15px;font-weight:800;">All Requests</div>
+    <div style="width:60px;"></div>
+</div>
+<div class="search-wrap"><input type="text" placeholder="??  Search..." oninput="filterList(this.value)"></div>
+<div class="scroll-area" id="history-list" style="padding-top:12px;gap:8px;">
+    @foreach (var req in Model)
+    {
+        <div class="request-card" data-search="@req.Agcd @req.AgName @req.Status">
+            <div class="request-row">
+                <span style="font-weight:700;">@req.Agcd</span>
+                <span class="status-pill @req.Status?.ToLower().Replace("_","-")">@req.Status</span>
+            </div>
+            <div class="request-row" style="font-size:12px;color:var(--muted);">
+                <span>@req.AgName</span><span>@req.Publ / @req.Edtn</span>
+            </div>
+            <div class="request-row" style="font-size:13px;">
+                <span>@req.BaseSupply ? @req.ChangedSupply
+                    @if(req.IncDec=="I"){<span style="color:var(--green);">?</span>}else{<span style="color:var(--accent);">?</span>}
+                </span>
+                <span style="font-size:11px;color:var(--muted);">@req.CreationDate?.ToString("dd MMM yyyy")</span>
+            </div>
+        </div>
+    }
+</div>
+<div class="bottom-nav">
+    <a class="nav-btn" href="@Url.Action("Dashboard","HO")"><span class="nav-icon">??</span>Home</a>
+    <a class="nav-btn active" href="@Url.Action("History","HO")"><span class="nav-icon">??</span>History</a>
+    <a class="nav-btn" href="@Url.Action("Reports","HO")"><span class="nav-icon">??</span>Reports</a>
+    <a class="nav-btn" href="@Url.Action("Index","Profile")"><span class="nav-icon">??</span>Profile</a>
+</div>
+@section Scripts {
+<script>
+function filterList(v){
+    document.querySelectorAll('#history-list .request-card').forEach(c=>{
+        c.style.display=c.dataset.search.toLowerCase().includes(v.toLowerCase())?'':'none';
+    });
+}
+</script>
+}

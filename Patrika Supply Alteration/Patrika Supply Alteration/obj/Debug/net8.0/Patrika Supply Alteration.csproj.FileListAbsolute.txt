@@ -1,0 +1,45 @@
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\appsettings.Development.json
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\appsettings.json
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\Patrika Supply Alteration.staticwebassets.runtime.json
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\Patrika Supply Alteration.staticwebassets.endpoints.json
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\Patrika Supply Alteration.exe
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\Patrika Supply Alteration.deps.json
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\Patrika Supply Alteration.runtimeconfig.json
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\Patrika Supply Alteration.dll
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\Patrika Supply Alteration.pdb
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\BouncyCastle.Cryptography.dll
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\MailKit.dll
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\MimeKit.dll
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\Oracle.ManagedDataAccess.dll
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\System.Configuration.ConfigurationManager.dll
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\System.Diagnostics.PerformanceCounter.dll
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\System.DirectoryServices.Protocols.dll
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\System.Security.Cryptography.ProtectedData.dll
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Diagnostics.PerformanceCounter.dll
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\runtimes\linux\lib\net8.0\System.DirectoryServices.Protocols.dll
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\runtimes\osx\lib\net8.0\System.DirectoryServices.Protocols.dll
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.DirectoryServices.Protocols.dll
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\Patrika Supply Alteration.csproj.AssemblyReference.cache
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\rpswa.dswa.cache.json
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\Patrika Supply Alteration.GeneratedMSBuildEditorConfig.editorconfig
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\Patrika Supply Alteration.AssemblyInfoInputs.cache
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\Patrika Supply Alteration.AssemblyInfo.cs
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\Patrika Supply Alteration.csproj.CoreCompileInputs.cache
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\Patrika Supply Alteration.MvcApplicationPartsAssemblyInfo.cache
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\Patrika Supply Alteration.RazorAssemblyInfo.cache
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\Patrika Supply Alteration.RazorAssemblyInfo.cs
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\rjimswa.dswa.cache.json
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\scopedcss\bundle\Patrika Supply Alteration.styles.css
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\staticwebassets.build.json
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\staticwebassets.build.json.cache
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\staticwebassets.development.json
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\staticwebassets.build.endpoints.json
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\Patrika .47427935.Up2Date
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\Patrika Supply Alteration.dll
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\refint\Patrika Supply Alteration.dll
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\Patrika Supply Alteration.pdb
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\Patrika Supply Alteration.genruntimeconfig.cache
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\ref\Patrika Supply Alteration.dll
+E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt

@@ -1,0 +1,115 @@
+@model DashboardViewModel
+<div class="topbar">
+    <div class="topbar-logo">&#x1F4F0; <span>DCR</span></div>
+    <div class="topbar-user">
+        <b>@Model.User?.EmpName</b>
+        <span class="role-badge role-se">@Model.User?.RoleName</span>
+    </div>
+</div>
+<div class="scroll-area">
+    <div class="cutoff-banner fade-in">
+        <div style="font-size:18px;flex-shrink:0;">&#x23F0;</div>
+        <div class="cutoff-text">&#x2705; Before Cut-off (5:00 PM) &mdash; Requests submitted now will process today.</div>
+    </div>
+    <div class="stats-row fade-in-2">
+        <div class="stat-card orange"><div class="stat-num orange">@Model.Pending</div><div class="stat-label">Pending</div></div>
+        <div class="stat-card green"><div class="stat-num green">@Model.Approved</div><div class="stat-label">Approved</div></div>
+        <div class="stat-card blue"><div class="stat-num blue">@Model.Today</div><div class="stat-label">Today</div></div>
+        <div class="stat-card red"><div class="stat-num red">@Model.Rejected</div><div class="stat-label">Rejected</div></div>
+    </div>
+    <a href="@Url.Action("NewRequest","Home")" class="btn btn-primary btn-icon fade-in-3" style="padding:15px;text-decoration:none;">
+        <span>&#x2795;</span><span>New Supply Change Request</span>
+    </a>
+    <div class="fade-in-3">
+        <div class="section-header">
+            <div class="section-title">Recent Requests</div>
+            <a href="@Url.Action("History","Home")" class="btn btn-secondary btn-sm" style="text-decoration:none;">View All</a>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+            @foreach (var req in Model.RecentRequests)
+            {
+                <div class="request-card" onclick="openAuditModal(@req.ReqId)">
+                    <div class="request-row">
+                        <span style="font-weight:500;color:var(--paper);">@req.AgName @(string.IsNullOrEmpty(req.Agcd) ? "" : $"({req.Agcd})")</span>
+                        <span class="status-pill @req.Status?.ToLower().Replace("_","-")">@req.Status</span>
+                    </div>
+                    <div class="request-row" style="font-size:10px;color:var(--muted);opacity:0.7;">
+                        <span>@(string.IsNullOrEmpty(req.BranchCode) ? "-" : req.BranchCode)</span>
+                        <span>@(req.CreationDate.HasValue ? req.CreationDate.Value.ToString("dd MMM yyyy") : "-")</span>
+                    </div>
+                    <div class="request-row" style="font-size:11px;color:var(--muted);">
+
+                        <span>By @(string.IsNullOrEmpty(req.CreationBy) ? req.UserId : req.CreationBy)</span>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<div class="bottom-nav">
+    <a class="nav-btn active" href="@Url.Action("Dashboard","Home")"><span class="nav-icon">&#x1F3E0;</span>Home</a>
+    <a class="nav-btn" href="@Url.Action("NewRequest","Home")"><span class="nav-icon">&#x2795;</span>New</a>
+    <a class="nav-btn" href="@Url.Action("History","Home")"><span class="nav-icon">&#x1F4CB;</span>History</a>
+    <a class="nav-btn" href="@Url.Action("Index","Profile")"><span class="nav-icon">&#x1F464;</span>Profile</a>
+</div>
+@section Scripts {
+<script>
+function openAuditModal(reqId){
+    fetch('/Home/AuditTrail?reqId='+reqId)
+        .then(r=>r.json())
+        .then(data=>{
+            if(!data||data.length===0){showToast('No data found','error');return;}
+            var r=data[0];
+            var diff=(r.changedSupply||0)-(r.baseSupply||0);
+            var diffStr=(diff>0?'+':'')+diff;
+            var diffColor=diff>0?'var(--green)':'var(--accent)';
+            var statusLabel=(r.status||'').replace(/_/g,' ').toUpperCase();
+            var statusCls=(r.status||'').toLowerCase().replace(/_/g,'-');
+            var dateStr=r.creationDate?new Date(r.creationDate).toLocaleDateString('en-IN',{year:'numeric',month:'short',day:'2-digit'}):'';
+            var timeStr=r.creationDate?new Date(r.creationDate).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):''; 
+            var effDate=r.changedSupplyDate?new Date(r.changedSupplyDate).toLocaleDateString('en-IN',{year:'numeric',month:'short',day:'2-digit'}):'-';
+
+            var html=`
+            <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap;">
+              <span class="status-pill ${statusCls}" style="font-size:11px;padding:5px 12px;">${statusLabel}</span>
+              <span style="font-size:11px;color:var(--muted);">${dateStr} · ${timeStr}</span>
+            </div>
+            <div class="supply-diff" style="margin-bottom:14px;">
+              <div style="text-align:center"><div class="supply-num">${r.baseSupply||0}</div><div class="supply-sub">Current</div></div>
+              <div class="arrow">${r.incDec==='I'?'??':'??'}</div>
+              <div style="text-align:center"><div class="supply-num" style="color:${diffColor}">${r.changedSupply||0}</div><div class="supply-sub">New</div></div>
+              <div style="text-align:center"><div class="supply-num" style="font-size:18px;color:${diffColor}">${diffStr}</div><div class="supply-sub">Diff</div></div>
+            </div>
+            <div style="font-size:12px;line-height:2;margin-bottom:12px;">
+              <span style="color:var(--muted)">Agency:</span> <b>${r.agName||''}</b> (${r.agcd||''})<br>
+              <span style="color:var(--muted)">Branch:</span> <b>${r.branchName||''}</b> (${r.branchCode||''})<br>
+              <span style="color:var(--muted)">Effective Date:</span> <b>${effDate}</b><br>
+              <span style="color:var(--muted)">By:</span> <b>${r.submittedbyname||''}</b> (${r.submittedBy||''})<br>
+            </div>
+            <div class="card-title" style="margin-top:14px;">Reason & Remarks</div>
+            <div class="detail-highlight-field" style="background:rgba(231,111,81,0.08);border:1.5px solid rgba(231,111,81,0.3);border-radius:10px;padding:10px 14px;">
+              <span class="detail-field-label">Reason</span>
+              <span class="detail-field-value">${r.reasonCode||'-'}</span>
+            </div>
+            <div class="detail-highlight-field remark-highlight" style="margin-top:8px;">
+              <span class="detail-field-label">Remarks</span>
+              <span class="detail-field-value">${r.remarks||'—'}</span>
+            </div>`;
+
+            // ZH/HO remarks from approval trail
+            var zhRem='',hoRem='';
+            data.forEach(a=>{
+                if(a.approvalLevel&&a.approvalLevel.indexOf('ZH')>=0&&a.approverRemarks) zhRem=a.approverRemarks;
+                if(a.approvalLevel&&a.approvalLevel.indexOf('HO')>=0&&a.approverRemarks) hoRem=a.approverRemarks;
+            });
+            if(zhRem) html+=`<div style="font-size:12px;color:var(--muted);line-height:1.6;margin-top:8px;"><b style="color:var(--green);">ZH Remarks:</b> ${zhRem}</div>`;
+            if(hoRem) html+=`<div style="font-size:12px;color:var(--muted);line-height:1.6;margin-top:5px;"><b style="color:var(--accent);">HO Remarks:</b> ${hoRem}</div>`;
+
+            document.getElementById('modal-title').textContent='Request #REQ'+String(r.reqId).padStart(3,'0');
+            document.getElementById('modal-body').innerHTML=html;
+            document.getElementById('modal-actions').innerHTML='';
+            document.getElementById('detail-modal').classList.add('active');
+        });
+}
+</script>
+}

@@ -1,0 +1,23 @@
+﻿{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "OracleDb": "User Id=YOUR_USER;Password=YOUR_PASS;Data Source=YOUR_HOST:1521/YOUR_SERVICE;"
+  },
+  "SMTP": {
+    "Email": "noreply@vertexplus.com",
+    "Password": "phyctvpsrynfxhrh",
+    "PortNo": "587",
+    "SSL": "true",
+    "Host": "smtp.office365.com",
+    "DisplayName": "Vertex Plus"
+  },
+  "Session": {
+    "TimeoutMinutes": 60
+  }
+}

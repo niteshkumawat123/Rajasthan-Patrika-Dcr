@@ -1,0 +1,62 @@
+﻿@model List<SupplyRequestViewModel>
+<div class="topbar">
+    <a href="@Url.Action("Dashboard","Home")" class="btn btn-secondary btn-sm" style="width:auto;padding:4px 8px;text-decoration:none;">&#x2190; Back</a>
+    <div style="font-size:15px;font-weight:800;">All Requests</div>
+    <div style="width:60px;"></div>
+</div>
+<div class="search-wrap"><input type="text" placeholder="&#x1F50D;  Search agency / zone..." oninput="filterList(this.value)"></div>
+<div class="scroll-area" id="history-list" style="padding-top:12px;gap:8px;">
+    @foreach (var req in Model)
+    {
+        <div class="request-card" data-search="@req.Agcd @req.AgName @req.Status" onclick="openAuditModal(@req.ReqId)">
+            <div class="request-row">
+                <span style="font-weight:700;">@req.Agcd</span>
+                <span class="status-pill @req.Status?.ToLower().Replace("_","-")">@req.Status</span>
+            </div>
+            <div class="request-row" style="font-size:12px;color:var(--muted);">
+                <span>@req.AgName</span>
+                <span>@req.Publ / @req.Edtn</span>
+            </div>
+            <div class="request-row" style="font-size:13px;">
+                <span>@req.BaseSupply &#x2192; @req.ChangedSupply
+                    @if(req.IncDec=="I"){<span style="color:var(--green);">&#x2191;</span>}else{<span style="color:var(--accent);">&#x2193;</span>}
+                </span>
+                <span style="font-size:11px;color:var(--muted);">@req.CreationDate?.ToString("dd MMM yyyy")</span>
+            </div>
+            @if(req.ApprAction != null){
+                <div class="request-row" style="font-size:11px;color:var(--muted);">
+                    <span>@req.ApprAction by @req.ActionBy</span>
+                    <span>@req.ActionDate?.ToString("dd MMM")</span>
+                </div>
+            }
+        </div>
+    }
+</div>
+<div class="bottom-nav">
+    <a class="nav-btn" href="@Url.Action("Dashboard","Home")"><span class="nav-icon">&#x1F3E0;</span>Home</a>
+    <a class="nav-btn" href="@Url.Action("NewRequest","Home")"><span class="nav-icon">&#x2795;</span>New</a>
+    <a class="nav-btn active" href="@Url.Action("History","Home")"><span class="nav-icon">&#x1F4CB;</span>History</a>
+    <a class="nav-btn" href="@Url.Action("Index","Profile")"><span class="nav-icon">&#x1F464;</span>Profile</a>
+</div>
+@section Scripts {
+<script>
+function filterList(q){
+    q=q.toLowerCase();
+    document.querySelectorAll('.request-card').forEach(c=>{
+        c.style.display=c.dataset.search.toLowerCase().includes(q)?'':'none';
+    });
+}
+function openAuditModal(reqId){
+    fetch('/Home/AuditTrail?reqId='+reqId)
+        .then(r=>r.json())
+        .then(data=>{
+            let html='';
+            data.forEach(a=>{
+                html+='<div class="profile-row"><span>'+(a.approvalLevel||'Submitted')+'</span><span>'+(a.apprAction||'Created')+' by '+(a.actionBy||a.submittedBy)+'</span></div>';
+            });
+            document.getElementById('modal-body').innerHTML=html;
+            document.getElementById('detail-modal').classList.add('active');
+        });
+}
+</script>
+}

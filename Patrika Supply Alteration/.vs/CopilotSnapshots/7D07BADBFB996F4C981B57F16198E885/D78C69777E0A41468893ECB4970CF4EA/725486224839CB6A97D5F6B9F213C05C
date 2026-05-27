@@ -1,0 +1,93 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using DCRSupplyApp.Models;
+using DCRSupplyApp.Services;
+using DCRSupplyApp.Filters;
+
+namespace DCRSupplyApp.Controllers;
+
+[ServiceFilter(typeof(SessionAuthFilter))]
+public class HomeController : Controller
+{
+    private readonly OracleDbService _dbService;
+    private readonly SessionService _sessionService;
+
+    public HomeController(OracleDbService dbService, SessionService sessionService)
+    {
+        _dbService = dbService;
+        _sessionService = sessionService;
+    }
+
+    private UserSessionModel GetUser() => _sessionService.GetUser(HttpContext.Session)!;
+
+    [HttpGet]
+    public async Task<IActionResult> Dashboard()
+    {
+        var user = GetUser();
+        var stats = await _dbService.GetSEStatsAsync(user.UserId!, user.ComCode!);
+        var recent = await _dbService.GetSERecentRequestsAsync(user.UserId!, user.ComCode!);
+        var model = new DashboardViewModel
+        {
+            Pending = stats.pending,
+            Approved = stats.approved,
+            Rejected = stats.rejected,
+            Today = stats.today,
+            RecentRequests = recent,
+            User = user
+        };
+        return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult NewRequest()
+    {
+        return View();
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> AgentLookup(string agcd)
+    {
+        var user = GetUser();
+        var agent = await _dbService.GetAgentAsync(agcd, user.ComCode!);
+        if (agent == null)
+            return Json(new { found = false });
+        var supplies = await _dbService.GetSupplyAsync(agent.Agcd!, agent.Dpcd!, user.ComCode!);
+        return Json(new { found = true, agent, supplies });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> AgentSearch(string q)
+    {
+        if (string.IsNullOrWhiteSpace(q) || q.Length < 2)
+            return Json(new List<object>());
+        var user = GetUser();
+        var results = await _dbService.SearchAgentsAsync(q, user.ComCode!);
+        return Json(results);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SubmitRequest([FromBody] SupplyRequestViewModel model)
+    {
+        var user = GetUser();
+        model.UserId = user.UserId;
+        model.CompCode = user.ComCode;
+        model.UnitCode = user.UnitCode;
+        model.ZoneCode = user.Zone;
+        var success = await _dbService.SubmitRequestAsync(model);
+        return Json(new { success, message = success ? "Request submitted successfully." : "Failed to submit request." });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> History()
+    {
+        var user = GetUser();
+        var list = await _dbService.GetSEHistoryAsync(user.UserId!, user.ComCode!);
+        return View(list);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> AuditTrail(decimal reqId)
+    {
+        var trail = await _dbService.GetAuditTrailAsync(reqId);
+        return Json(trail);
+    }
+}

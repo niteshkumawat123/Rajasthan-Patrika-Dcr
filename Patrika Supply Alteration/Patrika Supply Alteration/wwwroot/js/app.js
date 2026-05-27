@@ -1,0 +1,34 @@
+﻿// Theme toggle
+(function(){
+    const fab = document.getElementById('theme-fab');
+    const saved = localStorage.getItem('dcr-theme');
+    if(saved === 'light') { document.body.classList.add('dark-mode'); fab && (fab.textContent = '\u2600\uFE0F'); }
+    if(fab) fab.addEventListener('click', function(){
+        document.body.classList.toggle('dark-mode');
+        const isLight = document.body.classList.contains('dark-mode');
+        localStorage.setItem('dcr-theme', isLight ? 'light' : 'dark');
+        fab.textContent = isLight ? '\u2600\uFE0F' : '\uD83C\uDF19';
+    });
+})();
+
+// Toast
+function showToast(message, type) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.className = type || 'success';
+    setTimeout(() => { toast.className = ''; toast.style.display = 'none'; }, 3000);
+}
+
+// Modal
+function openModal(id) {
+    const el = document.getElementById(id);
+    if (el) { el.classList.add('active'); document.body.classList.add('modal-open'); }
+}
+function closeModal(id) {
+    const el = document.getElementById(id);
+    if (el) { el.classList.remove('active'); document.body.classList.remove('modal-open'); }
+}
+function closeModalOutside(event, id) {
+    if (event.target === document.getElementById(id)) closeModal(id);
+}

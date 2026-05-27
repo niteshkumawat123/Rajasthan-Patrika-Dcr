@@ -1,0 +1,75 @@
+
+
+
+1:- Cross charges bill 
+ jaipur to indore bill 
+
+2:- news print  intra branch transfer
+
+3 salery voucher
+
+4 traveling expense
+
+5 imprest request
+
+6 bank reconsilation 
+
+7 rl monthely billing create master (contract management )
+
+
+salary voucher 
+emprest
+advance
+
+
+purchase 
+finance 
+payroll
+
+
+Cross charges billing according to branch wise 
+
+    Branch
+packages
+
+
+
+same state 
+
+debit note and credit note
+
+different state
+invoice with gst 
+
+
+
+fully automatic on billing system  automatic hit accont head
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

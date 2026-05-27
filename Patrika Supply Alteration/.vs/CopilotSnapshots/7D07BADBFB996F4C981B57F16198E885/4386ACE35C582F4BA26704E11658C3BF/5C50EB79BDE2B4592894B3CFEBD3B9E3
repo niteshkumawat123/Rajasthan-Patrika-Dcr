@@ -1,0 +1,193 @@
+﻿@{
+    ViewData["Title"] = "New Request";
+}
+<div class="topbar">
+    <a href="@Url.Action("Dashboard","Home")" class="btn btn-secondary btn-sm" style="width:auto;padding:4px 8px;text-decoration:none;">&#x2190; Back</a>
+    <div style="font-size:15px;font-weight:800;">New Request</div>
+    <div style="width:60px;"></div>
+</div>
+<div class="scroll-area">
+    <div class="card fade-in">
+        <div class="card-title">Request Type</div>
+        <div class="chip-row">
+            <div class="chip increase active" id="chip-increase" onclick="selectType('increase')">&#x1F4C8; Increase</div>
+            <div class="chip decrease" id="chip-decrease" onclick="selectType('decrease')">&#x1F4C9; Decrease</div>
+        </div>
+    </div>
+    <div class="card fade-in-2">
+        <div class="card-title">Agency Details (from ERP)</div>
+        <div class="field" style="position:relative;">
+            <label>Search Agency (Name or Code) *</label>
+            <input type="text" id="agent-search" placeholder="Type agency name or code..." autocomplete="off" oninput="searchAgent(this.value)">
+            <div id="agent-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:200;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;max-height:220px;overflow-y:auto;margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,0.3);"></div>
+            <div class="erp-loading" id="erp-loading" style="display:none;">&#x231B; Searching...</div>
+            <div class="erp-ok" id="erp-ok" style="display:none;">&#x2705; Agency found in ERP</div>
+        </div>
+        <div class="field">
+            <label>Agency Name (auto-filled)</label>
+            <input type="text" id="agent-name" placeholder="Auto-filled on selection" readonly style="opacity:0.7;">
+        </div>
+        <div class="input-row">
+            <div class="field">
+                <label>Agency Code</label>
+                <input type="text" id="agent-code" placeholder="Auto-filled" readonly style="opacity:0.7;">
+            </div>
+            <div class="field">
+                <label>Zone</label>
+                <input type="text" id="agent-zone-disp" placeholder="Auto-filled" readonly style="opacity:0.7;">
+            </div>
+        </div>
+        <div class="field">
+            <label>Effective Date *</label>
+            <input type="date" id="eff-date" value="@DateTime.Now.ToString("yyyy-MM-dd")">
+        </div>
+    </div>
+    <div class="card fade-in-3" id="supply-card" style="display:none;">
+        <div class="card-title">Current Supply</div>
+        <div id="supply-table"></div>
+    </div>
+    <div class="card fade-in-3">
+        <div class="card-title">Supply Details</div>
+        <div class="input-row">
+            <div class="field">
+                <label>Current Supply (ERP)</label>
+                <input type="number" id="old-supply" placeholder="Auto-filled" min="0" readonly style="opacity:0.8;background:rgba(78,140,255,0.06);border-color:rgba(78,140,255,0.2);">
+            </div>
+            <div class="field">
+                <label>New Supply *</label>
+                <input type="number" id="new-supply" placeholder="Enter new qty" min="0" oninput="calcDiff()">
+            </div>
+        </div>
+        <div class="supply-diff">
+            <div style="text-align:center"><div class="supply-num" id="prev-old">—</div><div class="supply-sub">Current</div></div>
+            <div class="arrow">&#x2192;</div>
+            <div style="text-align:center"><div class="supply-num" id="prev-new">—</div><div class="supply-sub">New</div></div>
+            <div style="text-align:center"><div class="supply-num" id="prev-diff" style="font-size:18px;">—</div><div class="supply-sub">Diff</div></div>
+        </div>
+    </div>
+    <div class="card fade-in-3">
+        <div class="card-title">Reason & Remarks</div>
+        <div class="field">
+            <label>Reason for Change *</label>
+            <select id="reason-select">
+                <option value="">Select reason</option>
+                <option>New residential colony opened</option>
+                <option>Subscriber base increased</option>
+                <option>Agency's area expanded</option>
+                <option>Festival / seasonal demand</option>
+                <option>Previous supply insufficient</option>
+                <option>Subscriber base decreased</option>
+                <option>Agency area reduced / split</option>
+                <option>Competition impact</option>
+                <option>Other</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>Remarks for Approver (optional)</label>
+            <textarea id="remarks" placeholder="Any notes for Zonal Head..."></textarea>
+        </div>
+    </div>
+    <button class="btn btn-primary btn-icon" onclick="submitRequest()"><span>&#x1F680;</span><span>Submit for Approval</span></button>
+    <div style="height:80px;"></div>
+</div>
+<div class="bottom-nav">
+    <a class="nav-btn" href="@Url.Action("Dashboard","Home")"><span class="nav-icon">&#x1F3E0;</span>Home</a>
+    <a class="nav-btn active" href="@Url.Action("NewRequest","Home")"><span class="nav-icon">&#x2795;</span>New</a>
+    <a class="nav-btn" href="@Url.Action("History","Home")"><span class="nav-icon">&#x1F4CB;</span>History</a>
+    <a class="nav-btn" href="@Url.Action("Index","Profile")"><span class="nav-icon">&#x1F464;</span>Profile</a>
+</div>
+@section Scripts {
+<script>
+let selectedType='I', agentData=null, supplyData=[];
+function selectType(t){
+    selectedType=t==='increase'?'I':'D';
+    document.getElementById('chip-increase').classList.toggle('active',t==='increase');
+    document.getElementById('chip-decrease').classList.toggle('active',t==='decrease');
+}
+let searchTimer;
+function searchAgent(v){
+    clearTimeout(searchTimer);
+    var dropdown=document.getElementById('agent-dropdown');
+    if(v.length<2){dropdown.style.display='none';return;}
+    document.getElementById('erp-loading').style.display='block';
+    document.getElementById('erp-ok').style.display='none';
+    searchTimer=setTimeout(()=>{
+        fetch('/Home/AgentSearch?q='+encodeURIComponent(v))
+            .then(r=>r.json()).then(results=>{
+                document.getElementById('erp-loading').style.display='none';
+                if(results.length===0){
+                    dropdown.innerHTML='<div style="padding:12px;font-size:12px;color:var(--muted);">No agents found</div>';
+                    dropdown.style.display='block';
+                    return;
+                }
+                let html='';
+                results.forEach(a=>{
+                    html+=`<div class="agent-option" onclick="selectAgent('${a.agcd}','${a.dpcd}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;transition:background .15s;">
+                        <b style="color:var(--paper);">${a.agName}</b> <span style="color:var(--blue);font-size:11px;">${a.agcd}/${a.dpcd}/${a.branchCode||''}</span>
+                    </div>`;
+                });
+                dropdown.innerHTML=html;
+                dropdown.style.display='block';
+            });
+    },300);
+}
+function selectAgent(agcd,dpcd){
+    document.getElementById('agent-dropdown').style.display='none';
+    document.getElementById('erp-loading').style.display='block';
+    document.getElementById('agent-search').value=agcd;
+    fetch('/Home/AgentLookup?agcd='+encodeURIComponent(agcd))
+        .then(r=>r.json()).then(d=>{
+            document.getElementById('erp-loading').style.display='none';
+            if(d.found){
+                agentData=d.agent; supplyData=d.supplies;
+                document.getElementById('erp-ok').style.display='block';
+                document.getElementById('agent-name').value=d.agent.agName||'';
+                document.getElementById('agent-code').value=d.agent.agcd||'';
+                document.getElementById('agent-zone-disp').value=d.agent.branchCode||'';
+                document.getElementById('agent-search').value=d.agent.agName+' ('+d.agent.agcd+')';
+                if(d.supplies&&d.supplies.length>0){
+                    document.getElementById('old-supply').value=d.supplies[0].baseSupply||0;
+                    document.getElementById('prev-old').textContent=d.supplies[0].baseSupply||'—';
+                    document.getElementById('supply-card').style.display='block';
+                    let html='<table style="width:100%;font-size:12px;"><tr><th>Publ</th><th>Edtn</th><th>Base</th></tr>';
+                    d.supplies.forEach(s=>{html+=`<tr><td>${s.publ}</td><td>${s.edtn}</td><td>${s.baseSupply}</td></tr>`;});
+                    html+='</table>';
+                    document.getElementById('supply-table').innerHTML=html;
+                }
+            }
+        });
+}
+// Close dropdown when clicking outside
+document.addEventListener('click',function(e){
+    if(!e.target.closest('#agent-search')&&!e.target.closest('#agent-dropdown')){
+        document.getElementById('agent-dropdown').style.display='none';
+    }
+});
+function calcDiff(){
+    let o=parseInt(document.getElementById('old-supply').value)||0;
+    let n=parseInt(document.getElementById('new-supply').value)||0;
+    document.getElementById('prev-old').textContent=o;
+    document.getElementById('prev-new').textContent=n;
+    document.getElementById('prev-diff').textContent=(n-o>0?'+':'')+(n-o);
+}
+function submitRequest(){
+    if(!agentData){showToast('Please select an agent first','error');return;}
+    let body={
+        agcd:agentData.agcd, dpcd:agentData.dpcd,
+        publ:supplyData[0]?.publ, edtn:supplyData[0]?.edtn,
+        supplyTypeCode:supplyData[0]?.supplyTypeCode,
+        baseSupply:parseInt(document.getElementById('old-supply').value)||0,
+        incDec:selectedType,
+        changedSupply:parseInt(document.getElementById('new-supply').value)||0,
+        reasonCode:document.getElementById('reason-select').value,
+        changedSupplyDate:document.getElementById('eff-date').value||null,
+        remarks:document.getElementById('remarks').value
+    };
+    fetch('/Home/SubmitRequest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+        .then(r=>r.json()).then(d=>{
+            showToast(d.message, d.success?'success':'error');
+            if(d.success) setTimeout(()=>window.location.href='/Home/Dashboard',1500);
+        });
+}
+</script>
+}

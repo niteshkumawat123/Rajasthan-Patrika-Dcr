@@ -1,0 +1,839 @@
+﻿using Oracle.ManagedDataAccess.Client;
+using DCRSupplyApp.Models;
+
+namespace DCRSupplyApp.Services;
+
+public class OracleDbService
+{
+    private readonly string _connectionString;
+
+    public OracleDbService(IConfiguration config)
+    {
+        _connectionString = config.GetConnectionString("OracleDb")!;
+    }
+
+    private OracleConnection GetConnection() => new OracleConnection(_connectionString);
+
+    // QUERY 1: Get roles
+    public async Task<List<RoleViewModel>> GetRolesAsync()
+    {
+        var roles = new List<RoleViewModel>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        using var cmd = new OracleCommand("SELECT CODE, NAME FROM CIR_PLI_HIERARCHY", conn);
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            roles.Add(new RoleViewModel
+            {
+                Code = reader["CODE"]?.ToString(),
+                Name = reader["NAME"]?.ToString()
+            });
+        }
+        return roles;
+    }
+
+    // QUERY 2: Login verification
+    public async Task<UserSessionModel?> LoginAsync(string username, string password, string code)
+    {
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT L.""userid"" AS USERID, L.HR_CODE, L.COM_CODE, L.STATUS,
+                    E.EMP_CODE, E.NAME, E.DESIG, E.BRAN_CODE,
+                    E.MOBILE, E.EMAIL, E.ZONE, E.REPORT_TO,
+                    CPH.NAME AS ROLE_NAME, CPHM.HIERARCHY_CODE
+                    FROM LOGIN L
+                    LEFT JOIN HR_EMP_MST E ON E.EMP_CODE = L.HR_CODE
+                    LEFT JOIN CIR_PLI_HIERARCHY_MAST CPHM ON CPHM.EMPLOYEE_CODE = L.HR_CODE
+                    LEFT JOIN CIR_PLI_HIERARCHY CPH ON CPH.CODE = CPHM.HIERARCHY_CODE
+                    WHERE L.""username"" = :USERNAME
+                    AND L.SUPPLY_ALTERATION_PASSWORD = :PASSWORD
+                    AND L.STATUS = 'A'
+                    AND CPH.CODE = :CODE";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("USERNAME", username));
+        cmd.Parameters.Add(new OracleParameter("PASSWORD", password));
+        cmd.Parameters.Add(new OracleParameter("CODE", code));
+        using var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            return new UserSessionModel
+            {
+                UserId = reader["USERID"]?.ToString(),
+                HrCode = reader["HR_CODE"]?.ToString(),
+                ComCode = reader["COM_CODE"]?.ToString(),
+                EmpCode = reader["EMP_CODE"]?.ToString(),
+                EmpName = reader["NAME"]?.ToString(),
+                Designation = reader["DESIG"]?.ToString(),
+                BranchCode = reader["BRAN_CODE"]?.ToString(),
+                Mobile = reader["MOBILE"]?.ToString(),
+                Email = reader["EMAIL"]?.ToString(),
+                Zone = reader["ZONE"]?.ToString(),
+                ReportTo = reader["REPORT_TO"]?.ToString(),
+                RoleName = reader["ROLE_NAME"]?.ToString(),
+                HierarchyCode = reader["HIERARCHY_CODE"]?.ToString(),
+                SelectedRole = code
+            };
+        }
+        return null;
+    }
+
+    // QUERY 3: Forgot password
+    public async Task<(string? email, string? password)> GetForgotPasswordAsync(string empId)
+    {
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        using var cmd = new OracleCommand("SELECT EMAIL, SUPPLY_ALTERATION_PASSWORD FROM LOGIN WHERE HR_CODE = :EMPID", conn);
+        cmd.Parameters.Add(new OracleParameter("EMPID", empId));
+        using var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            return (reader["EMAIL"]?.ToString(), reader["SUPPLY_ALTERATION_PASSWORD"]?.ToString());
+        }
+        return (null, null);
+    }
+
+    // QUERY 4: Profile
+    public async Task<ProfileViewModel?> GetProfileAsync(string empCode)
+    {
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT HEM1.EMP_CODE, HEM1.NAME, HEM1.REPORT_TO, HEM1.BRANCH, HEM1.DEPARTMENT,
+                    HEM1.EMP_CURRENT_STATUS, HEM1.ZONE,
+                    HEM2.NAME AS REPORTINGPERSONNAME,
+                    CPH.NAME AS ROLEPOSITION
+                    FROM HR_EMP_MST HEM1
+                    LEFT JOIN HR_EMP_MST HEM2 ON HEM1.REPORT_TO = HEM2.EMP_CODE
+                    LEFT JOIN CIR_PLI_HIERARCHY_MAST CPHM ON CPHM.EMPLOYEE_CODE = HEM1.EMP_CODE
+                    LEFT JOIN CIR_PLI_HIERARCHY CPH ON CPH.CODE = CPHM.HIERARCHY_CODE
+                    WHERE HEM1.EMP_CODE = :EMPCODE";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("EMPCODE", empCode));
+        using var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            return new ProfileViewModel
+            {
+                EmpCode = reader["EMP_CODE"]?.ToString(),
+                Name = reader["NAME"]?.ToString(),
+                ReportTo = reader["REPORT_TO"]?.ToString(),
+                Branch = reader["BRANCH"]?.ToString(),
+                Department = reader["DEPARTMENT"]?.ToString(),
+                EmpCurrentStatus = reader["EMP_CURRENT_STATUS"] as decimal?,
+                Zone = reader["ZONE"]?.ToString(),
+                ReportingPersonName = reader["REPORTINGPERSONNAME"]?.ToString(),
+                RolePosition = reader["ROLEPOSITION"]?.ToString()
+            };
+        }
+        return null;
+    }
+
+    // QUERY 5: SE Dashboard stats
+    public async Task<(int pending, int approved, int rejected, int today)> GetSEStatsAsync(string seUserId, string compCode)
+    {
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT
+                    COUNT(CASE WHEN STATUS = 'PENDING_ZH' THEN 1 END) AS PENDING,
+                    COUNT(CASE WHEN STATUS = 'HO_APPROVED' THEN 1 END) AS APPROVED,
+                    COUNT(CASE WHEN STATUS IN ('REJECTED','ZH_REJECTED') THEN 1 END) AS REJECTED,
+                    COUNT(CASE WHEN TRUNC(CREATION_DATE) = TRUNC(SYSDATE) THEN 1 END) AS TODAY
+                    FROM APP_CIR_SUPPLY_REQ
+                    WHERE USERID = :SE_USERID AND COMP_CODE = :COMP_CODE";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("SE_USERID", seUserId));
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+        using var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            return (
+                Convert.ToInt32(reader["PENDING"]),
+                Convert.ToInt32(reader["APPROVED"]),
+                Convert.ToInt32(reader["REJECTED"]),
+                Convert.ToInt32(reader["TODAY"])
+            );
+        }
+        return (0, 0, 0, 0);
+    }
+
+    // QUERY 6: SE Recent requests
+    public async Task<List<SupplyRequestViewModel>> GetSERecentRequestsAsync(string seUserId, string compCode)
+    {
+        var list = new List<SupplyRequestViewModel>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT * FROM (
+    SELECT 
+        R.REQ_ID, 
+        R.AGCD, 
+        R.DPCD, 
+        R.PUBL, 
+        R.EDTN,
+        R.BASE_SUPPLY, 
+        R.INC_DEC, 
+        R.CHANGED_SUPPLY,
+        R.STATUS, 
+        R.CREATION_DATE, 
+        R.REASON_CODE,
+        R.CHANGED_SUPPLY_DATE, 
+        R.REMARKS,
+        
+       
+        (SELECT AG_NAME 
+         FROM CIR_AGMAST 
+         WHERE AGCD      = R.AGCD 
+           AND DPCD      = R.DPCD 
+           AND COMP_CODE = R.COMP_CODE 
+           AND ROWNUM    = 1
+        ) AS AG_NAME,
+        
+       
+        (SELECT FF.DROP_POINT_NAME 
+         FROM CIR_AGMAST MM
+         INNER JOIN CIR_DROP_POINT_MAST FF ON MM.STATION_CODE = FF.DROP_POINT
+         WHERE MM.AGCD      = R.AGCD 
+           AND MM.DPCD      = R.DPCD
+           AND MM.COMP_CODE = R.COMP_CODE
+           AND ROWNUM       = 1
+        ) AS DROP_POINT_NAME
+
+    FROM APP_CIR_SUPPLY_REQ R
+    WHERE R.USERID    = :SE_USERID 
+      AND R.COMP_CODE = :COMP_CODE
+    ORDER BY R.CREATION_DATE DESC
+) WHERE ROWNUM <= 10";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("SE_USERID", seUserId));
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(MapSupplyRequest(reader));
+        }
+        return list;
+    }
+
+    // QUERY 7: Agent lookup
+    public async Task<AgentLookupViewModel?> GetAgentAsync(string agcd, string compCode)
+    {
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT AGCD, DPCD, AG_NAME, BRANCH_CODE, EXECUTIVE_CODE,
+                    SUSPEND, SUPPLY_STOP_FLAG, MOBILE_NO1, ADDR1
+                    FROM CIR_AGMAST
+                    WHERE AGCD = :AGCD AND COMP_CODE = :COMP_CODE AND SUSPEND = 'N'
+                    AND (SUPPLY_STOP_FLAG IS NULL OR SUPPLY_STOP_FLAG = 'N')";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("AGCD", agcd));
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+        using var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            return new AgentLookupViewModel
+            {
+                Agcd = reader["AGCD"]?.ToString(),
+                Dpcd = reader["DPCD"]?.ToString(),
+                AgName = reader["AG_NAME"]?.ToString(),
+                BranchCode = reader["BRANCH_CODE"]?.ToString(),
+                ExecutiveCode = reader["EXECUTIVE_CODE"]?.ToString(),
+                Suspend = reader["SUSPEND"]?.ToString(),
+                SupplyStopFlag = reader["SUPPLY_STOP_FLAG"]?.ToString(),
+                MobileNo1 = reader["MOBILE_NO1"] as decimal?,
+                Addr1 = reader["ADDR1"]?.ToString()
+            };
+        }
+        return null;
+    }
+
+    // Agent search by name or code
+    public async Task<List<object>> SearchAgentsAsync(string keyword, string compCode)
+    {
+        var list = new List<object>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT * FROM (
+                    SELECT CA.AGCD, CA.DPCD, CA.AG_NAME, CA.BRANCH_CODE,PCM.""Pub_cent_Code"",PCM.""Pub_Cent_name"" 
+                    FROM CIR_AGMAST CA 
+                    LEFT JOIN PUB_CENT_MAST PCM 
+                    ON PCM.""Pub_cent_Code"" =  CA.UNIT
+                    WHERE CA.COMP_CODE = :COMP_CODE AND CA.SUSPEND = 'N'
+                    AND (CA.SUPPLY_STOP_FLAG IS NULL OR CA.SUPPLY_STOP_FLAG = 'N')
+                    AND (UPPER(CA.AG_NAME) LIKE UPPER(:KEYWORD) OR UPPER(CA.AGCD) LIKE UPPER(:KEYWORD))
+                    ORDER BY AG_NAME
+                    ) WHERE ROWNUM <= 15";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+        cmd.Parameters.Add(new OracleParameter("KEYWORD", "%" + keyword + "%"));
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(new
+            {
+                agcd = reader["AGCD"]?.ToString(),
+                dpcd = reader["DPCD"]?.ToString(),
+                agName = reader["AG_NAME"]?.ToString(),
+                branchCode = reader["Pub_cent_Code"]?.ToString(),
+                branchname = reader["Pub_Cent_name"]?.ToString()
+            });
+        }
+        return list;
+    }
+
+    // QUERY 8: Current supply
+    public async Task<List<SupplyViewModel>> GetSupplyAsync(string agcd, string dpcd, string compCode)
+    {
+        var list = new List<SupplyViewModel>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT BASE_SUPPLY, SUPPLY_MON, SUPPLY_TUE, SUPPLY_WED,
+                    SUPPLY_THU, SUPPLY_FRI, SUPPLY_SAT, SUPPLY_SUN,
+                    SUPPLY_EFFECTIVE_DATE, SUPPLY_FLAG, PUBL, EDTN, SUPPLY_TYPE_CODE
+                    FROM CIR_SUPPLY
+                    WHERE AGCD = :AGCD AND DPCD = :DPCD AND COMP_CODE = :COMP_CODE AND SUPPLY_FLAG = 'Y'
+                    ORDER BY PUBL, EDTN";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("AGCD", agcd));
+        cmd.Parameters.Add(new OracleParameter("DPCD", dpcd));
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(new SupplyViewModel
+            {
+                BaseSupply = reader["BASE_SUPPLY"] as decimal?,
+                SupplyMon = reader["SUPPLY_MON"] as decimal?,
+                SupplyTue = reader["SUPPLY_TUE"] as decimal?,
+                SupplyWed = reader["SUPPLY_WED"] as decimal?,
+                SupplyThu = reader["SUPPLY_THU"] as decimal?,
+                SupplyFri = reader["SUPPLY_FRI"] as decimal?,
+                SupplySat = reader["SUPPLY_SAT"] as decimal?,
+                SupplySun = reader["SUPPLY_SUN"] as decimal?,
+                SupplyEffectiveDate = reader["SUPPLY_EFFECTIVE_DATE"] as DateTime?,
+                SupplyFlag = reader["SUPPLY_FLAG"]?.ToString(),
+                Publ = reader["PUBL"]?.ToString(),
+                Edtn = reader["EDTN"]?.ToString(),
+                SupplyTypeCode = reader["SUPPLY_TYPE_CODE"]?.ToString()
+            });
+        }
+        return list;
+    }
+
+    // Check if a pending request exists for the same agency
+    public async Task<bool> HasPendingRequestAsync(string agcd, string dpcd, string compCode)
+    {
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT COUNT(*) FROM APP_CIR_SUPPLY_REQ
+                    WHERE AGCD = :AGCD AND DPCD = :DPCD AND COMP_CODE = :COMP_CODE
+                    AND STATUS IN ('PENDING_ZH','PENDING_HO')";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("AGCD", agcd));
+        cmd.Parameters.Add(new OracleParameter("DPCD", dpcd));
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+        var result = await cmd.ExecuteScalarAsync();
+        return Convert.ToInt32(result) > 0;
+    }
+
+    // QUERY 9: Submit new supply request
+    public async Task<bool> SubmitRequestAsync(SupplyRequestViewModel model)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            var sql = @"INSERT INTO APP_CIR_SUPPLY_REQ (
+                        REQ_ID, COMP_CODE, UNIT_CODE, AGCD, DPCD,
+                        PUBL, EDTN, SUPPLY_TYPE_CODE,
+                        BASE_SUPPLY, INC_DEC, CHANGED_SUPPLY,
+                        REASON_CODE, ZONE_CODE, USERID, CREATION_DATE,
+                        CHANGED_SUPPLY_DATE, REMARKS, STATUS, ERP_PUSH_FLAG
+                        ) VALUES (
+                        SEQ_SUPPLY_REQ.NEXTVAL, :COMP_CODE, :UNIT_CODE, :AGCD, :DPCD,
+                        :PUBL, :EDTN, :SUPPLY_TYPE_CODE,
+                        :BASE_SUPPLY, :INC_DEC, :CHANGED_SUPPLY,
+                        :REASON_CODE, :ZONE_CODE, :SE_USERID, SYSDATE,
+                        :CHANGED_SUPPLY_DATE, :REMARKS, 'PENDING_ZH', 'N')";
+            using var cmd = new OracleCommand(sql, conn);
+            cmd.Parameters.Add(new OracleParameter("COMP_CODE", model.CompCode));
+            cmd.Parameters.Add(new OracleParameter("UNIT_CODE", model.UnitCode));
+            cmd.Parameters.Add(new OracleParameter("AGCD", model.Agcd));
+            cmd.Parameters.Add(new OracleParameter("DPCD", model.Dpcd));
+            cmd.Parameters.Add(new OracleParameter("PUBL", model.Publ));
+            cmd.Parameters.Add(new OracleParameter("EDTN", model.Edtn));
+            cmd.Parameters.Add(new OracleParameter("SUPPLY_TYPE_CODE", model.SupplyTypeCode));
+            cmd.Parameters.Add(new OracleParameter("BASE_SUPPLY", model.BaseSupply));
+            cmd.Parameters.Add(new OracleParameter("INC_DEC", model.IncDec));
+            cmd.Parameters.Add(new OracleParameter("CHANGED_SUPPLY", model.ChangedSupply));
+            cmd.Parameters.Add(new OracleParameter("REASON_CODE", model.ReasonCode));
+            cmd.Parameters.Add(new OracleParameter("ZONE_CODE", model.ZoneCode));
+            cmd.Parameters.Add(new OracleParameter("SE_USERID", model.UserId));
+            cmd.Parameters.Add(new OracleParameter("CHANGED_SUPPLY_DATE", model.ChangedSupplyDate));
+            cmd.Parameters.Add(new OracleParameter("REMARKS", model.Remarks));
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch { return false; }
+    }
+
+    // QUERY 10: SE full history
+    public async Task<List<SupplyRequestViewModel>> GetSEHistoryAsync(string seUserId, string compCode)
+    {
+        var list = new List<SupplyRequestViewModel>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT R.REQ_ID, R.AGCD, R.PUBL, R.EDTN,
+                    R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
+                    R.STATUS, R.CREATION_DATE, R.CHANGED_SUPPLY_DATE, R.REASON_CODE, R.REMARKS,
+                    A.AG_NAME,
+                    AP.APPR_ACTION, AP.ACTION_BY, AP.ACTION_DATE, AP.REMARKS AS APPROVER_REMARKS
+                    FROM APP_CIR_SUPPLY_REQ R
+                    LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
+                    LEFT JOIN (
+                        SELECT REQ_ID, APPR_ACTION, ACTION_BY, ACTION_DATE, REMARKS
+                        FROM APP_CIR_SUPPLY_APPROVAL AP1
+                        WHERE AP1.ACTION_DATE = (SELECT MAX(AP2.ACTION_DATE) FROM APP_CIR_SUPPLY_APPROVAL AP2 WHERE AP2.REQ_ID = AP1.REQ_ID)
+                    ) AP ON AP.REQ_ID = R.REQ_ID
+                    WHERE R.USERID = :SE_USERID AND R.COMP_CODE = :COMP_CODE
+                    ORDER BY R.CREATION_DATE DESC";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("SE_USERID", seUserId));
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(MapSupplyRequestWithApproval(reader));
+        }
+        return list;
+    }
+
+    // QUERY 11: ZH stats
+    public async Task<(int awaitingMe, int atHo, int approved, int rejected)> GetZHStatsAsync(string zhBranchCode, string compCode)
+    {
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT
+                    COUNT(CASE WHEN STATUS = 'PENDING_ZH' THEN 1 END) AS AWAITING_ME,
+                    COUNT(CASE WHEN STATUS = 'PENDING_HO' THEN 1 END) AS AT_HO,
+                    COUNT(CASE WHEN STATUS = 'HO_APPROVED' THEN 1 END) AS APPROVED,
+                    COUNT(CASE WHEN STATUS IN ('REJECTED','ZH_REJECTED') THEN 1 END) AS REJECTED
+                    FROM APP_CIR_SUPPLY_REQ
+                    WHERE ZONE_CODE = :ZH_BRANCH_CODE AND COMP_CODE = :COMP_CODE";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("ZH_BRANCH_CODE", zhBranchCode));
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+        using var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            return (
+                Convert.ToInt32(reader["AWAITING_ME"]),
+                Convert.ToInt32(reader["AT_HO"]),
+                Convert.ToInt32(reader["APPROVED"]),
+                Convert.ToInt32(reader["REJECTED"])
+            );
+        }
+        return (0, 0, 0, 0);
+    }
+
+    // QUERY 12: ZH pending requests
+    public async Task<List<SupplyRequestViewModel>> GetZHPendingAsync(string zhBranchCode, string compCode)
+    {
+        var list = new List<SupplyRequestViewModel>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT R.REQ_ID, R.AGCD, R.DPCD, R.PUBL, R.EDTN,
+                    R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
+                    R.REASON_CODE, R.REMARKS, R.USERID,
+                    R.CREATION_DATE, R.CHANGED_SUPPLY_DATE,
+                    A.AG_NAME, A.BRANCH_CODE
+                    FROM APP_CIR_SUPPLY_REQ R
+                    LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.COMP_CODE = R.COMP_CODE
+                    WHERE R.STATUS = 'PENDING_ZH' AND R.ZONE_CODE = :ZH_BRANCH_CODE AND R.COMP_CODE = :COMP_CODE
+                    ORDER BY R.CREATION_DATE ASC";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("ZH_BRANCH_CODE", zhBranchCode));
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(MapSupplyRequest(reader));
+        }
+        return list;
+    }
+
+    // QUERY 13: ZH Approve/Reject
+    public async Task<bool> ZHApproveRejectAsync(decimal reqId, string action, string zhUserId, string remarks, string compCode)
+    {
+        var toStatus = action == "APPROVED" ? "PENDING_HO" : "ZH_REJECTED";
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            using var txn = conn.BeginTransaction();
+            try
+            {
+                var sql1 = @"INSERT INTO APP_CIR_SUPPLY_APPROVAL (
+                            APPROVAL_ID, REQ_ID, APPROVAL_LEVEL, APPR_ACTION, ACTION_BY,
+                            ACTION_DATE, REMARKS, FROM_STATUS, TO_STATUS, COMP_CODE
+                            ) VALUES (
+                            SEQ_SUPPLY_APPROVAL.NEXTVAL, :REQ_ID, 'ZH', :ACTION, :ZH_USERID,
+                            SYSDATE, :ZH_REMARKS, 'PENDING_ZH', :TO_STATUS, :COMP_CODE)";
+                using var cmd1 = new OracleCommand(sql1, conn) { Transaction = txn };
+                cmd1.Parameters.Add(new OracleParameter("REQ_ID", reqId));
+                cmd1.Parameters.Add(new OracleParameter("ACTION", action));
+                cmd1.Parameters.Add(new OracleParameter("ZH_USERID", zhUserId));
+                cmd1.Parameters.Add(new OracleParameter("ZH_REMARKS", remarks));
+                cmd1.Parameters.Add(new OracleParameter("TO_STATUS", toStatus));
+                cmd1.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+                await cmd1.ExecuteNonQueryAsync();
+
+                var sql2 = "UPDATE APP_CIR_SUPPLY_REQ SET STATUS = :TO_STATUS WHERE REQ_ID = :REQ_ID";
+                using var cmd2 = new OracleCommand(sql2, conn) { Transaction = txn };
+                cmd2.Parameters.Add(new OracleParameter("TO_STATUS", toStatus));
+                cmd2.Parameters.Add(new OracleParameter("REQ_ID", reqId));
+                await cmd2.ExecuteNonQueryAsync();
+
+                txn.Commit();
+                return true;
+            }
+            catch { txn.Rollback(); return false; }
+        }
+        catch { return false; }
+    }
+
+    // QUERY 14: HO stats
+    public async Task<(int awaitingHo, int hoApproved, int totalIncreased, int totalDecreased)> GetHOStatsAsync(string compCode, DateTime selectedDate)
+    {
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT
+                    COUNT(CASE WHEN STATUS = 'PENDING_HO' THEN 1 END) AS AWAITING_HO,
+                    COUNT(CASE WHEN STATUS = 'HO_APPROVED' THEN 1 END) AS HO_APPROVED,
+                    NVL(SUM(CASE WHEN INC_DEC = 'I' AND STATUS = 'HO_APPROVED' THEN (CHANGED_SUPPLY - BASE_SUPPLY) ELSE 0 END),0) AS TOTAL_INCREASED,
+                    NVL(SUM(CASE WHEN INC_DEC = 'D' AND STATUS = 'HO_APPROVED' THEN (BASE_SUPPLY - CHANGED_SUPPLY) ELSE 0 END),0) AS TOTAL_DECREASED
+                    FROM APP_CIR_SUPPLY_REQ
+                    WHERE COMP_CODE = :COMP_CODE AND TRUNC(CREATION_DATE) = TRUNC(:SELECTED_DATE)";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+        cmd.Parameters.Add(new OracleParameter("SELECTED_DATE", selectedDate));
+        using var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            return (
+                Convert.ToInt32(reader["AWAITING_HO"]),
+                Convert.ToInt32(reader["HO_APPROVED"]),
+                Convert.ToInt32(reader["TOTAL_INCREASED"]),
+                Convert.ToInt32(reader["TOTAL_DECREASED"])
+            );
+        }
+        return (0, 0, 0, 0);
+    }
+
+    // QUERY 15: HO pending list
+    public async Task<List<SupplyRequestViewModel>> GetHOPendingAsync(string compCode)
+    {
+        var list = new List<SupplyRequestViewModel>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT R.REQ_ID, R.AGCD, R.DPCD, R.PUBL, R.EDTN,
+                    R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
+                    R.REASON_CODE, R.ZONE_CODE, R.USERID, R.CREATION_DATE, R.CHANGED_SUPPLY_DATE,
+                    A.AG_NAME, A.BRANCH_CODE,
+                    ZH_AP.ACTION_BY AS ZH_APPROVED_BY,
+                    ZH_AP.REMARKS AS ZH_REMARKS,
+                    ZH_AP.ACTION_DATE AS ZH_ACTION_DATE
+                    FROM APP_CIR_SUPPLY_REQ R
+                    LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
+                    LEFT JOIN APP_CIR_SUPPLY_APPROVAL ZH_AP ON ZH_AP.REQ_ID = R.REQ_ID AND ZH_AP.APPROVAL_LEVEL = 'ZH' AND ZH_AP.APPR_ACTION = 'APPROVED'
+                    WHERE R.STATUS = 'PENDING_HO' AND R.COMP_CODE = :COMP_CODE
+                    ORDER BY R.CREATION_DATE ASC";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            var item = MapSupplyRequest(reader);
+            item.ZhApprovedBy = reader["ZH_APPROVED_BY"]?.ToString();
+            item.ZhRemarks = reader["ZH_REMARKS"]?.ToString();
+            item.ZhActionDate = reader["ZH_ACTION_DATE"] as DateTime?;
+            list.Add(item);
+        }
+        return list;
+    }
+
+    // QUERY 16: HO Approve (4-step transaction)
+    public async Task<bool> HOApproveAsync(decimal reqId, string hoUserId, string remarks, string compCode, string unitCode, string agcd, string dpcd, string publ, string edtn, string supplyTypeCode, decimal changedSupply, DateTime? changedSupplyDate)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            using var txn = conn.BeginTransaction();
+            try
+            {
+                // Step 1
+                var sql1 = @"INSERT INTO APP_CIR_SUPPLY_APPROVAL (
+                            APPROVAL_ID, REQ_ID, APPROVAL_LEVEL, APPR_ACTION, ACTION_BY,
+                            ACTION_DATE, REMARKS, FROM_STATUS, TO_STATUS, COMP_CODE
+                            ) VALUES (
+                            SEQ_SUPPLY_APPROVAL.NEXTVAL, :REQ_ID, 'HO', 'APPROVED', :HO_USERID,
+                            SYSDATE, :REMARKS, 'PENDING_HO', 'HO_APPROVED', :COMP_CODE)";
+                using var cmd1 = new OracleCommand(sql1, conn) { Transaction = txn };
+                cmd1.Parameters.Add(new OracleParameter("REQ_ID", reqId));
+                cmd1.Parameters.Add(new OracleParameter("HO_USERID", hoUserId));
+                cmd1.Parameters.Add(new OracleParameter("REMARKS", remarks));
+                cmd1.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+                await cmd1.ExecuteNonQueryAsync();
+
+                // Step 2
+                var sql2 = "UPDATE APP_CIR_SUPPLY_REQ SET STATUS='HO_APPROVED', ERP_PUSH_FLAG='N' WHERE REQ_ID=:REQ_ID";
+                using var cmd2 = new OracleCommand(sql2, conn) { Transaction = txn };
+                cmd2.Parameters.Add(new OracleParameter("REQ_ID", reqId));
+                await cmd2.ExecuteNonQueryAsync();
+
+                // Step 3
+                var sql3 = @"UPDATE CIR_SUPPLY SET
+                            BASE_SUPPLY=:CHANGED_SUPPLY, SUPPLY_MON=:CHANGED_SUPPLY, SUPPLY_TUE=:CHANGED_SUPPLY,
+                            SUPPLY_WED=:CHANGED_SUPPLY, SUPPLY_THU=:CHANGED_SUPPLY, SUPPLY_FRI=:CHANGED_SUPPLY,
+                            SUPPLY_SAT=:CHANGED_SUPPLY, SUPPLY_SUN=:CHANGED_SUPPLY,
+                            SUPPLY_EFFECTIVE_DATE=:CHANGED_SUPPLY_DATE, UPDATED_BY=:HO_USERID, UPDATED_DT=SYSDATE
+                            WHERE COMP_CODE=:COMP_CODE AND UNIT=:UNIT_CODE AND AGCD=:AGCD AND DPCD=:DPCD
+                            AND PUBL=:PUBL AND EDTN=:EDTN AND SUPPLY_TYPE_CODE=:SUPPLY_TYPE_CODE";
+                using var cmd3 = new OracleCommand(sql3, conn) { Transaction = txn };
+                cmd3.Parameters.Add(new OracleParameter("CHANGED_SUPPLY", changedSupply));
+                cmd3.Parameters.Add(new OracleParameter("CHANGED_SUPPLY_DATE", changedSupplyDate));
+                cmd3.Parameters.Add(new OracleParameter("HO_USERID", hoUserId));
+                cmd3.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+                cmd3.Parameters.Add(new OracleParameter("UNIT_CODE", unitCode));
+                cmd3.Parameters.Add(new OracleParameter("AGCD", agcd));
+                cmd3.Parameters.Add(new OracleParameter("DPCD", dpcd));
+                cmd3.Parameters.Add(new OracleParameter("PUBL", publ));
+                cmd3.Parameters.Add(new OracleParameter("EDTN", edtn));
+                cmd3.Parameters.Add(new OracleParameter("SUPPLY_TYPE_CODE", supplyTypeCode));
+                await cmd3.ExecuteNonQueryAsync();
+
+                // Step 4a
+                var sql4a = "UPDATE APP_CIR_SUPPLY_REQ SET ERP_PUSH_FLAG='Y', ERP_PUSH_DATE=SYSDATE WHERE REQ_ID=:REQ_ID";
+                using var cmd4a = new OracleCommand(sql4a, conn) { Transaction = txn };
+                cmd4a.Parameters.Add(new OracleParameter("REQ_ID", reqId));
+                await cmd4a.ExecuteNonQueryAsync();
+
+                // Step 4b
+                var sql4b = @"INSERT INTO APP_CIR_SUPPLY_APPROVAL (
+                            APPROVAL_ID, REQ_ID, APPROVAL_LEVEL, APPR_ACTION, ACTION_BY,
+                            ACTION_DATE, REMARKS, FROM_STATUS, TO_STATUS, COMP_CODE
+                            ) VALUES (
+                            SEQ_SUPPLY_APPROVAL.NEXTVAL, :REQ_ID, 'HO', 'PUSHED_TO_ERP', :HO_USERID,
+                            SYSDATE, :REMARKS, 'HO_APPROVED', 'HO_APPROVED', :COMP_CODE)";
+                using var cmd4b = new OracleCommand(sql4b, conn) { Transaction = txn };
+                cmd4b.Parameters.Add(new OracleParameter("REQ_ID", reqId));
+                cmd4b.Parameters.Add(new OracleParameter("HO_USERID", hoUserId));
+                cmd4b.Parameters.Add(new OracleParameter("REMARKS", remarks));
+                cmd4b.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+                await cmd4b.ExecuteNonQueryAsync();
+
+                txn.Commit();
+                return true;
+            }
+            catch { txn.Rollback(); return false; }
+        }
+        catch { return false; }
+    }
+
+    // QUERY 17: Branch-wise summary
+    public async Task<List<BranchSummaryViewModel>> GetBranchSummaryAsync(string compCode, DateTime selectedDate)
+    {
+        var list = new List<BranchSummaryViewModel>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT R.ZONE_CODE, A.BRANCH_CODE,
+                    COUNT(*) AS TOTAL_REQUESTS,
+                    COUNT(CASE WHEN R.INC_DEC = 'I' THEN 1 END) AS INCREASES,
+                    COUNT(CASE WHEN R.INC_DEC = 'D' THEN 1 END) AS DECREASES,
+                    NVL(SUM(CASE WHEN R.INC_DEC = 'I' THEN R.CHANGED_SUPPLY - R.BASE_SUPPLY ELSE 0 END),0) AS NET_INC_COPIES,
+                    NVL(SUM(CASE WHEN R.INC_DEC = 'D' THEN R.BASE_SUPPLY - R.CHANGED_SUPPLY ELSE 0 END),0) AS NET_DEC_COPIES,
+                    COUNT(CASE WHEN R.ERP_PUSH_FLAG = 'Y' THEN 1 END) AS PUSHED_TO_ERP
+                    FROM APP_CIR_SUPPLY_REQ R
+                    LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
+                    WHERE R.COMP_CODE = :COMP_CODE AND TRUNC(R.CREATION_DATE) = TRUNC(:SELECTED_DATE)
+                    GROUP BY R.ZONE_CODE, A.BRANCH_CODE
+                    ORDER BY R.ZONE_CODE";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+        cmd.Parameters.Add(new OracleParameter("SELECTED_DATE", selectedDate));
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(new BranchSummaryViewModel
+            {
+                ZoneCode = reader["ZONE_CODE"]?.ToString(),
+                BranchCode = reader["BRANCH_CODE"]?.ToString(),
+                TotalRequests = Convert.ToInt32(reader["TOTAL_REQUESTS"]),
+                Increases = Convert.ToInt32(reader["INCREASES"]),
+                Decreases = Convert.ToInt32(reader["DECREASES"]),
+                NetIncCopies = Convert.ToInt32(reader["NET_INC_COPIES"]),
+                NetDecCopies = Convert.ToInt32(reader["NET_DEC_COPIES"]),
+                PushedToErp = Convert.ToInt32(reader["PUSHED_TO_ERP"])
+            });
+        }
+        return list;
+    }
+
+    // QUERY 18: ERP push log
+    public async Task<List<ErpPushLogViewModel>> GetErpPushLogAsync(string compCode, DateTime selectedDate)
+    {
+        var list = new List<ErpPushLogViewModel>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT R.REQ_ID, R.AGCD, A.AG_NAME,
+                    R.PUBL, R.EDTN, R.BASE_SUPPLY, R.CHANGED_SUPPLY, R.INC_DEC,
+                    R.ERP_PUSH_DATE, AP.ACTION_BY AS PUSHED_BY
+                    FROM APP_CIR_SUPPLY_REQ R
+                    LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
+                    LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID AND AP.APPR_ACTION = 'PUSHED_TO_ERP'
+                    WHERE R.COMP_CODE = :COMP_CODE AND R.ERP_PUSH_FLAG = 'Y'
+                    AND TRUNC(R.ERP_PUSH_DATE) = TRUNC(:SELECTED_DATE)
+                    ORDER BY R.ERP_PUSH_DATE DESC";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+        cmd.Parameters.Add(new OracleParameter("SELECTED_DATE", selectedDate));
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(new ErpPushLogViewModel
+            {
+                ReqId = Convert.ToDecimal(reader["REQ_ID"]),
+                Agcd = reader["AGCD"]?.ToString(),
+                AgName = reader["AG_NAME"]?.ToString(),
+                Publ = reader["PUBL"]?.ToString(),
+                Edtn = reader["EDTN"]?.ToString(),
+                BaseSupply = reader["BASE_SUPPLY"] as decimal?,
+                ChangedSupply = reader["CHANGED_SUPPLY"] as decimal?,
+                IncDec = reader["INC_DEC"]?.ToString(),
+                ErpPushDate = reader["ERP_PUSH_DATE"] as DateTime?,
+                PushedBy = reader["PUSHED_BY"]?.ToString()
+            });
+        }
+        return list;
+    }
+
+    // QUERY 19: Audit trail
+    public async Task<List<AuditTrailViewModel>> GetAuditTrailAsync(decimal reqId)
+    {
+        var list = new List<AuditTrailViewModel>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT R.REQ_ID, R.AGCD, A.AG_NAME,
+                    R.PUBL, R.EDTN, R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
+                    R.REASON_CODE, R.USERID AS SUBMITTED_BY, R.CREATION_DATE, R.STATUS,
+                    R.REMARKS, R.ZONE_CODE, R.CHANGED_SUPPLY_DATE,
+                    AP.APPROVAL_LEVEL, AP.APPR_ACTION, AP.ACTION_BY,
+                    AP.ACTION_DATE, AP.REMARKS AS APPROVER_REMARKS,
+                    AP.FROM_STATUS, AP.TO_STATUS
+                    FROM APP_CIR_SUPPLY_REQ R
+                    LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
+                    LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
+                    WHERE R.REQ_ID = :REQ_ID
+                    ORDER BY AP.ACTION_DATE ASC";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("REQ_ID", reqId));
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(new AuditTrailViewModel
+            {
+                ReqId = Convert.ToDecimal(reader["REQ_ID"]),
+                Agcd = reader["AGCD"]?.ToString(),
+                AgName = reader["AG_NAME"]?.ToString(),
+                Publ = reader["PUBL"]?.ToString(),
+                Edtn = reader["EDTN"]?.ToString(),
+                BaseSupply = reader["BASE_SUPPLY"] as decimal?,
+                IncDec = reader["INC_DEC"]?.ToString(),
+                ChangedSupply = reader["CHANGED_SUPPLY"] as decimal?,
+                ReasonCode = reader["REASON_CODE"]?.ToString(),
+                Remarks = reader["REMARKS"]?.ToString(),
+                ZoneCode = reader["ZONE_CODE"]?.ToString(),
+                BranchCode ="NA", //reader["BRAN_CODE"]?.ToString(),
+                ChangedSupplyDate = reader["CHANGED_SUPPLY_DATE"] as DateTime?,
+                SubmittedBy = reader["SUBMITTED_BY"]?.ToString(),
+                CreationDate = reader["CREATION_DATE"] as DateTime?,
+                Status = reader["STATUS"]?.ToString(),
+                ApprovalLevel = reader["APPROVAL_LEVEL"]?.ToString(),
+                ApprAction = reader["APPR_ACTION"]?.ToString(),
+                ActionBy = reader["ACTION_BY"]?.ToString(),
+                ActionDate = reader["ACTION_DATE"] as DateTime?,
+                ApproverRemarks = reader["APPROVER_REMARKS"]?.ToString(),
+                FromStatus = reader["FROM_STATUS"]?.ToString(),
+                ToStatus = reader["TO_STATUS"]?.ToString()
+            });
+        }
+        return list;
+    }
+
+    // HO History (all requests)
+    public async Task<List<SupplyRequestViewModel>> GetHOHistoryAsync(string compCode)
+    {
+        var list = new List<SupplyRequestViewModel>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT R.REQ_ID, R.AGCD, R.DPCD, R.PUBL, R.EDTN,
+                    R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
+                    R.STATUS, R.CREATION_DATE, R.REASON_CODE, R.REMARKS,
+                    A.AG_NAME,
+                    AP.APPR_ACTION, AP.ACTION_BY, AP.ACTION_DATE, AP.REMARKS AS APPROVER_REMARKS
+                    FROM APP_CIR_SUPPLY_REQ R
+                    LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
+                    LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
+                      AND AP.ACTION_DATE = (SELECT MAX(ACTION_DATE) FROM APP_CIR_SUPPLY_APPROVAL WHERE REQ_ID = R.REQ_ID)
+                    WHERE R.COMP_CODE = :COMP_CODE
+                    ORDER BY R.CREATION_DATE DESC";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(MapSupplyRequestWithApproval(reader));
+        }
+        return list;
+    }
+
+    private SupplyRequestViewModel MapSupplyRequest(System.Data.Common.DbDataReader reader)
+    {
+        return new SupplyRequestViewModel
+        {
+            ReqId = reader["REQ_ID"] != DBNull.Value ? Convert.ToDecimal(reader["REQ_ID"]) : null,
+            Agcd = reader["AGCD"]?.ToString(),
+            Dpcd = HasColumn(reader, "DPCD") ? reader["DPCD"]?.ToString() : null,
+            Publ = reader["PUBL"]?.ToString(),
+            Edtn = reader["EDTN"]?.ToString(),
+            BaseSupply = reader["BASE_SUPPLY"] != DBNull.Value ? Convert.ToDecimal(reader["BASE_SUPPLY"]) : null,
+            IncDec = reader["INC_DEC"]?.ToString(),
+            ChangedSupply = reader["CHANGED_SUPPLY"] != DBNull.Value ? Convert.ToDecimal(reader["CHANGED_SUPPLY"]) : null,
+            Status = reader["STATUS"]?.ToString(),
+            CreationDate = reader["CREATION_DATE"] != DBNull.Value ? Convert.ToDateTime(reader["CREATION_DATE"]) : null,
+            ReasonCode = HasColumn(reader, "REASON_CODE") ? reader["REASON_CODE"]?.ToString() : null,
+            Remarks = HasColumn(reader, "REMARKS") ? reader["REMARKS"]?.ToString() : null,
+            AgName = HasColumn(reader, "AG_NAME") ? reader["AG_NAME"]?.ToString() : null,
+            BranchCode = HasColumn(reader, "DROP_POINT_NAME") ? reader["DROP_POINT_NAME"]?.ToString() : null
+        };
+    }
+
+    private SupplyRequestViewModel MapSupplyRequestWithApproval(System.Data.Common.DbDataReader reader)
+    {
+        var item = MapSupplyRequest(reader);
+        item.ApprAction = HasColumn(reader, "APPR_ACTION") ? reader["APPR_ACTION"]?.ToString() : null;
+        item.ActionBy = HasColumn(reader, "ACTION_BY") ? reader["ACTION_BY"]?.ToString() : null;
+        item.ActionDate = HasColumn(reader, "ACTION_DATE") ? reader["ACTION_DATE"] as DateTime? : null;
+        item.ApproverRemarks = HasColumn(reader, "APPROVER_REMARKS") ? reader["APPROVER_REMARKS"]?.ToString() : null;
+        return item;
+    }
+
+    private bool HasColumn(System.Data.Common.DbDataReader reader, string columnName)
+    {
+        try
+        {
+            reader.GetOrdinal(columnName);
+            return true;
+        }
+        catch { return false; }
+    }
+}

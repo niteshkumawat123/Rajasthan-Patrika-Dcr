@@ -1,0 +1,670 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\services\\oracledbservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\services\\oracledbservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\views\\home\\history.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\views\\home\\history.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\views\\home\\dashboard.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\views\\home\\dashboard.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\models\\supplyrequestviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\models\\supplyrequestviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\models\\auditviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\models\\auditviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\filters\\sessionauthfilter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\filters\\sessionauthfilter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\models\\loginviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\models\\loginviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\views\\home\\newrequest.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\views\\home\\newrequest.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\wwwroot\\css\\style.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\wwwroot\\css\\style.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\patrika supply alteration.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\patrika supply alteration.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\models\\usersessionmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\models\\usersessionmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\models\\roleviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\models\\roleviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\models\\agentlookupviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\models\\agentlookupviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\models\\supplyviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\models\\supplyviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\models\\zhdashboardviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\models\\zhdashboardviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\models\\hodashboardviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\models\\hodashboardviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\models\\profileviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\models\\profileviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\models\\reportviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\models\\reportviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\services\\sessionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\services\\sessionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\services\\emailservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\services\\emailservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\controllers\\zhcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\controllers\\zhcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\controllers\\hocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\controllers\\hocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\controllers\\profilecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\controllers\\profilecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\views\\_viewimports.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\views\\_viewimports.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\views\\shared\\_loginlayout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\views\\shared\\_loginlayout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\views\\account\\roleselect.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\views\\account\\roleselect.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\views\\account\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\views\\account\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\views\\account\\forgotpassword.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\views\\account\\forgotpassword.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\views\\zh\\dashboard.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\views\\zh\\dashboard.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\views\\ho\\dashboard.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\views\\ho\\dashboard.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\views\\ho\\history.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\views\\ho\\history.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\views\\ho\\reports.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\views\\ho\\reports.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\views\\profile\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\views\\profile\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\wwwroot\\js\\app.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}|",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\wwwroot\\js\\app.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|e:\\rajasthanpatrika\\patrika supply alteration\\patrika supply alteration\\views\\shared\\_modal.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{ED9FAA64-3437-4AFF-A17E-D6D8B325F945}|Patrika Supply Alteration\\Patrika Supply Alteration.csproj|solutionrelative:patrika supply alteration\\views\\shared\\_modal.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "HomeController.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Controllers\\HomeController.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Controllers\\HomeController.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Controllers\\HomeController.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Controllers\\HomeController.cs",
+              "ViewState": "AgIAAEYAAACgmZmZmZktwFgAAAA1AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:14:58.909Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "OracleDbService.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Services\\OracleDbService.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Services\\OracleDbService.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Services\\OracleDbService.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Services\\OracleDbService.cs",
+              "ViewState": "AgIAAKoCAAAAAAAAAIAwwLQCAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:14:24.435Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Dashboard.cshtml",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Home\\Dashboard.cshtml",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Views\\Home\\Dashboard.cshtml",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Home\\Dashboard.cshtml",
+              "RelativeToolTip": "Patrika Supply Alteration\\Views\\Home\\Dashboard.cshtml",
+              "ViewState": "AgIAACkAAAAAAAAAAAAAACkAAABlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-23T05:49:27.924Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 38,
+              "Title": "app.js",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\wwwroot\\js\\app.js",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\wwwroot\\js\\app.js",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\wwwroot\\js\\app.js",
+              "RelativeToolTip": "Patrika Supply Alteration\\wwwroot\\js\\app.js",
+              "ViewState": "AgIAAB0AAAAAAAAAAABQwCIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-05-22T12:20:52.35Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "LoginViewModel.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\LoginViewModel.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Models\\LoginViewModel.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\LoginViewModel.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Models\\LoginViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:11:14.846Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "AccountController.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Controllers\\AccountController.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Controllers\\AccountController.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Controllers\\AccountController.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Controllers\\AccountController.cs",
+              "ViewState": "AgIAACYAAAAAAAAAAAAowDUAAAAuAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:14:47.552Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "SupplyRequestViewModel.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\SupplyRequestViewModel.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Models\\SupplyRequestViewModel.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\SupplyRequestViewModel.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Models\\SupplyRequestViewModel.cs",
+              "ViewState": "AgIAABwAAAAAAAAAAAAzwCEAAAATAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:11:28.839Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "History.cshtml",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Home\\History.cshtml",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Views\\Home\\History.cshtml",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Home\\History.cshtml",
+              "RelativeToolTip": "Patrika Supply Alteration\\Views\\Home\\History.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-23T05:49:56.388Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "AuditViewModel.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\AuditViewModel.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Models\\AuditViewModel.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\AuditViewModel.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Models\\AuditViewModel.cs",
+              "ViewState": "AgIAABoAAACgmZmZmZkwwBwAAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:12:24.787Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "SessionAuthFilter.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Filters\\SessionAuthFilter.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Filters\\SessionAuthFilter.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Filters\\SessionAuthFilter.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Filters\\SessionAuthFilter.cs",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAMwBwAAABCAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:14:34.751Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Program.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Program.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Program.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Program.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Program.cs",
+              "ViewState": "AgIAAAIAAAAAAAAAAAAgwAUAAAArAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:10:25.248Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "RoleViewModel.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\RoleViewModel.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Models\\RoleViewModel.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\RoleViewModel.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Models\\RoleViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:11:19.033Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "NewRequest.cshtml",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Home\\NewRequest.cshtml",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Views\\Home\\NewRequest.cshtml",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Home\\NewRequest.cshtml",
+              "RelativeToolTip": "Patrika Supply Alteration\\Views\\Home\\NewRequest.cshtml",
+              "ViewState": "AgIAALQAAAAAAAAAAAAAAC8AAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-22T12:18:15.175Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\appsettings.json",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\appsettings.json",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\appsettings.json",
+              "RelativeToolTip": "Patrika Supply Alteration\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-05-25T13:44:29.94Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "UserSessionModel.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\UserSessionModel.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Models\\UserSessionModel.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\UserSessionModel.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Models\\UserSessionModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:11:09.061Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "style.css",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\wwwroot\\css\\style.css",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\wwwroot\\css\\style.css",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\wwwroot\\css\\style.css",
+              "RelativeToolTip": "Patrika Supply Alteration\\wwwroot\\css\\style.css",
+              "ViewState": "AgIAAB4BAAAAAAAAAAAjwB4AAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-05-22T13:34:55.134Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 39,
+              "Title": "_Modal.cshtml",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Shared\\_Modal.cshtml",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Views\\Shared\\_Modal.cshtml",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Shared\\_Modal.cshtml",
+              "RelativeToolTip": "Patrika Supply Alteration\\Views\\Shared\\_Modal.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-23T12:01:38.721Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "Patrika Supply Alteration.csproj",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
+              "RelativeToolTip": "Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAvAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-05-22T12:10:15.036Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 37,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Profile\\Index.cshtml",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Views\\Profile\\Index.cshtml",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Profile\\Index.cshtml",
+              "RelativeToolTip": "Patrika Supply Alteration\\Views\\Profile\\Index.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAIBJwBgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-22T12:19:46.504Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 36,
+              "Title": "Reports.cshtml",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\HO\\Reports.cshtml",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Views\\HO\\Reports.cshtml",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\HO\\Reports.cshtml",
+              "RelativeToolTip": "Patrika Supply Alteration\\Views\\HO\\Reports.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAIBJwDgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-22T12:19:35.21Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 35,
+              "Title": "History.cshtml",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\HO\\History.cshtml",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Views\\HO\\History.cshtml",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\HO\\History.cshtml",
+              "RelativeToolTip": "Patrika Supply Alteration\\Views\\HO\\History.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAIBJwCoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-22T12:19:21.076Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 34,
+              "Title": "Dashboard.cshtml",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\HO\\Dashboard.cshtml",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Views\\HO\\Dashboard.cshtml",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\HO\\Dashboard.cshtml",
+              "RelativeToolTip": "Patrika Supply Alteration\\Views\\HO\\Dashboard.cshtml",
+              "ViewState": "AgIAACQAAAAAAAAAAIBJwF0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-22T12:19:10.091Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 33,
+              "Title": "Dashboard.cshtml",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\ZH\\Dashboard.cshtml",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Views\\ZH\\Dashboard.cshtml",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\ZH\\Dashboard.cshtml",
+              "RelativeToolTip": "Patrika Supply Alteration\\Views\\ZH\\Dashboard.cshtml",
+              "ViewState": "AgIAABgAAAAAAAAAAIBJwEgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-22T12:18:46.551Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 32,
+              "Title": "ForgotPassword.cshtml",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Account\\ForgotPassword.cshtml",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Views\\Account\\ForgotPassword.cshtml",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Account\\ForgotPassword.cshtml",
+              "RelativeToolTip": "Patrika Supply Alteration\\Views\\Account\\ForgotPassword.cshtml",
+              "ViewState": "AgIAAAMAAAAAAAAAAIBJwB0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-22T12:17:22.483Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 31,
+              "Title": "Login.cshtml",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Account\\Login.cshtml",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Views\\Account\\Login.cshtml",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Account\\Login.cshtml",
+              "RelativeToolTip": "Patrika Supply Alteration\\Views\\Account\\Login.cshtml",
+              "ViewState": "AgIAAAQAAAAAAAAAAIBJwCUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-22T12:17:14.372Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 30,
+              "Title": "RoleSelect.cshtml",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Account\\RoleSelect.cshtml",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Views\\Account\\RoleSelect.cshtml",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Account\\RoleSelect.cshtml",
+              "RelativeToolTip": "Patrika Supply Alteration\\Views\\Account\\RoleSelect.cshtml",
+              "ViewState": "AgIAAAMAAAAAAAAAAABRwC8AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-22T12:17:01.879Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 29,
+              "Title": "_LoginLayout.cshtml",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Shared\\_LoginLayout.cshtml",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Views\\Shared\\_LoginLayout.cshtml",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Shared\\_LoginLayout.cshtml",
+              "RelativeToolTip": "Patrika Supply Alteration\\Views\\Shared\\_LoginLayout.cshtml",
+              "ViewState": "AgIAAAgAAAAAAAAAAABRwBYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-22T12:16:41.969Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 28,
+              "Title": "_Layout.cshtml",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Shared\\_Layout.cshtml",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Views\\Shared\\_Layout.cshtml",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\Shared\\_Layout.cshtml",
+              "RelativeToolTip": "Patrika Supply Alteration\\Views\\Shared\\_Layout.cshtml",
+              "ViewState": "AgIAAAoAAAAAAAAAAIBJwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-22T12:16:19.406Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 27,
+              "Title": "_ViewImports.cshtml",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\_ViewImports.cshtml",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Views\\_ViewImports.cshtml",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Views\\_ViewImports.cshtml",
+              "RelativeToolTip": "Patrika Supply Alteration\\Views\\_ViewImports.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAIBJwAIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-22T12:16:06.252Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "ProfileController.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Controllers\\ProfileController.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Controllers\\ProfileController.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Controllers\\ProfileController.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Controllers\\ProfileController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:15:24.784Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "HOController.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Controllers\\HOController.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Controllers\\HOController.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Controllers\\HOController.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Controllers\\HOController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAFIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:15:19.156Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "ZHController.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Controllers\\ZHController.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Controllers\\ZHController.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Controllers\\ZHController.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Controllers\\ZHController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAD4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:15:07.654Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "EmailService.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Services\\EmailService.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Services\\EmailService.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Services\\EmailService.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Services\\EmailService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:12:39.702Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "SessionService.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Services\\SessionService.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Services\\SessionService.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Services\\SessionService.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Services\\SessionService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:12:31.102Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "ReportViewModel.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\ReportViewModel.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Models\\ReportViewModel.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\ReportViewModel.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Models\\ReportViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:12:17.367Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "ProfileViewModel.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\ProfileViewModel.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Models\\ProfileViewModel.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\ProfileViewModel.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Models\\ProfileViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:12:07.323Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "HODashboardViewModel.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\HODashboardViewModel.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Models\\HODashboardViewModel.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\HODashboardViewModel.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Models\\HODashboardViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:12:00.886Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "ZHDashboardViewModel.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\ZHDashboardViewModel.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Models\\ZHDashboardViewModel.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\ZHDashboardViewModel.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Models\\ZHDashboardViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:11:54.736Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "SupplyViewModel.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\SupplyViewModel.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Models\\SupplyViewModel.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\SupplyViewModel.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Models\\SupplyViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:11:42.969Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "AgentLookupViewModel.cs",
+              "DocumentMoniker": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\AgentLookupViewModel.cs",
+              "RelativeDocumentMoniker": "Patrika Supply Alteration\\Models\\AgentLookupViewModel.cs",
+              "ToolTip": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Models\\AgentLookupViewModel.cs",
+              "RelativeToolTip": "Patrika Supply Alteration\\Models\\AgentLookupViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-22T12:11:34.719Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
