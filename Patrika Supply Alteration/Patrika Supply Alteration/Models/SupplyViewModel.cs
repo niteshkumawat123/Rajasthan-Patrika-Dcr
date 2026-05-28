@@ -2,7 +2,7 @@ namespace DCRSupplyApp.Models;
 
 public class SupplyViewModel
 {
-    public decimal? BaseSupply { get; set; }
+    public int? BaseSupply { get; set; }
     public decimal? SupplyMon { get; set; }
     public decimal? SupplyTue { get; set; }
     public decimal? SupplyWed { get; set; }

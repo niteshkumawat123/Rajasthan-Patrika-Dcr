@@ -8,22 +8,20 @@
 <div class="scroll-area" id="history-list" style="padding-top:12px;gap:8px;">
     @foreach (var req in Model)
     {
-        <div class="request-card" data-search="@req.Agcd @req.AgName @req.Status" onclick="openAuditModal(@req.ReqId)">
-            <div class="request-row">
-                <span style="font-weight:600;color:var(--paper);">@req.AgName <span style="font-weight:400;color:var(--muted);font-size:11px;">(@req.Agcd)</span></span>
+        <div class="req-item" data-search="@req.Agcd @req.AgName @req.Status" onclick="openAuditModal(@req.ReqId)">
+            <div class="req-info">
+                <div class="req-agent">@req.AgName</div>
+                <div class="req-meta">
+                    @if(!string.IsNullOrEmpty(req.BranchCode)){<span class="req-badge zone">@req.BranchCode</span>}
+                    <span style="font-size:11px;color:var(--muted);">@req.CreationDate?.ToString("dd MMM yyyy")</span>
+                    <span style="font-size:11px;color:var(--muted);">@req.BaseSupply &#x2192; @req.ChangedSupply
+                        @if(req.IncDec=="I"){<span style="color:var(--green);">&#x2191;</span>}else{<span style="color:var(--accent);">&#x2193;</span>}
+                    </span>
+                </div>
+                <div class="req-by">@(string.IsNullOrEmpty(req.Agcd) ? "" : req.Agcd) &middot; By @(string.IsNullOrEmpty(req.CreationBy) ? req.UserId : req.CreationBy)</div>
+            </div>
+            <div style="flex-shrink:0;display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
                 <span class="status-pill @req.Status?.ToLower().Replace("_","-")">@req.Status</span>
-            </div>
-            <div class="request-row" style="font-size:12px;color:var(--muted);">
-                <span>@req.BaseSupply &#x2192; @req.ChangedSupply
-                    @if(req.IncDec=="I"){<span style="color:var(--green);">&#x2191;</span>}else{<span style="color:var(--accent);">&#x2193;</span>}
-                </span>
-                <span style="font-size:11px;">@req.CreationDate?.ToString("dd MMM yyyy")</span>
-            </div>
-            <div class="request-row" style="font-size:11px;color:var(--muted);">
-                <span>By @(string.IsNullOrEmpty(req.CreationBy) ? req.UserId : req.CreationBy + "(" + req.CreationByCode + ")" )</span>
-                @if(req.ApprAction != null){
-                    <span>@req.ApprAction · @req.ActionDate?.ToString("dd MMM")</span>
-                }
             </div>
         </div>
     }

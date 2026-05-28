@@ -262,7 +262,7 @@ public class OracleDbService
                     SUPPLY_THU, SUPPLY_FRI, SUPPLY_SAT, SUPPLY_SUN,
                     SUPPLY_EFFECTIVE_DATE, SUPPLY_FLAG, PUBL, EDTN, SUPPLY_TYPE_CODE
                     FROM CIR_SUPPLY
-                    WHERE AGCD = :AGCD AND DPCD = :DPCD AND COMP_CODE = :COMP_CODE AND SUPPLY_FLAG = 'Y'
+                    WHERE AGCD = :AGCD AND DPCD = :DPCD AND COMP_CODE = :COMP_CODE 
                     ORDER BY PUBL, EDTN";
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("AGCD", agcd));
@@ -273,7 +273,7 @@ public class OracleDbService
         {
             list.Add(new SupplyViewModel
             {
-                BaseSupply = reader["BASE_SUPPLY"] as decimal?,
+                BaseSupply = Convert.ToInt32(reader["BASE_SUPPLY"]) ,
                 SupplyMon = reader["SUPPLY_MON"] as decimal?,
                 SupplyTue = reader["SUPPLY_TUE"] as decimal?,
                 SupplyWed = reader["SUPPLY_WED"] as decimal?,
@@ -314,7 +314,7 @@ public class OracleDbService
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = @"INSERT INTO  (APP_CIR_SUPPLY_REQ
+            var sql = @"INSERT INTO APP_CIR_SUPPLY_REQ (
                         REQ_ID, COMP_CODE, UNIT_CODE, AGCD, DPCD,
                         PUBL, EDTN, SUPPLY_TYPE_CODE,
                         BASE_SUPPLY, INC_DEC, CHANGED_SUPPLY,

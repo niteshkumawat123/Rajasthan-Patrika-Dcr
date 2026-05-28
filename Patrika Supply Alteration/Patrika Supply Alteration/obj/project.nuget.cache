@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "NnB2eugRDsM=",
+  "dgSpecHash": "0yDao+VxOKg=",
   "success": true,
-  "projectFilePath": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
+  "projectFilePath": "E:\\RajasthanPatrika\\Rajasthan-Patrika-Dcr\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\nitesh.kumawat.VERTEXPLUS\\.nuget\\packages\\bouncycastle.cryptography\\2.2.1\\bouncycastle.cryptography.2.2.1.nupkg.sha512",
     "C:\\Users\\nitesh.kumawat.VERTEXPLUS\\.nuget\\packages\\mailkit\\4.3.0\\mailkit.4.3.0.nupkg.sha512",
@@ -23,9 +23,9 @@
       "code": "NU1902",
       "level": "Warning",
       "message": "Package 'MailKit' 4.3.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-9j88-vvj5-vhgr",
-      "projectPath": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
+      "projectPath": "E:\\RajasthanPatrika\\Rajasthan-Patrika-Dcr\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
       "warningLevel": 1,
-      "filePath": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
+      "filePath": "E:\\RajasthanPatrika\\Rajasthan-Patrika-Dcr\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
       "libraryId": "MailKit",
       "targetGraphs": [
         "net8.0"
@@ -35,9 +35,9 @@
       "code": "NU1902",
       "level": "Warning",
       "message": "Package 'MimeKit' 4.3.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-g7hc-96xr-gvvx",
-      "projectPath": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
+      "projectPath": "E:\\RajasthanPatrika\\Rajasthan-Patrika-Dcr\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
       "warningLevel": 1,
-      "filePath": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
+      "filePath": "E:\\RajasthanPatrika\\Rajasthan-Patrika-Dcr\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
       "libraryId": "MimeKit",
       "targetGraphs": [
         "net8.0"
@@ -47,9 +47,9 @@
       "code": "NU1903",
       "level": "Warning",
       "message": "Package 'MimeKit' 4.3.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-gmc6-fwg3-75m5",
-      "projectPath": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
+      "projectPath": "E:\\RajasthanPatrika\\Rajasthan-Patrika-Dcr\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
       "warningLevel": 1,
-      "filePath": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
+      "filePath": "E:\\RajasthanPatrika\\Rajasthan-Patrika-Dcr\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
       "libraryId": "MimeKit",
       "targetGraphs": [
         "net8.0"

@@ -54,16 +54,17 @@
                 <input type="number" id="old-supply" placeholder="Auto-filled" min="0" readonly style="opacity:0.8;background:rgba(78,140,255,0.06);border-color:rgba(78,140,255,0.2);">
             </div>
             <div class="field">
-                <label>New Supply *</label>
-                <input type="number" id="new-supply" placeholder="Enter new qty" min="0" oninput="calcDiff()">
+                <label>Quantity *</label>
+                <input type="number" id="new-supply" placeholder="Enter qty" min="1" oninput="calcDiff()">
             </div>
         </div>
         <div class="supply-diff">
             <div style="text-align:center"><div class="supply-num" id="prev-old">—</div><div class="supply-sub">Current</div></div>
             <div class="arrow">&#x2192;</div>
-            <div style="text-align:center"><div class="supply-num" id="prev-new">—</div><div class="supply-sub">New</div></div>
-            <div style="text-align:center"><div class="supply-num" id="prev-diff" style="font-size:18px;">—</div><div class="supply-sub">Diff</div></div>
+            <div style="text-align:center"><div class="supply-num" id="prev-new">—</div><div class="supply-sub">Quantity</div></div>
+            <div style="text-align:center"><div class="supply-num" id="prev-diff" style="font-size:18px;">—</div><div class="supply-sub">Total</div></div>
         </div>
+        <div id="supply-error" style="display:none;font-size:12px;color:var(--accent);margin-top:8px;"></div>
     </div>
     <div class="card fade-in-3">
         <div class="card-title">Reason & Remarks</div>
@@ -103,6 +104,7 @@ function selectType(t){
     selectedType=t==='increase'?'I':'D';
     document.getElementById('chip-increase').classList.toggle('active',t==='increase');
     document.getElementById('chip-decrease').classList.toggle('active',t==='decrease');
+    calcDiff();
 }
 let searchTimer;
 function searchAgent(v){
@@ -164,21 +166,37 @@ document.addEventListener('click',function(e){
     }
 });
 function calcDiff(){
-    let o=parseInt(document.getElementById('old-supply').value)||0;
-    let n=parseInt(document.getElementById('new-supply').value)||0;
-    document.getElementById('prev-old').textContent=o;
-    document.getElementById('prev-new').textContent=n;
-    document.getElementById('prev-diff').textContent=(n-o>0?'+':'')+(n-o);
+    let current=parseInt(document.getElementById('old-supply').value)||0;
+    let qty=parseInt(document.getElementById('new-supply').value)||0;
+    let total = selectedType==='I' ? current + qty : current - qty;
+    var errEl=document.getElementById('supply-error');
+    document.getElementById('prev-old').textContent=current;
+    document.getElementById('prev-new').textContent=qty;
+    if(selectedType==='D' && qty > current){
+        document.getElementById('prev-diff').textContent='—';
+        errEl.textContent='Decrease quantity cannot exceed current supply ('+current+')';
+        errEl.style.display='block';
+    } else {
+        document.getElementById('prev-diff').textContent=total;
+        errEl.style.display='none';
+    }
 }
 function submitRequest(){
     if(!agentData){showToast('Please select an agent first','error');return;}
+    let current=parseInt(document.getElementById('old-supply').value)||0;
+    let qty=parseInt(document.getElementById('new-supply').value)||0;
+    if(!qty || qty<=0){showToast('Please enter a valid quantity','error');return;}
+    if(selectedType==='D' && qty > current){
+        showToast('Decrease quantity cannot exceed current supply ('+current+')','error');return;
+    }
+    let total = selectedType==='I' ? current + qty : current - qty;
     let body={
         agcd:agentData.agcd, dpcd:agentData.dpcd,
         publ:supplyData[0]?.publ, edtn:supplyData[0]?.edtn,
         supplyTypeCode:supplyData[0]?.supplyTypeCode,
-        baseSupply:parseInt(document.getElementById('old-supply').value)||0,
+        baseSupply:current,
         incDec:selectedType,
-        changedSupply:parseInt(document.getElementById('new-supply').value)||0,
+        changedSupply:total,
         reasonCode:document.getElementById('reason-select').value,
         changedSupplyDate:document.getElementById('eff-date').value||null,
         remarks:document.getElementById('remarks').value

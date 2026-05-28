@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj": {}
+    "E:\\RajasthanPatrika\\Rajasthan-Patrika-Dcr\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj": {}
   },
   "projects": {
-    "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj": {
+    "E:\\RajasthanPatrika\\Rajasthan-Patrika-Dcr\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
+        "projectUniqueName": "E:\\RajasthanPatrika\\Rajasthan-Patrika-Dcr\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
         "projectName": "Patrika Supply Alteration",
-        "projectPath": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
+        "projectPath": "E:\\RajasthanPatrika\\Rajasthan-Patrika-Dcr\\Patrika Supply Alteration\\Patrika Supply Alteration\\Patrika Supply Alteration.csproj",
         "packagesPath": "C:\\Users\\nitesh.kumawat.VERTEXPLUS\\.nuget\\packages\\",
-        "outputPath": "E:\\RajasthanPatrika\\Patrika Supply Alteration\\Patrika Supply Alteration\\obj\\",
+        "outputPath": "E:\\RajasthanPatrika\\Rajasthan-Patrika-Dcr\\Patrika Supply Alteration\\Patrika Supply Alteration\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

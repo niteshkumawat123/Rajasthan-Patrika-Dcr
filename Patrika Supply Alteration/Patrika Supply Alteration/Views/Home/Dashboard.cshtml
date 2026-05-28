@@ -28,18 +28,17 @@
         <div style="display:flex;flex-direction:column;gap:8px;">
             @foreach (var req in Model.RecentRequests)
             {
-                <div class="request-card" onclick="openAuditModal(@req.ReqId)">
-                    <div class="request-row">
-                        <span style="font-weight:500;color:var(--paper);">@req.AgName @(string.IsNullOrEmpty(req.Agcd) ? "" : $"({req.Agcd})")</span>
+                <div class="req-item" onclick="openAuditModal(@req.ReqId)">
+                    <div class="req-info">
+                        <div class="req-agent">@req.AgName</div>
+                        <div class="req-meta">
+                            @if(!string.IsNullOrEmpty(req.BranchCode)){<span class="req-badge zone">@req.BranchCode</span>}
+                            <span style="font-size:11px;color:var(--muted);">@(req.CreationDate.HasValue ? req.CreationDate.Value.ToString("dd MMM yyyy") : "-")</span>
+                        </div>
+                        <div class="req-by">@(string.IsNullOrEmpty(req.Agcd) ? "" : req.Agcd) &middot; By @(string.IsNullOrEmpty(req.CreationBy) ? req.UserId : req.CreationBy)</div>
+                    </div>
+                    <div style="flex-shrink:0;display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
                         <span class="status-pill @req.Status?.ToLower().Replace("_","-")">@req.Status</span>
-                    </div>
-                    <div class="request-row" style="font-size:10px;color:var(--muted);opacity:0.7;">
-                        <span>@(string.IsNullOrEmpty(req.BranchCode) ? "-" : req.BranchCode)</span>
-                        <span>@(req.CreationDate.HasValue ? req.CreationDate.Value.ToString("dd MMM yyyy") : "-")</span>
-                    </div>
-                    <div class="request-row" style="font-size:11px;color:var(--muted);">
-
-                        <span>By @(string.IsNullOrEmpty(req.CreationBy) ? req.UserId : req.CreationBy)</span>
                     </div>
                 </div>
             }

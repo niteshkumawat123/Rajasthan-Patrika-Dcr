@@ -198,6 +198,22 @@ a { color: inherit; text-decoration: none; }
 }
 .request-card:hover { border-color: var(--blue); }
 .request-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+
+/* ?? REQ-ITEM (index.html style) ?? */
+.req-item {
+  background: var(--surface); border-radius: 12px; padding: 13px 15px;
+  border: 1px solid var(--border); display: flex; align-items: center; gap: 11px;
+  cursor: pointer; transition: background .15s, border-color .15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.req-item:hover { background: rgba(78,140,255,0.04); border-color: rgba(37,99,235,0.18); }
+.req-info { flex: 1; min-width: 0; }
+.req-agent { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--paper); }
+.req-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 3px; align-items: center; }
+.req-by { font-size: 10px; color: var(--muted); margin-top: 2px; opacity: 0.8; }
+.req-badge { padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 500; }
+.req-badge.zone { background: rgba(78,140,255,0.1); color: var(--blue); }
+.req-badge.branch { background: rgba(139,92,246,0.1); color: var(--purple); }
 .request-row:last-child { margin-bottom: 0; }
 
 /* ?? STATUS PILLS ?? */
