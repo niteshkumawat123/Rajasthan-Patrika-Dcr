@@ -123,4 +123,31 @@ public class ZHController : Controller
         var trail = await _dbService.GetAuditTrailAsync(reqId);
         return Json(trail);
     }
+
+    [HttpGet]
+    public async Task<IActionResult> FilteredRequests(string status)
+    {
+        var user = GetUser();
+        var branchCodes = user.BranchDetails?.Select(b => b.BranchCode).Where(b => b != null).ToList();
+        List<SupplyRequestViewModel> list;
+        switch (status)
+        {
+            case "awaiting":
+                list = await _dbService.GetZHPendingAsync(user.EmpCode!, user.ComCode!, branchCodes);
+                break;
+            case "approved":
+                list = await _dbService.GetZHApprovedByMeAsync(user.UserId!, user.ComCode!, branchCodes);
+                break;
+            case "atho":
+                list = await _dbService.GetZHAtHoAsync(user.EmpCode!, user.ComCode!, branchCodes);
+                break;
+            case "rejected":
+                list = await _dbService.GetZHRejectedAsync(user.EmpCode!, user.ComCode!, branchCodes);
+                break;
+            default:
+                list = await _dbService.GetZHPendingAsync(user.EmpCode!, user.ComCode!, branchCodes);
+                break;
+        }
+        return Json(list);
+    }
 }

@@ -50,6 +50,22 @@ public class HOController : Controller
     }
 
     [HttpGet]
+    public async Task<IActionResult> FilteredRequests(string status)
+    {
+        var user = GetUser();
+        var allRequests = await _dbService.GetHOHistoryAsync(user.ComCode!);
+        var filtered = status switch
+        {
+            "awaiting" => allRequests.Where(r => r.Status == "PENDING_HO").ToList(),
+            "approved" => allRequests.Where(r => r.Status == "HO_APPROVED").ToList(),
+            "increased" => allRequests.Where(r => r.IncDec == "I" && r.Status == "HO_APPROVED").ToList(),
+            "decreased" => allRequests.Where(r => r.IncDec == "D" && r.Status == "HO_APPROVED").ToList(),
+            _ => allRequests
+        };
+        return Json(filtered);
+    }
+
+    [HttpGet]
     public async Task<IActionResult> History()
     {
         var user = GetUser();

@@ -7,23 +7,35 @@
     </div>
 </div>
 <div class="scroll-area">
-    <div class="stats-row fade-in">
-        <div class="stat-card orange"><div class="stat-num orange">@Model.AwaitingMe</div><div class="stat-label">Awaiting Me</div></div>
-        <div class="stat-card green"><div class="stat-num green">@Model.Approved</div><div class="stat-label">I Approved</div></div>
-        <div class="stat-card blue"><div class="stat-num blue">@Model.AtHo</div><div class="stat-label">At HO</div></div>
-        <div class="stat-card red"><div class="stat-num red">@Model.Rejected</div><div class="stat-label">Rejected</div></div>
+    <div class="stats-row fade-in" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">
+        <div class="stat-card orange" onclick="loadFiltered('awaiting')" style="cursor:pointer;padding:10px 6px;min-height:auto;">
+            <div class="stat-num orange" style="font-size:22px;">@Model.AwaitingMe</div>
+            <div class="stat-label" style="font-size:10px;">Awaiting Me</div>
+        </div>
+        <div class="stat-card green" onclick="loadFiltered('approved')" style="cursor:pointer;padding:10px 6px;min-height:auto;">
+            <div class="stat-num green" style="font-size:22px;">@Model.Approved</div>
+            <div class="stat-label" style="font-size:10px;">I Approved</div>
+        </div>
+        <div class="stat-card blue" onclick="loadFiltered('atho')" style="cursor:pointer;padding:10px 6px;min-height:auto;">
+            <div class="stat-num blue" style="font-size:22px;">@Model.AtHo</div>
+            <div class="stat-label" style="font-size:10px;">At HO</div>
+        </div>
+        <div class="stat-card red" onclick="loadFiltered('rejected')" style="cursor:pointer;padding:10px 6px;min-height:auto;">
+            <div class="stat-num red" style="font-size:22px;">@Model.Rejected</div>
+            <div class="stat-label" style="font-size:10px;">Rejected</div>
+        </div>
     </div>
     @if(Model.CanAddRequest){
-    <a href="@Url.Action("NewRequest","ZH")" class="btn btn-primary btn-icon fade-in-2" style="padding:15px;text-decoration:none;margin-bottom:12px;">
+    <a href="@Url.Action("NewRequest","ZH")" class="btn btn-primary btn-icon fade-in-2" style="padding:12px;text-decoration:none;margin-bottom:12px;font-size:14px;">
         <span>&#x2795;</span><span>New Supply Change Request</span>
     </a>
     }
-    <div class="fade-in-2">
+    <div class="fade-in-2" id="filtered-section">
         <div class="section-header">
-            <div class="section-title">Pending My Approval</div>
-            <span class="status-pill pending">@Model.PendingRequests.Count</span>
+            <div class="section-title" id="section-title-text">Pending My Approval</div>
+            <span class="status-pill pending" id="section-count">@Model.PendingRequests.Count</span>
         </div>
-        <div style="display:flex;flex-direction:column;gap:8px;">
+        <div id="filtered-list" style="display:flex;flex-direction:column;gap:8px;">
             @foreach (var req in Model.PendingRequests)
             {
                 <div class="req-item" onclick="openAuditModal(@req.ReqId)">
@@ -62,6 +74,57 @@
 @section Scripts {
 <script>
 let pendingAction=null, pendingReqId=null;
+let activeFilter='awaiting';
+
+function loadFiltered(status){
+    activeFilter=status;
+    // Update section title
+    let titles={'awaiting':'Pending My Approval','approved':'I Approved','atho':'At HO (Pending)','rejected':'Rejected'};
+    document.getElementById('section-title-text').textContent=titles[status]||'Requests';
+    document.getElementById('filtered-list').innerHTML='<div style="text-align:center;padding:20px;color:#999;">Loading...</div>';
+
+    // Highlight active card
+    document.querySelectorAll('.stat-card').forEach(c=>c.style.outline='none');
+    let idx={'awaiting':0,'approved':1,'atho':2,'rejected':3};
+    let cards=document.querySelectorAll('.stat-card');
+    if(cards[idx[status]]) cards[idx[status]].style.outline='2px solid #4e8cff';
+
+    fetch('/ZH/FilteredRequests?status='+status).then(r=>r.json()).then(data=>{
+        document.getElementById('section-count').textContent=data.length;
+        if(!data||data.length===0){
+            document.getElementById('filtered-list').innerHTML='<div style="text-align:center;padding:20px;color:#999;">No records found</div>';
+            return;
+        }
+        let html='';
+        data.forEach(req=>{
+            let isInc=req.incDec==='I';
+            let statusLabel=(req.status||'').replace(/_/g,' ');
+            let statusCls=(req.status||'').toLowerCase().replace(/_/g,'-');
+            let dateStr=req.creationDate?new Date(req.creationDate).toLocaleDateString('en-IN',{year:'numeric',month:'short',day:'2-digit'}):'';
+            let showActions=(status==='awaiting');
+            html+=`<div class="req-item" onclick="openAuditModal(${req.reqId})" style="cursor:pointer;">
+                <div class="req-icon ${isInc?'increase':'decrease'}">${isInc?'📈':'📉'}</div>
+                <div class="req-info">
+                    <div class="req-agent">${req.agName||''}</div>
+                    <div class="req-meta">
+                        <span style="background:rgba(78,140,255,0.1);padding:2px 7px;border-radius:6px;font-size:11px;">${req.publ||''} / ${req.edtn||''}</span>
+                        <span style="font-size:11px;color:var(--muted);">${dateStr}</span>
+                    </div>
+                    <div class="req-by">${req.agcd||''} &middot; ${req.baseSupply||0} → ${req.changedSupply||0} ${isInc?'↑':'↓'} &middot; By ${req.creationBy||''}</div>
+                </div>
+                <div style="flex-shrink:0;display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                    <span class="status-pill ${statusCls}">${statusLabel}</span>
+                    ${showActions?`<div style="display:flex;flex-direction:row;gap:6px;">
+                        <button class="quick-approve-btn" onclick="event.stopPropagation();zhAction(${req.reqId},'approve')" title="Approve">✅</button>
+                        <button class="quick-approve-btn" onclick="event.stopPropagation();zhAction(${req.reqId},'reject')" title="Reject" style="color:var(--accent);background:rgba(231,111,81,0.15);border-color:rgba(231,111,81,0.4);">✖</button>
+                    </div>`:''}
+                </div>
+            </div>`;
+        });
+        document.getElementById('filtered-list').innerHTML=html;
+    });
+}
+
 function zhAction(reqId, action){
     pendingReqId=reqId; pendingAction=action;
     document.getElementById('remarks-modal-title').textContent=action==='approve'?'Approve & Forward to HO':'Reject Request';

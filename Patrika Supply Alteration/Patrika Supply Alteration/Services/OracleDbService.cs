@@ -786,7 +786,122 @@ public class OracleDbService
             );
         }
         return (0, 0, 0, 0);
-    }    // QUERY 12: ZH pending requests
+    }
+
+    // ZH Approved requests (from APP_CIR_SUPPLY_APPROVAL)
+    public async Task<List<SupplyRequestViewModel>> GetZHApprovedByMeAsync(string empCode, string compCode, List<string?>? branchCodes)
+    {
+        var list = new List<SupplyRequestViewModel>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+
+        var branchParams = new List<string>();
+        for (int i = 0; i < branchCodes.Count; i++)
+            branchParams.Add("'" + (branchCodes[i] ?? "").Replace("'", "''") + "'");
+
+        var sql = $@"
+        SELECT R.REQ_ID, R.AGCD, R.DPCD, R.PUBL, R.EDTN,
+               R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
+               R.REASON_CODE, R.REMARKS, R.USERID,
+               R.CREATION_DATE, R.CHANGED_SUPPLY_DATE, R.STATUS,
+               A.AG_NAME, A.BRANCH_CODE,
+               HEM.NAME AS CREATION_BY, HEM.EMP_CODE,
+               AP.ACTION_DATE, AP.REMARKS AS APPROVER_REMARKS
+        FROM APP_CIR_SUPPLY_REQ R
+        INNER JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
+            AND AP.APPROVAL_LEVEL = 'ZH' AND AP.APPR_ACTION = 'APPROVED' AND AP.ACTION_BY = :EMP_CODE
+        LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.COMP_CODE = R.COMP_CODE
+        LEFT JOIN HR_EMP_MST HEM ON HEM.EMP_CODE = R.USERID
+        WHERE R.COMP_CODE = :COMP_CODE
+          AND R.UNIT_CODE IN ({string.Join(",", branchParams)})
+        ORDER BY AP.ACTION_DATE DESC";
+
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("EMP_CODE", empCode));
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            var item = MapSupplyRequest(reader);
+            item.ActionDate = reader["ACTION_DATE"] as DateTime?;
+            item.ApproverRemarks = reader["APPROVER_REMARKS"]?.ToString();
+            list.Add(item);
+        }
+        return list;
+    }
+
+    // ZH At HO requests (approved by ZH, pending at HO)
+    public async Task<List<SupplyRequestViewModel>> GetZHAtHoAsync(string empCode, string compCode, List<string?>? branchCodes)
+    {
+        var list = new List<SupplyRequestViewModel>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+
+        var branchParams = new List<string>();
+        for (int i = 0; i < branchCodes.Count; i++)
+            branchParams.Add("'" + (branchCodes[i] ?? "").Replace("'", "''") + "'");
+
+        var sql = $@"
+        SELECT R.REQ_ID, R.AGCD, R.DPCD, R.PUBL, R.EDTN,
+               R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
+               R.REASON_CODE, R.REMARKS, R.USERID,
+               R.CREATION_DATE, R.CHANGED_SUPPLY_DATE, R.STATUS,
+               A.AG_NAME, A.BRANCH_CODE,
+               HEM.NAME AS CREATION_BY, HEM.EMP_CODE
+        FROM APP_CIR_SUPPLY_REQ R
+        LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.COMP_CODE = R.COMP_CODE
+        LEFT JOIN HR_EMP_MST HEM ON HEM.EMP_CODE = R.USERID
+        WHERE R.STATUS = 'PENDING_HO'
+          AND R.COMP_CODE = :COMP_CODE
+          AND R.UNIT_CODE IN ({string.Join(",", branchParams)})
+        ORDER BY R.CREATION_DATE DESC";
+
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+            list.Add(MapSupplyRequest(reader));
+        return list;
+    }
+
+    // ZH Rejected requests
+    public async Task<List<SupplyRequestViewModel>> GetZHRejectedAsync(string empCode, string compCode, List<string?>? branchCodes)
+    {
+        var list = new List<SupplyRequestViewModel>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+
+        var branchParams = new List<string>();
+        for (int i = 0; i < branchCodes.Count; i++)
+            branchParams.Add("'" + (branchCodes[i] ?? "").Replace("'", "''") + "'");
+
+        var sql = $@"
+        SELECT R.REQ_ID, R.AGCD, R.DPCD, R.PUBL, R.EDTN,
+               R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
+               R.REASON_CODE, R.REMARKS, R.USERID,
+               R.CREATION_DATE, R.CHANGED_SUPPLY_DATE, R.STATUS,
+               A.AG_NAME, A.BRANCH_CODE,
+               HEM.NAME AS CREATION_BY, HEM.EMP_CODE
+        FROM APP_CIR_SUPPLY_REQ R
+        LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.COMP_CODE = R.COMP_CODE
+        LEFT JOIN HR_EMP_MST HEM ON HEM.EMP_CODE = R.USERID
+        WHERE R.STATUS IN ('REJECTED','ZH_REJECTED')
+          AND R.COMP_CODE = :COMP_CODE
+          AND R.UNIT_CODE IN ({string.Join(",", branchParams)})
+        ORDER BY R.CREATION_DATE DESC";
+
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+            list.Add(MapSupplyRequest(reader));
+        return list;
+    }
+
+    // QUERY 12: ZH pending requests
     public async Task<List<SupplyRequestViewModel>> GetZHPendingAsync(string empCode, string compCode, List<string?>? branchCodes)
     {
         var list = new List<SupplyRequestViewModel>();
@@ -1017,7 +1132,7 @@ public class OracleDbService
                     NVL(SUM(CASE WHEN INC_DEC = 'I' AND STATUS = 'HO_APPROVED' THEN (CHANGED_SUPPLY - BASE_SUPPLY) ELSE 0 END),0) AS TOTAL_INCREASED,
                     NVL(SUM(CASE WHEN INC_DEC = 'D' AND STATUS = 'HO_APPROVED' THEN (BASE_SUPPLY - CHANGED_SUPPLY) ELSE 0 END),0) AS TOTAL_DECREASED
                     FROM APP_CIR_SUPPLY_REQ
-                    WHERE COMP_CODE = :COMP_CODE AND TRUNC(CREATION_DATE) = TRUNC(:SELECTED_DATE)";
+                     ";
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
         cmd.Parameters.Add(new OracleParameter("SELECTED_DATE", selectedDate));
@@ -1046,11 +1161,14 @@ public class OracleDbService
                     A.AG_NAME, A.BRANCH_CODE,
                     ZH_AP.ACTION_BY AS ZH_APPROVED_BY,
                     ZH_AP.REMARKS AS ZH_REMARKS,
-                    ZH_AP.ACTION_DATE AS ZH_ACTION_DATE
+                    ZH_AP.ACTION_DATE AS ZH_ACTION_DATE,R.STATUS,HEM.EMP_CODE , HEM.NAME AS CREATION_BY,
+                    AP.REMARKS AS APPROVER_REMARKS,NULL AS DROP_POINT_NAME
                     FROM APP_CIR_SUPPLY_REQ R
+                    LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
+                    LEFT JOIN hr_emp_mst HEM ON HEM.EMP_CODE = R.USERID
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
                     LEFT JOIN APP_CIR_SUPPLY_APPROVAL ZH_AP ON ZH_AP.REQ_ID = R.REQ_ID AND ZH_AP.APPROVAL_LEVEL = 'ZH' AND ZH_AP.APPR_ACTION = 'APPROVED'
-                    WHERE R.STATUS = 'PENDING_HO' AND R.COMP_CODE = :COMP_CODE
+                    WHERE R.STATUS = 'PENDING_HO' 
                     ORDER BY R.CREATION_DATE ASC";
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
