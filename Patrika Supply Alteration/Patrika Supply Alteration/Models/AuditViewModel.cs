@@ -7,9 +7,9 @@ public class AuditTrailViewModel
     public string? AgName { get; set; }
     public string? Publ { get; set; }
     public string? Edtn { get; set; }
-    public decimal? BaseSupply { get; set; }
+    public int BaseSupply { get; set; }
     public string? IncDec { get; set; }
-    public decimal? ChangedSupply { get; set; }
+    public int ChangedSupply { get; set; }
     public string? ReasonCode { get; set; }
     public string? Remarks { get; set; }
     public string? ZoneCode { get; set; }
@@ -27,4 +27,5 @@ public class AuditTrailViewModel
     public string? FromStatus { get; set; }
     public string? ToStatus { get; set; }
     public string? SUBMITTEDBYNAME { get; set; }
+    public string? CreationByCode { get; set; }
 }

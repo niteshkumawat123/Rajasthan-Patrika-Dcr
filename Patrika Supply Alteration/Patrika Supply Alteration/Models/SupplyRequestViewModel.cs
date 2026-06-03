@@ -1,3 +1,5 @@
+using Org.BouncyCastle.Asn1;
+
 namespace DCRSupplyApp.Models;
 
 public class SupplyRequestViewModel
@@ -33,4 +35,16 @@ public class SupplyRequestViewModel
     public DateTime? ZhActionDate { get; set; }
     public string? CreationBy { get; set; }
     public string? CreationByCode { get; set; }
+    public string? EmployeeCode { get; set; }
+    public string? DropPointName { get; set; }
+
+    // Day-wise supply fields
+    public int? SupplyMon { get; set; }
+    public int? SupplyTue { get; set; }
+    public int? SupplyWed { get; set; }
+    public int? SupplyThu { get; set; }
+    public int? SupplyFri { get; set; }
+    public int? SupplySat { get; set; }
+    public int? SupplySun { get; set; }
+    public bool DayWiseEnabled { get; set; }
 }

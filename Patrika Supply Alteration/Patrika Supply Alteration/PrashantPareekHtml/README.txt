@@ -16,7 +16,3 @@
 Just upload all files/folders to your hosting/server.
 Open index.html in browser.
 
-C:\app\Administrator/admin/unicode/dpdump/
-
-
-GRANT READ, WRITE ON DIRECTORY MY_BACKUP_DIR TO rperpdata;

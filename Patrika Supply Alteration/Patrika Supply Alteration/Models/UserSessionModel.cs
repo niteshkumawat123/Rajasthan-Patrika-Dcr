@@ -17,4 +17,18 @@ public class UserSessionModel
     public string? HierarchyCode { get; set; }
     public string? SelectedRole { get; set; }
     public string? UnitCode { get; set; }
+    public List<BranchDetail> BranchDetails { get; set; }
+    public List<RoleDetails> RoleDetails { get; set; }
+}
+
+public class BranchDetail
+{
+    public string? BranchCode { get; set; }
+    public string? BranchName { get; set; } 
+}
+
+public class RoleDetails
+{
+    public string? RoleId { get; set; }
+    public string? RoleName { get; set; }
 }

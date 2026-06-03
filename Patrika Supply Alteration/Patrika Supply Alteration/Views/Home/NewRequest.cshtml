@@ -1,8 +1,9 @@
 ﻿@{
     ViewData["Title"] = "New Request";
+    var ctrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "Home";
 }
 <div class="topbar">
-    <a href="@Url.Action("Dashboard","Home")" class="btn btn-secondary btn-sm" style="width:auto;padding:4px 8px;text-decoration:none;">&#x2190; Back</a>
+    <a href="@Url.Action("Dashboard", ctrl)" class="btn btn-secondary btn-sm" style="width:auto;padding:4px 8px;text-decoration:none;">&#x2190; Back</a>
     <div style="font-size:15px;font-weight:800;">New Request</div>
     <div style="width:60px;"></div>
 </div>
@@ -54,7 +55,7 @@
                 <input type="number" id="old-supply" placeholder="Auto-filled" min="0" readonly style="opacity:0.8;background:rgba(78,140,255,0.06);border-color:rgba(78,140,255,0.2);">
             </div>
             <div class="field">
-                <label>Quantity *</label>
+                <label id="qty-label">Increased Quantity *</label>
                 <input type="number" id="new-supply" placeholder="Enter qty" min="1" oninput="calcDiff()">
             </div>
         </div>
@@ -65,6 +66,24 @@
             <div style="text-align:center"><div class="supply-num" id="prev-diff" style="font-size:18px;">—</div><div class="supply-sub">Total</div></div>
         </div>
         <div id="supply-error" style="display:none;font-size:12px;color:var(--accent);margin-top:8px;"></div>
+        <div style="margin-top:14px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--paper);">
+                <input type="checkbox" id="daywise-toggle" onchange="toggleDayWise()" style="width:18px;height:18px;accent-color:var(--blue);">
+                Edit Day-wise Supply
+            </label>
+        </div>
+        <div id="daywise-section" style="display:none;margin-top:12px;background:rgba(78,140,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px;">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">&#x1F4C5; Customize supply for each day (independent of increase/decrease quantity above)</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div class="field" style="margin:0;"><label style="font-size:11px;">Monday</label><input type="number" id="dw-mon" min="0" class="daywise-input"></div>
+                <div class="field" style="margin:0;"><label style="font-size:11px;">Tuesday</label><input type="number" id="dw-tue" min="0" class="daywise-input"></div>
+                <div class="field" style="margin:0;"><label style="font-size:11px;">Wednesday</label><input type="number" id="dw-wed" min="0" class="daywise-input"></div>
+                <div class="field" style="margin:0;"><label style="font-size:11px;">Thursday</label><input type="number" id="dw-thu" min="0" class="daywise-input"></div>
+                <div class="field" style="margin:0;"><label style="font-size:11px;">Friday</label><input type="number" id="dw-fri" min="0" class="daywise-input"></div>
+                <div class="field" style="margin:0;"><label style="font-size:11px;">Saturday</label><input type="number" id="dw-sat" min="0" class="daywise-input"></div>
+                <div class="field" style="margin:0;"><label style="font-size:11px;">Sunday</label><input type="number" id="dw-sun" min="0" class="daywise-input"></div>
+            </div>
+        </div>
     </div>
     <div class="card fade-in-3">
         <div class="card-title">Reason & Remarks</div>
@@ -92,19 +111,31 @@
     <div style="height:80px;"></div>
 </div>
 <div class="bottom-nav">
-    <a class="nav-btn" href="@Url.Action("Dashboard","Home")"><span class="nav-icon">&#x1F3E0;</span>Home</a>
-    <a class="nav-btn active" href="@Url.Action("NewRequest","Home")"><span class="nav-icon">&#x2795;</span>New</a>
-    <a class="nav-btn" href="@Url.Action("History","Home")"><span class="nav-icon">&#x1F4CB;</span>History</a>
+    <a class="nav-btn" href="@Url.Action("Dashboard", ctrl)"><span class="nav-icon">&#x1F3E0;</span>Home</a>
+    <a class="nav-btn active" href="@Url.Action("NewRequest", ctrl)"><span class="nav-icon">&#x2795;</span>New</a>
+    <a class="nav-btn" href="@Url.Action("History", ctrl)"><span class="nav-icon">&#x1F4CB;</span>History</a>
     <a class="nav-btn" href="@Url.Action("Index","Profile")"><span class="nav-icon">&#x1F464;</span>Profile</a>
 </div>
 @section Scripts {
 <script>
 let selectedType='I', agentData=null, supplyData=[];
+function toggleDayWise(){
+    var section=document.getElementById('daywise-section');
+    section.style.display=document.getElementById('daywise-toggle').checked?'block':'none';
+    updateQtyLabel();
+}
+var baseCtrl='/@(ctrl)';
 function selectType(t){
     selectedType=t==='increase'?'I':'D';
     document.getElementById('chip-increase').classList.toggle('active',t==='increase');
     document.getElementById('chip-decrease').classList.toggle('active',t==='decrease');
+    updateQtyLabel();
     calcDiff();
+}
+function updateQtyLabel(){
+    var daywise=document.getElementById('daywise-toggle').checked;
+    var star=daywise?'':'*';
+    document.getElementById('qty-label').textContent=selectedType==='I'?'Increased Quantity '+star:'Decreased Quantity '+star;
 }
 let searchTimer;
 function searchAgent(v){
@@ -114,7 +145,7 @@ function searchAgent(v){
     document.getElementById('erp-loading').style.display='block';
     document.getElementById('erp-ok').style.display='none';
     searchTimer=setTimeout(()=>{
-        fetch('/Home/AgentSearch?q='+encodeURIComponent(v))
+        fetch(baseCtrl+'/AgentSearch?q='+encodeURIComponent(v))
             .then(r=>r.json()).then(results=>{
                 document.getElementById('erp-loading').style.display='none';
                 if(results.length===0){
@@ -137,7 +168,7 @@ function selectAgent(agcd,dpcd,branchname,branchCode){
     document.getElementById('agent-dropdown').style.display='none';
     document.getElementById('erp-loading').style.display='block';
     document.getElementById('agent-search').value=agcd;
-    fetch('/Home/AgentLookup?agcd='+encodeURIComponent(agcd))
+    fetch(baseCtrl+'/AgentLookup?agcd='+encodeURIComponent(agcd)+'&dpcd='+encodeURIComponent(dpcd))
         .then(r=>r.json()).then(d=>{
             document.getElementById('erp-loading').style.display='none';
             if(d.found){
@@ -150,11 +181,15 @@ function selectAgent(agcd,dpcd,branchname,branchCode){
                 if(d.supplies&&d.supplies.length>0){
                     document.getElementById('old-supply').value=d.supplies[0].baseSupply||0;
                     document.getElementById('prev-old').textContent=d.supplies[0].baseSupply||'—';
-                    document.getElementById('supply-card').style.display='block';
-                    let html='<table style="width:100%;font-size:12px;"><tr><th>Publ</th><th>Edtn</th><th>Base</th></tr>';
-                    d.supplies.forEach(s=>{html+=`<tr><td>${s.publ}</td><td>${s.edtn}</td><td>${s.baseSupply}</td></tr>`;});
-                    html+='</table>';
-                    document.getElementById('supply-table').innerHTML=html;
+                    // Populate day-wise inputs with actual values
+                    var s0=d.supplies[0];
+                    document.getElementById('dw-mon').value=s0.supplyMon||0;
+                    document.getElementById('dw-tue').value=s0.supplyTue||0;
+                    document.getElementById('dw-wed').value=s0.supplyWed||0;
+                    document.getElementById('dw-thu').value=s0.supplyThu||0;
+                    document.getElementById('dw-fri').value=s0.supplyFri||0;
+                    document.getElementById('dw-sat').value=s0.supplySat||0;
+                    document.getElementById('dw-sun').value=s0.supplySun||0;
                 }
             }
         });
@@ -185,11 +220,12 @@ function submitRequest(){
     if(!agentData){showToast('Please select an agent first','error');return;}
     let current=parseInt(document.getElementById('old-supply').value)||0;
     let qty=parseInt(document.getElementById('new-supply').value)||0;
-    if(!qty || qty<=0){showToast('Please enter a valid quantity','error');return;}
+    var daywise=document.getElementById('daywise-toggle').checked;
+    if(!daywise && (!qty || qty<=0)){showToast('Please enter a valid quantity','error');return;}
     if(selectedType==='D' && qty > current){
         showToast('Decrease quantity cannot exceed current supply ('+current+')','error');return;
     }
-    let total = selectedType==='I' ? current + qty : current - qty;
+    let total = qty>0 ? (selectedType==='I' ? current + qty : current - qty) : current;
     let body={
         agcd:agentData.agcd, dpcd:agentData.dpcd,
         publ:supplyData[0]?.publ, edtn:supplyData[0]?.edtn,
@@ -199,12 +235,20 @@ function submitRequest(){
         changedSupply:total,
         reasonCode:document.getElementById('reason-select').value,
         changedSupplyDate:document.getElementById('eff-date').value||null,
-        remarks:document.getElementById('remarks').value
+        remarks:document.getElementById('remarks').value,
+        dayWiseEnabled:document.getElementById('daywise-toggle').checked,
+        supplyMon:document.getElementById('daywise-toggle').checked?parseInt(document.getElementById('dw-mon').value)||null:null,
+        supplyTue:document.getElementById('daywise-toggle').checked?parseInt(document.getElementById('dw-tue').value)||null:null,
+        supplyWed:document.getElementById('daywise-toggle').checked?parseInt(document.getElementById('dw-wed').value)||null:null,
+        supplyThu:document.getElementById('daywise-toggle').checked?parseInt(document.getElementById('dw-thu').value)||null:null,
+        supplyFri:document.getElementById('daywise-toggle').checked?parseInt(document.getElementById('dw-fri').value)||null:null,
+        supplySat:document.getElementById('daywise-toggle').checked?parseInt(document.getElementById('dw-sat').value)||null:null,
+        supplySun:document.getElementById('daywise-toggle').checked?parseInt(document.getElementById('dw-sun').value)||null:null
     };
-    fetch('/Home/SubmitRequest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    fetch(baseCtrl+'/SubmitRequest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
         .then(r=>r.json()).then(d=>{
             showToast(d.message, d.success?'success':'error');
-            if(d.success) setTimeout(()=>window.location.href='/Home/Dashboard',2000);
+            if(d.success) setTimeout(()=>window.location.href=baseCtrl+'/Dashboard',2000);
         });
 }
 </script>

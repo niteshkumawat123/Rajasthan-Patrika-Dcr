@@ -35,13 +35,7 @@ public class AccountController : Controller
     [HttpGet]
     public IActionResult Login()
     {
-        var model = new LoginViewModel
-        {
-            RoleCode = TempData["RoleCode"]?.ToString(),
-            RoleName = TempData["RoleName"]?.ToString()
-        };
-        if (string.IsNullOrEmpty(model.RoleCode))
-            return RedirectToAction("RoleSelect");
+        var model = new LoginViewModel();
         return View(model);
     }
 
@@ -49,23 +43,35 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginViewModel model)
     {
-        if (!ModelState.IsValid) return View(model);
+        if (string.IsNullOrEmpty(model.EmployeeId) || string.IsNullOrEmpty(model.Password))
+        {
+            model.ErrorMessage = "Please enter Employee ID and Password.";
+            return View(model);
+        }
 
-        var user = await _dbService.LoginAsync(model.EmployeeId, model.Password, model.RoleCode!);
+        var user = await _dbService.LoginAsync(model.EmployeeId, model.Password);
         if (user == null)
         {
-            model.ErrorMessage = "Invalid credentials or role. Please check and try again.";
+            model.ErrorMessage = "Invalid credentials. Please check and try again.";
             return View(model);
         }
 
         _sessionService.SetUser(HttpContext.Session, user);
 
-        return user.HierarchyCode?.ToUpper() switch
-        {
-            var c when c?.Contains("ZH") == true => RedirectToAction("Dashboard", "ZH"),
-            var c when c?.Contains("HO") == true => RedirectToAction("Dashboard", "HO"),
-            _ => RedirectToAction("Dashboard", "Home")
-        };
+        // Determine redirect based on role(s)
+        var roles = user.RoleDetails ?? new List<RoleDetails>();
+        bool canAdd = roles.Any(r => r.RoleId == "1" || r.RoleId == "3" || r.RoleId == "4" || r.RoleId == "6");
+        bool canApproveZH = roles.Any(r => r.RoleId == "4");
+        bool canApproveHO = roles.Any(r => r.RoleId == "7");
+
+        if (canApproveHO && !canAdd)
+            return RedirectToAction("Dashboard", "HO");
+        if (canApproveZH)
+            return RedirectToAction("Dashboard", "ZH");
+        if (canAdd)
+            return RedirectToAction("Dashboard", "Home");
+
+        return RedirectToAction("Dashboard", "Home");
     }
 
     [HttpGet]
@@ -102,6 +108,6 @@ public class AccountController : Controller
     public IActionResult Logout()
     {
         _sessionService.ClearUser(HttpContext.Session);
-        return RedirectToAction("RoleSelect");
+        return RedirectToAction("Login");
     }
 }

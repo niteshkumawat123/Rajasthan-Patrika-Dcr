@@ -17,9 +17,11 @@
         <div class="stat-card blue"><div class="stat-num blue">@Model.Today</div><div class="stat-label">Today</div></div>
         <div class="stat-card red"><div class="stat-num red">@Model.Rejected</div><div class="stat-label">Rejected</div></div>
     </div>
+    @if(Model.CanAddRequest){
     <a href="@Url.Action("NewRequest","Home")" class="btn btn-primary btn-icon fade-in-3" style="padding:15px;text-decoration:none;">
         <span>&#x2795;</span><span>New Supply Change Request</span>
     </a>
+    }
     <div class="fade-in-3">
         <div class="section-header">
             <div class="section-title">Recent Requests</div>
@@ -30,12 +32,12 @@
             {
                 <div class="req-item" onclick="openAuditModal(@req.ReqId)">
                     <div class="req-info">
-                        <div class="req-agent">@req.AgName</div>
+                        <div class="req-agent">@req.AgName  &middot; (@(string.IsNullOrEmpty(req.Agcd) ? "" : req.Agcd))</div>
                         <div class="req-meta">
-                            @if(!string.IsNullOrEmpty(req.BranchCode)){<span class="req-badge zone">@req.BranchCode</span>}
+                            @if(!string.IsNullOrEmpty(req.DropPointName)){<span class="req-badge zone">@req.DropPointName</span>}
                             <span style="font-size:11px;color:var(--muted);">@(req.CreationDate.HasValue ? req.CreationDate.Value.ToString("dd MMM yyyy") : "-")</span>
                         </div>
-                        <div class="req-by">@(string.IsNullOrEmpty(req.Agcd) ? "" : req.Agcd) &middot; By @(string.IsNullOrEmpty(req.CreationBy) ? req.UserId : req.CreationBy)</div>
+                        <div class="req-by"> By @(string.IsNullOrEmpty(req.CreationBy) ? req.UserId : req.CreationBy) (@req.CreationByCode)</div>
                     </div>
                     <div style="flex-shrink:0;display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
                         <span class="status-pill @req.Status?.ToLower().Replace("_","-")">@req.Status</span>
@@ -47,7 +49,12 @@
 </div>
 <div class="bottom-nav">
     <a class="nav-btn active" href="@Url.Action("Dashboard","Home")"><span class="nav-icon">&#x1F3E0;</span>Home</a>
+    @if(Model.CanAddRequest){
     <a class="nav-btn" href="@Url.Action("NewRequest","Home")"><span class="nav-icon">&#x2795;</span>New</a>
+    }
+    @if(Model.CanApprove){
+    <a class="nav-btn" href="@Url.Action("Dashboard","ZH")"><span class="nav-icon">&#x2705;</span>Approve</a>
+    }
     <a class="nav-btn" href="@Url.Action("History","Home")"><span class="nav-icon">&#x1F4CB;</span>History</a>
     <a class="nav-btn" href="@Url.Action("Index","Profile")"><span class="nav-icon">&#x1F464;</span>Profile</a>
 </div>
@@ -75,7 +82,7 @@ function openAuditModal(reqId){
             </div>
             <div class="supply-diff" style="margin-bottom:14px;">
               <div style="text-align:center"><div class="supply-num">${r.baseSupply||0}</div><div class="supply-sub">Current</div></div>
-              <div class="arrow">${r.incDec==='I'?'??':'??'}</div>
+              <div class="arrow">${r.incDec==='I'?'&#x2197;':'&#x2198;'}</div>
               <div style="text-align:center"><div class="supply-num" style="color:${diffColor}">${r.changedSupply||0}</div><div class="supply-sub">New</div></div>
               <div style="text-align:center"><div class="supply-num" style="font-size:18px;color:${diffColor}">${diffStr}</div><div class="supply-sub">Diff</div></div>
             </div>
@@ -83,7 +90,7 @@ function openAuditModal(reqId){
               <span style="color:var(--muted)">Agency:</span> <b>${r.agName||''}</b> (${r.agcd||''})<br>
               <span style="color:var(--muted)">Branch:</span> <b>${r.branchName||''}</b> (${r.branchCode||''})<br>
               <span style="color:var(--muted)">Effective Date:</span> <b>${effDate}</b><br>
-              <span style="color:var(--muted)">By:</span> <b>${r.submittedbyname||''}</b> (${r.submittedBy||''})<br>
+                      <span style="color:var(--muted)">By:</span> <b>${r.submittedbyname||r.submittedBy||''}</b> (${r.creationByCode||''})<br>
             </div>
             <div class="card-title" style="margin-top:14px;">Reason & Remarks</div>
             <div class="detail-highlight-field" style="background:rgba(231,111,81,0.08);border:1.5px solid rgba(231,111,81,0.3);border-radius:10px;padding:10px 14px;">

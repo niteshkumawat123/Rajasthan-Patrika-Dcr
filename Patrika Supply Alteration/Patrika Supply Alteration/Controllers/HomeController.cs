@@ -23,8 +23,12 @@ public class HomeController : Controller
     public async Task<IActionResult> Dashboard()
     {
         var user = GetUser();
-        var stats = await _dbService.GetSEStatsAsync(user.UserId!, user.ComCode!);
-        var recent = await _dbService.GetSERecentRequestsAsync(user.UserId!, user.ComCode!);
+        var roles = user.RoleDetails ?? new List<RoleDetails>();
+        bool canAdd = roles.Any(r => r.RoleId == "1" || r.RoleId == "3" || r.RoleId == "4" || r.RoleId == "6");
+        bool canApprove = roles.Any(r => r.RoleId == "4" || r.RoleId == "7");
+
+        var stats = await _dbService.GetSEStatsAsync(user.EmpCode!, user.ComCode!);
+        var recent = await _dbService.GetSERecentRequestsAsync(user.EmpCode!, user.ComCode!);
         var model = new DashboardViewModel
         {
             Pending = stats.pending,
@@ -32,7 +36,9 @@ public class HomeController : Controller
             Rejected = stats.rejected,
             Today = stats.today,
             RecentRequests = recent,
-            User = user
+            User = user,
+            CanAddRequest = canAdd,
+            CanApprove = canApprove
         };
         return View(model);
     }
@@ -44,13 +50,16 @@ public class HomeController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> AgentLookup(string agcd)
+    public async Task<IActionResult> AgentLookup(string agcd,string dpcd)
     {
         var user = GetUser();
         var agent = await _dbService.GetAgentAsync(agcd, user.ComCode!);
         if (agent == null)
+        {
             return Json(new { found = false });
-        var supplies = await _dbService.GetSupplyAsync(agent.Agcd!, agent.Dpcd!, user.ComCode!);
+        }
+        agent.Dpcd = dpcd;
+        var supplies = await _dbService.GetSupplyAsync(agent.Agcd!, dpcd!, user.ComCode!);
         return Json(new { found = true, agent, supplies });
     }
 
@@ -60,7 +69,8 @@ public class HomeController : Controller
         if (string.IsNullOrWhiteSpace(q) || q.Length < 2)
             return Json(new List<object>());
         var user = GetUser();
-        var results = await _dbService.SearchAgentsAsync(q, user.ComCode!);
+        var branchCodes = user.BranchDetails?.Select(b => b.BranchCode).Where(b => b != null).ToList();
+        var results = await _dbService.SearchAgentsByBranchAsync(q, user.ComCode!, branchCodes);
         return Json(results);
     }
 
@@ -72,6 +82,7 @@ public class HomeController : Controller
         model.CompCode = user.ComCode;
         model.UnitCode = user.UnitCode;
         model.ZoneCode = user.Zone;
+        model.EmployeeCode = user.EmpCode;
 
         // Check if there is already a pending request for this agency
         var hasPending = await _dbService.HasPendingRequestAsync(model.Agcd!, model.Dpcd!, user.ComCode!);

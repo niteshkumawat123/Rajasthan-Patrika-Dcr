@@ -1,4 +1,5 @@
 ﻿@model LoginViewModel
+
 @{
     Layout = "_LoginLayout";
 }
@@ -6,17 +7,11 @@
     <div class="login-header fade-in">
         <div style="font-size:52px;margin-bottom:12px;">&#x1F4F0;</div>
         <h1>DCR Supply App</h1>
-        <p>Newspaper Circulation Management · Jaipur HO</p>
     </div>
     <div class="fade-in-2">
         <div class="card-title" style="margin-bottom:14px;">Login</div>
-        <div style="margin-bottom:12px;">
-            <span class="role-badge role-se" style="font-size:11px;padding:5px 14px;">@Model.RoleName</span>
-        </div>
         <form method="post" asp-action="Login">
             @Html.AntiForgeryToken()
-            <input type="hidden" name="RoleCode" value="@Model.RoleCode" />
-            <input type="hidden" name="RoleName" value="@Model.RoleName" />
             <div class="login-field">
                 <label>Employee ID (Username)</label>
                 <input type="text" name="EmployeeId" placeholder="Enter Employee ID" autocomplete="off" value="@Model.EmployeeId">
@@ -32,6 +27,5 @@
             }
             <button type="submit" class="btn btn-primary btn-icon" style="margin-top:4px;"><span>Login</span><span>&#x2192;</span></button>
         </form>
-        <a asp-action="RoleSelect" class="btn btn-secondary" style="margin-top:10px;display:block;text-align:center;text-decoration:none;">&#x2190; Back to Roles</a>
     </div>
 </div>

@@ -8,4 +8,6 @@ public class DashboardViewModel
     public int Today { get; set; }
     public List<SupplyRequestViewModel> RecentRequests { get; set; } = new();
     public UserSessionModel? User { get; set; }
+    public bool CanAddRequest { get; set; }
+    public bool CanApprove { get; set; }
 }

@@ -8,4 +8,6 @@ public class ZHDashboardViewModel
     public int Rejected { get; set; }
     public List<SupplyRequestViewModel> PendingRequests { get; set; } = new();
     public UserSessionModel? User { get; set; }
+    public bool CanAddRequest { get; set; }
+    public bool CanApprove { get; set; }
 }
