@@ -26,9 +26,10 @@ public class ZHController : Controller
         var roles = user.RoleDetails ?? new List<RoleDetails>();
         bool canAdd = roles.Any(r => r.RoleId == "1" || r.RoleId == "3" || r.RoleId == "4" || r.RoleId == "6");
         bool canApprove = roles.Any(r => r.RoleId == "4");
+        var branchCodes = user.BranchDetails?.Select(b => b.BranchCode).Where(b => b != null).ToList();
 
-        var stats = await _dbService.GetZHStatsAsync(user.EmpCode!, user.ComCode!);
-        var pending = await _dbService.GetZHPendingAsync(user.EmpCode!, user.ComCode!);
+        var stats = await _dbService.GetZHStatsAsync(user.EmpCode!, user.ComCode!, branchCodes);
+        var pending = await _dbService.GetZHPendingAsync(user.EmpCode!, user.ComCode!, branchCodes);
         var model = new ZHDashboardViewModel
         {
             AwaitingMe = stats.awaitingMe,
@@ -50,13 +51,16 @@ public class ZHController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> AgentLookup(string agcd)
+    public async Task<IActionResult> AgentLookup(string agcd, string dpcd)
     {
         var user = GetUser();
         var agent = await _dbService.GetAgentAsync(agcd, user.ComCode!);
         if (agent == null)
+        {
             return Json(new { found = false });
-        var supplies = await _dbService.GetSupplyAsync(agent.Agcd!, agent.Dpcd!, user.ComCode!);
+        }
+        agent.Dpcd = dpcd;
+        var supplies = await _dbService.GetSupplyAsync(agent.Agcd!, dpcd!, user.ComCode!);
         return Json(new { found = true, agent, supplies });
     }
 
@@ -79,6 +83,7 @@ public class ZHController : Controller
         model.CompCode = user.ComCode;
         model.UnitCode = user.UnitCode;
         model.ZoneCode = user.Zone;
+        model.EmployeeCode = user.EmpCode;
 
         var hasPending = await _dbService.HasPendingRequestAsync(model.Agcd!, model.Dpcd!, user.ComCode!);
         if (hasPending)
@@ -92,7 +97,7 @@ public class ZHController : Controller
     public async Task<IActionResult> History()
     {
         var user = GetUser();
-        var list = await _dbService.GetSEHistoryAsync(user.UserId!, user.ComCode!);
+        var list = await _dbService.GetSEHistoryAsync(user.EmpCode!, user.ComCode!);
         return View("~/Views/Home/History.cshtml", list);
     }
 

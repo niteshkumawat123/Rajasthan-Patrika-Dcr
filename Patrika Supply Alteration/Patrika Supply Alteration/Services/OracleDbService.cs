@@ -152,7 +152,7 @@ public class OracleDbService
                      LEFT JOIN CIR_PLI_HIERARCHY CPH ON CPH.CODE = CEM.HIERARCHY_CODE
                      WHERE 
                         ISACTIVEFORPLI = 'Y' 
-                       AND EMPLOYEE_CODE = :EmployeeCode"";";
+                       AND EMPLOYEE_CODE = :EmployeeCode";
 
             using (var cmd1 = new OracleCommand(sql1, conn))
             {
@@ -735,7 +735,7 @@ public class OracleDbService
                         FROM APP_CIR_SUPPLY_APPROVAL AP1
                         WHERE AP1.ACTION_DATE = (SELECT MAX(AP2.ACTION_DATE) FROM APP_CIR_SUPPLY_APPROVAL AP2 WHERE AP2.REQ_ID = AP1.REQ_ID)
                     ) AP ON AP.REQ_ID = R.REQ_ID
-                    LEFT JOIN LOGIN LGN ON LGN.""userid"" = R.USERID
+                    LEFT JOIN LOGIN LGN ON LGN.HR_CODE = R.USERID
                     LEFT JOIN HR_EMP_MST HEM ON LGN.HR_CODE = HEM.EMP_CODE
                     WHERE R.USERID = :SE_USERID AND R.COMP_CODE = :COMP_CODE
                     ORDER BY R.CREATION_DATE DESC";
@@ -751,12 +751,18 @@ public class OracleDbService
     }
 
     // QUERY 11: ZH stats
-    public async Task<(int awaitingMe, int atHo, int approved, int rejected)> GetZHStatsAsync(string empCode, string compCode)
+    public async Task<(int awaitingMe, int atHo, int approved, int rejected)> GetZHStatsAsync(string empCode, string compCode, List<string?>? branchCodes)
     {
         using var conn = GetConnection();
         await conn.OpenAsync();
 
-        var sql = @"
+        var branchParams = new List<string>();
+        for (int i = 0; i < branchCodes.Count; i++)
+        {
+            branchParams.Add("'" + (branchCodes[i] ?? "").Replace("'", "''") + "'");
+        }
+
+        var sql = $@"
         SELECT
             COUNT(CASE WHEN STATUS = 'PENDING_ZH' THEN 1 END) AS AWAITING_ME,
             COUNT(CASE WHEN STATUS = 'PENDING_HO' THEN 1 END) AS AT_HO,
@@ -764,29 +770,12 @@ public class OracleDbService
             COUNT(CASE WHEN STATUS IN ('REJECTED', 'ZH_REJECTED') THEN 1 END) AS REJECTED
         FROM APP_CIR_SUPPLY_REQ
         WHERE COMP_CODE = :COMP_CODE
-          AND AGCD IN (
-                SELECT CA.AGCD
-                FROM CIR_AGMAST CA
-                JOIN CIR_EXECUTIVE_MAST CEM 
-                    ON CA.EXECUTIVE_CODE = CEM.EXECUTIVE_CODE
-                JOIN HR_EMP_MST HEM 
-                    ON HEM.EMP_CODE = CEM.HR_CODE
-                JOIN LOGIN LLL 
-                    ON LLL.HR_CODE = HEM.EMP_CODE
-                WHERE CEM.ISACTIVEFORPLI = 'Y'
-                  AND CA.DPCD = '0001'
-                  AND LLL.STATUS = 'A'
-                  AND CA.SUSPEND = 'N'
-                  AND HEM.EMP_CODE = :EMP_CODE
-          )";
+          AND UNIT_CODE IN ({string.Join(",", branchParams)})";
 
         using var cmd = new OracleCommand(sql, conn);
-
         cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
-        cmd.Parameters.Add(new OracleParameter("EMP_CODE", empCode));
 
         using var reader = await cmd.ExecuteReaderAsync();
-
         if (await reader.ReadAsync())
         {
             return (
@@ -796,93 +785,67 @@ public class OracleDbService
                 Convert.ToInt32(reader["REJECTED"])
             );
         }
-
         return (0, 0, 0, 0);
-    }
-    // QUERY 12: ZH pending requests
-    public async Task<List<SupplyRequestViewModel>> GetZHPendingAsync(string empCode, string compCode)
+    }    // QUERY 12: ZH pending requests
+    public async Task<List<SupplyRequestViewModel>> GetZHPendingAsync(string empCode, string compCode, List<string?>? branchCodes)
     {
         var list = new List<SupplyRequestViewModel>();
-
         using var conn = GetConnection();
         await conn.OpenAsync();
 
-        var sql = @"
-SELECT 
-    R.REQ_ID,
-    R.AGCD,
-    R.DPCD,
-    R.PUBL,
-    R.EDTN,
-    R.BASE_SUPPLY,
-    R.INC_DEC,
-    R.CHANGED_SUPPLY,
-    R.REASON_CODE,
-    R.REMARKS,
-    R.USERID,
-    R.CREATION_DATE,
-    R.CHANGED_SUPPLY_DATE,
-    R.STATUS,
-    A.AG_NAME,
-    A.BRANCH_CODE,
-    HEM.NAME AS CREATION_BY,
-    HEM.EMP_CODE,
+        var branchParams = new List<string>();
+        for (int i = 0; i < branchCodes.Count; i++)
+        {
+            branchParams.Add("'" + (branchCodes[i] ?? "").Replace("'", "''") + "'");
+        }
 
-    (
-        SELECT FF.DROP_POINT_NAME
-        FROM CIR_DROP_POINT_MAST FF
-        WHERE  FF.DROP_POINT = A.STATION_CODE
-        AND
-           ROWNUM = 1
-    ) AS DROP_POINT_NAME
-
-FROM APP_CIR_SUPPLY_REQ R
-
-LEFT JOIN CIR_AGMAST A 
-    ON A.AGCD = R.AGCD
-   AND A.DPCD = R.DPCD
-   AND A.COMP_CODE = R.COMP_CODE
-LEFT JOIN HR_EMP_MST HEM ON HEM.EMP_CODE = R.USERID
-
-
-
-
-WHERE R.STATUS = 'PENDING_ZH'
-  AND R.COMP_CODE = :COMP_CODE
-  AND R.AGCD IN (
-        SELECT CA.AGCD
-        FROM CIR_AGMAST CA
-        JOIN CIR_EXECUTIVE_MAST CEM
-            ON CA.EXECUTIVE_CODE = CEM.EXECUTIVE_CODE
-        JOIN HR_EMP_MST HEM
-            ON HEM.EMP_CODE = CEM.HR_CODE
-        JOIN LOGIN LLL
-            ON LLL.HR_CODE = HEM.EMP_CODE
-        WHERE CEM.ISACTIVEFORPLI = 'Y'
-          AND CA.DPCD = '0001'
-          AND LLL.STATUS = 'A'
-          AND CA.SUSPEND = 'N'
-          AND HEM.EMP_CODE = :EMP_CODE
-  )
-
-ORDER BY R.CREATION_DATE ASC
-";
+        var sql = $@"
+        SELECT 
+            R.REQ_ID,
+            R.AGCD,
+            R.DPCD,
+            R.PUBL,
+            R.EDTN,
+            R.BASE_SUPPLY,
+            R.INC_DEC,
+            R.CHANGED_SUPPLY,
+            R.REASON_CODE,
+            R.REMARKS,
+            R.USERID,
+            R.CREATION_DATE,
+            R.CHANGED_SUPPLY_DATE,
+            R.STATUS,
+            A.AG_NAME,
+            A.BRANCH_CODE,
+            HEM.NAME AS CREATION_BY,
+            HEM.EMP_CODE,
+            (
+                SELECT FF.DROP_POINT_NAME
+                FROM CIR_DROP_POINT_MAST FF
+                WHERE FF.DROP_POINT = A.STATION_CODE
+                AND ROWNUM = 1
+            ) AS DROP_POINT_NAME
+        FROM APP_CIR_SUPPLY_REQ R
+        LEFT JOIN CIR_AGMAST A 
+            ON A.AGCD = R.AGCD
+           AND A.DPCD = R.DPCD
+           AND A.COMP_CODE = R.COMP_CODE
+        LEFT JOIN HR_EMP_MST HEM ON HEM.EMP_CODE = R.USERID
+        WHERE R.STATUS = 'PENDING_ZH'
+          AND R.COMP_CODE = :COMP_CODE
+          AND R.UNIT_CODE IN ({string.Join(",", branchParams)})
+        ORDER BY R.CREATION_DATE ASC";
 
         using var cmd = new OracleCommand(sql, conn);
-
         cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
-        cmd.Parameters.Add(new OracleParameter("EMP_CODE", empCode));
 
         using var reader = await cmd.ExecuteReaderAsync();
-
         while (await reader.ReadAsync())
         {
             list.Add(MapSupplyRequest(reader));
         }
-
         return list;
-    }
-    // QUERY 13: ZH Approve/Reject
+    }    // QUERY 13: ZH Approve/Reject
     // Logic: If increase <= 10% of base supply, ZH approval pushes directly to ERP.
     //        If increase > 10% or decrease, forward to HO for second-level approval.
     public async Task<bool> ZHApproveRejectAsync(decimal reqId, string action, string zhUserId, string remarks, string compCode)
