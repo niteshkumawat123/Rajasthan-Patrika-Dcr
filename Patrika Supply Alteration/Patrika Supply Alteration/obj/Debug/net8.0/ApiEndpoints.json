@@ -1,1 +1,34 @@
-[]
+[
+  {
+    "ContainingType": "DCRSupplyApp.Controllers.NotificationController",
+    "Method": "RegisterToken",
+    "RelativePath": "api/Notification/register-token",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "DCRSupplyApp.Controllers.RegisterTokenRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DCRSupplyApp.Controllers.NotificationController",
+    "Method": "RemoveToken",
+    "RelativePath": "api/Notification/remove-token",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "DCRSupplyApp.Controllers.RegisterTokenRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]

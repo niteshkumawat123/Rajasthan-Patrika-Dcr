@@ -47,4 +47,5 @@ public class SupplyRequestViewModel
     public int? SupplySat { get; set; }
     public int? SupplySun { get; set; }
     public bool DayWiseEnabled { get; set; }
+    public int IsDaywiseSupply { get; set; }
 }

@@ -678,14 +678,14 @@ public class OracleDbService
                         BASE_SUPPLY, INC_DEC, CHANGED_SUPPLY,
                         REASON_CODE, ZONE_CODE, USERID, CREATION_DATE,
                         CHANGED_SUPPLY_DATE, REMARKS, STATUS, ERP_PUSH_FLAG,
-                        SUPPLY_MON, SUPPLY_TUE, SUPPLY_WED, SUPPLY_THU, SUPPLY_FRI, SUPPLY_SAT, SUPPLY_SUN
+                        SUPPLY_MON, SUPPLY_TUE, SUPPLY_WED, SUPPLY_THU, SUPPLY_FRI, SUPPLY_SAT, SUPPLY_SUN, IS_DAYWISE_SUPPLY
                         ) VALUES (
                         SEQ_SUPPLY_REQ.NEXTVAL, :COMP_CODE, :UNIT_CODE, :AGCD, :DPCD,
                         :PUBL, :EDTN, :SUPPLY_TYPE_CODE,
                         :BASE_SUPPLY, :INC_DEC, :CHANGED_SUPPLY,
                         :REASON_CODE, :ZONE_CODE, :SE_USERID, SYSDATE,
                         :CHANGED_SUPPLY_DATE, :REMARKS, 'PENDING_ZH', 'N',
-                        :SUPPLY_MON, :SUPPLY_TUE, :SUPPLY_WED, :SUPPLY_THU, :SUPPLY_FRI, :SUPPLY_SAT, :SUPPLY_SUN)";
+                        :SUPPLY_MON, :SUPPLY_TUE, :SUPPLY_WED, :SUPPLY_THU, :SUPPLY_FRI, :SUPPLY_SAT, :SUPPLY_SUN, :IS_DAYWISE_SUPPLY)";
             using var cmd = new OracleCommand(sql, conn);
             cmd.Parameters.Add(new OracleParameter("COMP_CODE", model.CompCode));
             cmd.Parameters.Add(new OracleParameter("UNIT_CODE", model.UnitCode));
@@ -709,6 +709,7 @@ public class OracleDbService
             cmd.Parameters.Add(new OracleParameter("SUPPLY_FRI", model.SupplyFri ?? (object)DBNull.Value));
             cmd.Parameters.Add(new OracleParameter("SUPPLY_SAT", model.SupplySat ?? (object)DBNull.Value));
             cmd.Parameters.Add(new OracleParameter("SUPPLY_SUN", model.SupplySun ?? (object)DBNull.Value));
+            cmd.Parameters.Add(new OracleParameter("IS_DAYWISE_SUPPLY", model.IsDaywiseSupply));
             await cmd.ExecuteNonQueryAsync();
             return true;
         }
@@ -975,7 +976,8 @@ public class OracleDbService
                 if (action == "APPROVED")
                 {
                     // Fetch request details to determine routing
-                    var sqlFetch = @"SELECT INC_DEC, BASE_SUPPLY, CHANGED_SUPPLY, UNIT_CODE, AGCD, DPCD, PUBL, EDTN, SUPPLY_TYPE_CODE, CHANGED_SUPPLY_DATE
+                    var sqlFetch = @"SELECT INC_DEC, BASE_SUPPLY, CHANGED_SUPPLY, UNIT_CODE, AGCD, DPCD, PUBL, EDTN, SUPPLY_TYPE_CODE, CHANGED_SUPPLY_DATE,
+                                     IS_DAYWISE_SUPPLY, SUPPLY_MON, SUPPLY_TUE, SUPPLY_WED, SUPPLY_THU, SUPPLY_FRI, SUPPLY_SAT, SUPPLY_SUN
                                      FROM APP_CIR_SUPPLY_REQ WHERE REQ_ID = :REQ_ID";
                     using var cmdFetch = new OracleCommand(sqlFetch, conn) { Transaction = txn };
                     cmdFetch.Parameters.Add(new OracleParameter("REQ_ID", reqId));
@@ -992,6 +994,14 @@ public class OracleDbService
                     var edtn = rdr["EDTN"]?.ToString() ?? "";
                     var supplyTypeCode = rdr["SUPPLY_TYPE_CODE"]?.ToString() ?? "";
                     var changedSupplyDate = rdr["CHANGED_SUPPLY_DATE"] as DateTime?;
+                    var isDaywiseSupply = rdr["IS_DAYWISE_SUPPLY"] != DBNull.Value ? Convert.ToInt32(rdr["IS_DAYWISE_SUPPLY"]) : 0;
+                    int? zhSupMon = rdr["SUPPLY_MON"] != DBNull.Value ? Convert.ToInt32(rdr["SUPPLY_MON"]) : null;
+                    int? zhSupTue = rdr["SUPPLY_TUE"] != DBNull.Value ? Convert.ToInt32(rdr["SUPPLY_TUE"]) : null;
+                    int? zhSupWed = rdr["SUPPLY_WED"] != DBNull.Value ? Convert.ToInt32(rdr["SUPPLY_WED"]) : null;
+                    int? zhSupThu = rdr["SUPPLY_THU"] != DBNull.Value ? Convert.ToInt32(rdr["SUPPLY_THU"]) : null;
+                    int? zhSupFri = rdr["SUPPLY_FRI"] != DBNull.Value ? Convert.ToInt32(rdr["SUPPLY_FRI"]) : null;
+                    int? zhSupSat = rdr["SUPPLY_SAT"] != DBNull.Value ? Convert.ToInt32(rdr["SUPPLY_SAT"]) : null;
+                    int? zhSupSun = rdr["SUPPLY_SUN"] != DBNull.Value ? Convert.ToInt32(rdr["SUPPLY_SUN"]) : null;
                     rdr.Close();
 
                     // Determine if ZH-only approval (increase <= 10%)
@@ -1027,15 +1037,37 @@ public class OracleDbService
                         await cmd2.ExecuteNonQueryAsync();
 
                         // Push to ERP (update CIR_SUPPLY)
-                        var sql3 = @"UPDATE CIR_SUPPLY SET
-                                    BASE_SUPPLY=:CHANGED_SUPPLY, SUPPLY_MON=:CHANGED_SUPPLY, SUPPLY_TUE=:CHANGED_SUPPLY,
-                                    SUPPLY_WED=:CHANGED_SUPPLY, SUPPLY_THU=:CHANGED_SUPPLY, SUPPLY_FRI=:CHANGED_SUPPLY,
-                                    SUPPLY_SAT=:CHANGED_SUPPLY, SUPPLY_SUN=:CHANGED_SUPPLY,
+                        string sql3;
+                        if (isDaywiseSupply == 1)
+                        {
+                            sql3 = @"UPDATE CIR_SUPPLY SET
+                                    BASE_SUPPLY=:CHANGED_SUPPLY, SUPPLY_MON=:SUPPLY_MON, SUPPLY_TUE=:SUPPLY_TUE,
+                                    SUPPLY_WED=:SUPPLY_WED, SUPPLY_THU=:SUPPLY_THU, SUPPLY_FRI=:SUPPLY_FRI,
+                                    SUPPLY_SAT=:SUPPLY_SAT, SUPPLY_SUN=:SUPPLY_SUN,
                                     SUPPLY_EFFECTIVE_DATE=:CHANGED_SUPPLY_DATE, UPDATED_BY=:ZH_USERID, UPDATED_DT=SYSDATE
                                     WHERE COMP_CODE=:COMP_CODE AND UNIT=:UNIT_CODE AND AGCD=:AGCD AND DPCD=:DPCD
                                     AND PUBL=:PUBL AND EDTN=:EDTN AND SUPPLY_TYPE_CODE=:SUPPLY_TYPE_CODE";
+                        }
+                        else
+                        {
+                            sql3 = @"UPDATE CIR_SUPPLY SET
+                                    BASE_SUPPLY=:CHANGED_SUPPLY,
+                                    SUPPLY_EFFECTIVE_DATE=:CHANGED_SUPPLY_DATE, UPDATED_BY=:ZH_USERID, UPDATED_DT=SYSDATE
+                                    WHERE COMP_CODE=:COMP_CODE AND UNIT=:UNIT_CODE AND AGCD=:AGCD AND DPCD=:DPCD
+                                    AND PUBL=:PUBL AND EDTN=:EDTN AND SUPPLY_TYPE_CODE=:SUPPLY_TYPE_CODE";
+                        }
                         using var cmd3 = new OracleCommand(sql3, conn) { Transaction = txn };
                         cmd3.Parameters.Add(new OracleParameter("CHANGED_SUPPLY", changedSupply));
+                        if (isDaywiseSupply == 1)
+                        {
+                            cmd3.Parameters.Add(new OracleParameter("SUPPLY_MON", zhSupMon ?? (object)DBNull.Value));
+                            cmd3.Parameters.Add(new OracleParameter("SUPPLY_TUE", zhSupTue ?? (object)DBNull.Value));
+                            cmd3.Parameters.Add(new OracleParameter("SUPPLY_WED", zhSupWed ?? (object)DBNull.Value));
+                            cmd3.Parameters.Add(new OracleParameter("SUPPLY_THU", zhSupThu ?? (object)DBNull.Value));
+                            cmd3.Parameters.Add(new OracleParameter("SUPPLY_FRI", zhSupFri ?? (object)DBNull.Value));
+                            cmd3.Parameters.Add(new OracleParameter("SUPPLY_SAT", zhSupSat ?? (object)DBNull.Value));
+                            cmd3.Parameters.Add(new OracleParameter("SUPPLY_SUN", zhSupSun ?? (object)DBNull.Value));
+                        }
                         cmd3.Parameters.Add(new OracleParameter("CHANGED_SUPPLY_DATE", changedSupplyDate));
                         cmd3.Parameters.Add(new OracleParameter("ZH_USERID", zhUserId));
                         cmd3.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
@@ -1122,20 +1154,27 @@ public class OracleDbService
     }
 
     // QUERY 14: HO stats
-    public async Task<(int awaitingHo, int hoApproved, int totalIncreased, int totalDecreased)> GetHOStatsAsync(string compCode, DateTime selectedDate)
+    public async Task<(int awaitingHo, int hoApproved, int totalIncreased, int totalDecreased)> GetHOStatsAsync(string compCode, DateTime selectedDate, List<string?>? branchCodes)
     {
         using var conn = GetConnection();
         await conn.OpenAsync();
-        var sql = @"SELECT
+        var branchParams = new List<string>();
+        for (int i = 0; i < branchCodes.Count; i++)
+        {
+            branchParams.Add("'" + (branchCodes[i] ?? "").Replace("'", "''") + "'");
+        }
+
+        var sql = $@"SELECT
                     COUNT(CASE WHEN STATUS = 'PENDING_HO' THEN 1 END) AS AWAITING_HO,
                     COUNT(CASE WHEN STATUS = 'HO_APPROVED' THEN 1 END) AS HO_APPROVED,
                     NVL(SUM(CASE WHEN INC_DEC = 'I' AND STATUS = 'HO_APPROVED' THEN (CHANGED_SUPPLY - BASE_SUPPLY) ELSE 0 END),0) AS TOTAL_INCREASED,
                     NVL(SUM(CASE WHEN INC_DEC = 'D' AND STATUS = 'HO_APPROVED' THEN (BASE_SUPPLY - CHANGED_SUPPLY) ELSE 0 END),0) AS TOTAL_DECREASED
                     FROM APP_CIR_SUPPLY_REQ
-                     ";
+                    WHERE COMP_CODE = :COMP_CODE
+                    AND UNIT_CODE IN ({string.Join(",", branchParams)})";
+                    
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
-        cmd.Parameters.Add(new OracleParameter("SELECTED_DATE", selectedDate));
         using var reader = await cmd.ExecuteReaderAsync();
         if (await reader.ReadAsync())
         {
@@ -1150,25 +1189,33 @@ public class OracleDbService
     }
 
     // QUERY 15: HO pending list
-    public async Task<List<SupplyRequestViewModel>> GetHOPendingAsync(string compCode)
+    public async Task<List<SupplyRequestViewModel>> GetHOPendingAsync(string compCode, List<string?>? branchCodes)
     {
         var list = new List<SupplyRequestViewModel>();
         using var conn = GetConnection();
         await conn.OpenAsync();
-        var sql = @"SELECT R.REQ_ID, R.AGCD, R.DPCD, R.PUBL, R.EDTN,
+        var branchParams = new List<string>();
+        for (int i = 0; i < branchCodes.Count; i++)
+        {
+            branchParams.Add("'" + (branchCodes[i] ?? "").Replace("'", "''") + "'");
+        }
+
+
+        var sql = $@"SELECT R.REQ_ID, R.AGCD, R.DPCD, R.PUBL, R.EDTN,
                     R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
                     R.REASON_CODE, R.ZONE_CODE, R.USERID, R.CREATION_DATE, R.CHANGED_SUPPLY_DATE,
                     A.AG_NAME, A.BRANCH_CODE,
                     ZH_AP.ACTION_BY AS ZH_APPROVED_BY,
                     ZH_AP.REMARKS AS ZH_REMARKS,
                     ZH_AP.ACTION_DATE AS ZH_ACTION_DATE,R.STATUS,HEM.EMP_CODE , HEM.NAME AS CREATION_BY,
-                    AP.REMARKS AS APPROVER_REMARKS,NULL AS DROP_POINT_NAME
+                    AP.REMARKS AS APPROVER_REMARKS,NULL AS DROP_POINT_NAME,R.UNIT_CODE,R.SUPPLY_TYPE_CODE
                     FROM APP_CIR_SUPPLY_REQ R
                     LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
                     LEFT JOIN hr_emp_mst HEM ON HEM.EMP_CODE = R.USERID
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
                     LEFT JOIN APP_CIR_SUPPLY_APPROVAL ZH_AP ON ZH_AP.REQ_ID = R.REQ_ID AND ZH_AP.APPROVAL_LEVEL = 'ZH' AND ZH_AP.APPR_ACTION = 'APPROVED'
-                    WHERE R.STATUS = 'PENDING_HO' 
+                    WHERE R.STATUS = 'PENDING_HO' AND R.COMP_CODE = :COMP_CODE
+                    AND R.UNIT_CODE IN ({string.Join(",", branchParams)})
                     ORDER BY R.CREATION_DATE ASC";
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
@@ -1214,17 +1261,61 @@ public class OracleDbService
                 cmd2.Parameters.Add(new OracleParameter("REQ_ID", reqId));
                 await cmd2.ExecuteNonQueryAsync();
 
-                // Step 3
-                var sql3 = @"UPDATE CIR_SUPPLY SET
-                            BASE_SUPPLY=:CHANGED_SUPPLY, SUPPLY_MON=:CHANGED_SUPPLY, SUPPLY_TUE=:CHANGED_SUPPLY,
-                            SUPPLY_WED=:CHANGED_SUPPLY, SUPPLY_THU=:CHANGED_SUPPLY, SUPPLY_FRI=:CHANGED_SUPPLY,
-                            SUPPLY_SAT=:CHANGED_SUPPLY, SUPPLY_SUN=:CHANGED_SUPPLY,
-                            SUPPLY_EFFECTIVE_DATE=:CHANGED_SUPPLY_DATE, UPDATED_BY=:HO_USERID, UPDATED_DT=SYSDATE
+                // Step 3: Check if day-wise supply is enabled
+                int isDaywiseSupply = 0;
+                int? supMon = null, supTue = null, supWed = null, supThu = null, supFri = null, supSat = null, supSun = null;
+                var sqlDaywise = @"SELECT IS_DAYWISE_SUPPLY, SUPPLY_MON, SUPPLY_TUE, SUPPLY_WED, SUPPLY_THU, SUPPLY_FRI, SUPPLY_SAT, SUPPLY_SUN
+                                   FROM APP_CIR_SUPPLY_REQ WHERE REQ_ID = :REQ_ID";
+                using var cmdDaywise = new OracleCommand(sqlDaywise, conn) { Transaction = txn };
+                cmdDaywise.Parameters.Add(new OracleParameter("REQ_ID", reqId));
+                using var rdrDaywise = await cmdDaywise.ExecuteReaderAsync();
+                if (await rdrDaywise.ReadAsync())
+                {
+                    isDaywiseSupply = rdrDaywise["IS_DAYWISE_SUPPLY"] != DBNull.Value ? Convert.ToInt32(rdrDaywise["IS_DAYWISE_SUPPLY"]) : 0;
+                    if (isDaywiseSupply == 1)
+                    {
+                        supMon = rdrDaywise["SUPPLY_MON"] != DBNull.Value ? Convert.ToInt32(rdrDaywise["SUPPLY_MON"]) : null;
+                        supTue = rdrDaywise["SUPPLY_TUE"] != DBNull.Value ? Convert.ToInt32(rdrDaywise["SUPPLY_TUE"]) : null;
+                        supWed = rdrDaywise["SUPPLY_WED"] != DBNull.Value ? Convert.ToInt32(rdrDaywise["SUPPLY_WED"]) : null;
+                        supThu = rdrDaywise["SUPPLY_THU"] != DBNull.Value ? Convert.ToInt32(rdrDaywise["SUPPLY_THU"]) : null;
+                        supFri = rdrDaywise["SUPPLY_FRI"] != DBNull.Value ? Convert.ToInt32(rdrDaywise["SUPPLY_FRI"]) : null;
+                        supSat = rdrDaywise["SUPPLY_SAT"] != DBNull.Value ? Convert.ToInt32(rdrDaywise["SUPPLY_SAT"]) : null;
+                        supSun = rdrDaywise["SUPPLY_SUN"] != DBNull.Value ? Convert.ToInt32(rdrDaywise["SUPPLY_SUN"]) : null;
+                    }
+                }
+                rdrDaywise.Close();
+
+                string sql3;
+                if (isDaywiseSupply == 1)
+                {
+                    sql3 = @"UPDATE CIR_SUPPLY SET
+                            BASE_SUPPLY=:CHANGED_SUPPLY, SUPPLY_MON=:SUPPLY_MON, SUPPLY_TUE=:SUPPLY_TUE,
+                            SUPPLY_WED=:SUPPLY_WED, SUPPLY_THU=:SUPPLY_THU, SUPPLY_FRI=:SUPPLY_FRI,
+                            SUPPLY_SAT=:SUPPLY_SAT, SUPPLY_SUN=:SUPPLY_SUN,
+                            SUPPLY_EFFECTIVE_DATE=SYSDATE, UPDATED_BY=:HO_USERID, UPDATED_DT=SYSDATE
                             WHERE COMP_CODE=:COMP_CODE AND UNIT=:UNIT_CODE AND AGCD=:AGCD AND DPCD=:DPCD
                             AND PUBL=:PUBL AND EDTN=:EDTN AND SUPPLY_TYPE_CODE=:SUPPLY_TYPE_CODE";
+                }
+                else
+                {
+                    sql3 = @"UPDATE CIR_SUPPLY SET
+                            BASE_SUPPLY=:CHANGED_SUPPLY,
+                            SUPPLY_EFFECTIVE_DATE=SYSDATE, UPDATED_BY=:HO_USERID, UPDATED_DT=SYSDATE
+                            WHERE COMP_CODE=:COMP_CODE AND UNIT=:UNIT_CODE AND AGCD=:AGCD AND DPCD=:DPCD
+                            AND PUBL=:PUBL AND EDTN=:EDTN AND SUPPLY_TYPE_CODE=:SUPPLY_TYPE_CODE";
+                }
                 using var cmd3 = new OracleCommand(sql3, conn) { Transaction = txn };
                 cmd3.Parameters.Add(new OracleParameter("CHANGED_SUPPLY", changedSupply));
-                cmd3.Parameters.Add(new OracleParameter("CHANGED_SUPPLY_DATE", changedSupplyDate));
+                if (isDaywiseSupply == 1)
+                {
+                    cmd3.Parameters.Add(new OracleParameter("SUPPLY_MON", supMon ?? (object)DBNull.Value));
+                    cmd3.Parameters.Add(new OracleParameter("SUPPLY_TUE", supTue ?? (object)DBNull.Value));
+                    cmd3.Parameters.Add(new OracleParameter("SUPPLY_WED", supWed ?? (object)DBNull.Value));
+                    cmd3.Parameters.Add(new OracleParameter("SUPPLY_THU", supThu ?? (object)DBNull.Value));
+                    cmd3.Parameters.Add(new OracleParameter("SUPPLY_FRI", supFri ?? (object)DBNull.Value));
+                    cmd3.Parameters.Add(new OracleParameter("SUPPLY_SAT", supSat ?? (object)DBNull.Value));
+                    cmd3.Parameters.Add(new OracleParameter("SUPPLY_SUN", supSun ?? (object)DBNull.Value));
+                }
                 cmd3.Parameters.Add(new OracleParameter("HO_USERID", hoUserId));
                 cmd3.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
                 cmd3.Parameters.Add(new OracleParameter("UNIT_CODE", unitCode));
@@ -1260,7 +1351,10 @@ public class OracleDbService
             }
             catch { txn.Rollback(); return false; }
         }
-        catch { return false; }
+        catch(Exception ex)
+        { 
+            return false;
+        }
     }
 
     // QUERY 17: Branch-wise summary
@@ -1455,6 +1549,8 @@ public class OracleDbService
             DropPointName = HasColumn(reader, "DROP_POINT_NAME") ? reader["DROP_POINT_NAME"]?.ToString() : null,
             CreationBy = HasColumn(reader, "CREATION_BY") ? reader["CREATION_BY"]?.ToString() : null,
             CreationByCode = HasColumn(reader, "EMP_CODE") ? reader["EMP_CODE"]?.ToString() : null,
+            BranchCode = HasColumn(reader, "UNIT_CODE") ? reader["UNIT_CODE"]?.ToString() : null,
+            SupplyTypeCode = HasColumn(reader, "SUPPLY_TYPE_CODE") ? reader["SUPPLY_TYPE_CODE"]?.ToString() : null,
 
 
         };

@@ -1,7 +1,10 @@
 wwwroot\css\site.css
 wwwroot\css\style.css
 wwwroot\favicon.ico
+wwwroot\firebase-messaging-sw.js
 wwwroot\js\app.js
+wwwroot\js\firebase-init.js
+wwwroot\js\firebase-notifications.js
 wwwroot\js\site.js
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map

@@ -30,13 +30,26 @@
             <div class="section-title" id="section-title-text">Pending HO Approval</div>
             <span class="status-pill pending" id="section-count">@Model.PendingRequests.Count</span>
         </div>
+        <div id="filter-bar" style="display:none;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+            <select id="branch-filter" onchange="applyFilters()" style="padding:6px 10px;border-radius:8px;border:1px solid #ddd;font-size:12px;">
+                <option value="">All Branches</option>
+                @if(Model.User?.BranchDetails != null){
+                    @foreach(var b in Model.User.BranchDetails.Where(x => x.BranchCode != null).Select(x => x.BranchCode).Distinct()){
+                        <option value="@b">@b</option>
+                    }
+                }
+            </select>
+            <select id="approvedby-filter" onchange="applyFilters()" style="padding:6px 10px;border-radius:8px;border:1px solid #ddd;font-size:12px;display:none;">
+                <option value="">All Approved By</option>
+            </select>
+        </div>
         <div id="filtered-list" style="display:flex;flex-direction:column;gap:8px;">
             @foreach (var req in Model.PendingRequests)
             {
                 <div class="req-item" onclick="openAuditModal(@req.ReqId)">
                     <div class="req-icon @(req.IncDec=="I"?"increase":"decrease")">@(req.IncDec=="I"?"📈":"📉")</div>
                     <div class="req-info">
-                        <div class="req-agent">@req.AgName</div>
+                        <div class="req-agent">@req.AgName &middot;(@req.Agcd) </div>
                         <div class="req-meta">
                             <span style="background:rgba(78,140,255,0.1);padding:2px 7px;border-radius:6px;font-size:11px;">@req.Publ / @req.Edtn</span>
                             @if(!string.IsNullOrEmpty(req.BranchCode)){
@@ -44,7 +57,7 @@
                             }
                             <span style="font-size:11px;color:var(--muted);">@req.CreationDate?.ToString("dd MMM yyyy")</span>
                         </div>
-                        <div class="req-by">@req.Agcd &middot; @req.BaseSupply → @req.ChangedSupply @(req.IncDec=="I"?"↑":"↓") &middot; By @req.CreationBy</div>
+                        <div class="req-by"> @req.BaseSupply → @req.ChangedSupply @(req.IncDec=="I"?"↑":"↓") &middot; By @req.CreationBy</div>
                         @if(req.ZhApprovedBy!=null){
                         <div style="font-size:11px;color:var(--muted);">ZH: @req.ZhApprovedBy @(string.IsNullOrEmpty(req.ZhRemarks) ? "" : $"· {req.ZhRemarks}")</div>
                         }
@@ -82,11 +95,48 @@ function loadFiltered(status){
     let cards=document.querySelectorAll('.stat-card');
     if(cards[idx[status]]) cards[idx[status]].style.outline='2px solid #4e8cff';
 
-    fetch('/HO/FilteredRequests?status='+status).then(r=>r.json()).then(data=>{
+    // Show filter bar and approved-by filter for approved status
+    let filterBar=document.getElementById('filter-bar');
+    filterBar.style.display='flex';
+    let approvedBySelect=document.getElementById('approvedby-filter');
+    approvedBySelect.style.display=(status==='approved')?'inline-block':'none';
+    // Reset filters
+    document.getElementById('branch-filter').value='';
+    approvedBySelect.value='';
+
+    fetchFilteredData(status);
+}
+
+function applyFilters(){
+    fetchFilteredData(activeFilter);
+}
+
+function fetchFilteredData(status){
+    let branch=document.getElementById('branch-filter').value;
+    let approvedBy=document.getElementById('approvedby-filter').value;
+    let url='/HO/FilteredRequests?status='+status;
+    if(branch) url+='&branch='+encodeURIComponent(branch);
+    if(approvedBy) url+='&approvedBy='+encodeURIComponent(approvedBy);
+
+    document.getElementById('filtered-list').innerHTML='<div style="text-align:center;padding:20px;color:#999;">Loading...</div>';
+
+    fetch(url).then(r=>r.json()).then(data=>{
         document.getElementById('section-count').textContent=data.length;
         if(!data||data.length===0){
             document.getElementById('filtered-list').innerHTML='<div style="text-align:center;padding:20px;color:#999;">No records found</div>';
             return;
+        }
+
+        // Populate approved-by dropdown if status is approved
+        if(status==='approved'){
+            let approvedBySelect=document.getElementById('approvedby-filter');
+            let currentVal=approvedBySelect.value;
+            // Get unique actionBy from full unfiltered set - only repopulate if branch changed
+            let uniqueUsers=[...new Set(data.map(r=>r.actionBy).filter(Boolean))];
+            let opts='<option value="">All Approved By</option>';
+            uniqueUsers.forEach(u=>{opts+='<option value="'+u+'">'+u+'</option>';});
+            approvedBySelect.innerHTML=opts;
+            approvedBySelect.value=currentVal;
         }
         let html='';
         data.forEach(req=>{

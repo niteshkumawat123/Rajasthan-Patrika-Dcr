@@ -10,11 +10,13 @@ public class ZHController : Controller
 {
     private readonly OracleDbService _dbService;
     private readonly SessionService _sessionService;
+    private readonly FirebaseNotificationService _notificationService;
 
-    public ZHController(OracleDbService dbService, SessionService sessionService)
+    public ZHController(OracleDbService dbService, SessionService sessionService, FirebaseNotificationService notificationService)
     {
         _dbService = dbService;
         _sessionService = sessionService;
+        _notificationService = notificationService;
     }
 
     private UserSessionModel GetUser() => _sessionService.GetUser(HttpContext.Session)!;
@@ -90,6 +92,10 @@ public class ZHController : Controller
             return Json(new { success = false, message = "A pending request already exists for this agency." });
 
         var success = await _dbService.SubmitRequestAsync(model);
+        if (success)
+        {
+            _ = _notificationService.SendToTopicAsync("ZH", "New Supply Request", $"New request submitted by {user.EmpName} for agent {model.Agcd}");
+        }
         return Json(new { success, message = success ? "Request submitted successfully!" : "Failed to submit request." });
     }
 
@@ -105,7 +111,11 @@ public class ZHController : Controller
     public async Task<IActionResult> Approve(decimal reqId, string remarks)
     {
         var user = GetUser();
-        var success = await _dbService.ZHApproveRejectAsync(reqId, "APPROVED", user.UserId!, remarks ?? "", user.ComCode!);
+        var success = await _dbService.ZHApproveRejectAsync(reqId, "APPROVED", user.EmpCode!, remarks ?? "", user.ComCode!);
+        if (success)
+        {
+            _ = _notificationService.SendToTopicAsync("HO", "Request Approved by ZH", $"Request #{reqId} approved by {user.EmpName} and forwarded.");
+        }
         return Json(new { success, message = success ? "Request approved." : "Failed to approve." });
     }
 
@@ -113,7 +123,11 @@ public class ZHController : Controller
     public async Task<IActionResult> Reject(decimal reqId, string remarks)
     {
         var user = GetUser();
-        var success = await _dbService.ZHApproveRejectAsync(reqId, "REJECTED", user.UserId!, remarks ?? "", user.ComCode!);
+        var success = await _dbService.ZHApproveRejectAsync(reqId, "REJECTED", user.EmpCode!, remarks ?? "", user.ComCode!);
+        if (success)
+        {
+            _ = _notificationService.SendToTopicAsync("Executive", "Request Rejected", $"Request #{reqId} has been rejected by ZH.");
+        }
         return Json(new { success, message = success ? "Request rejected." : "Failed to reject." });
     }
 
