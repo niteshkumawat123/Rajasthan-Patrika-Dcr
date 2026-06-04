@@ -15,11 +15,25 @@ public class FirebaseNotificationService
         if (!_initialized)
         {
             var path = Path.Combine(env.ContentRootPath, "firebase-service-account.json");
-            FirebaseApp.Create(new AppOptions
+            if (File.Exists(path))
             {
-                Credential = GoogleCredential.FromFile(path)
-            });
-            _initialized = true;
+                try
+                {
+                    FirebaseApp.Create(new AppOptions
+                    {
+                        Credential = GoogleCredential.FromFile(path)
+                    });
+                    _initialized = true;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Firebase initialization failed: {ex.Message}");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Firebase service account file not found at: {path}");
+            }
         }
     }
 
@@ -47,6 +61,7 @@ public class FirebaseNotificationService
     /// </summary>
     public async Task<bool> SendToUserAsync(string empCode, string title, string body)
     {
+        if (!_initialized) return false;
         if (!_userTokens.TryGetValue(empCode, out var tokens) || tokens.Count == 0)
             return false;
 
@@ -103,6 +118,7 @@ public class FirebaseNotificationService
     /// </summary>
     public async Task SendToTopicAsync(string topic, string title, string body)
     {
+        if (!_initialized) return;
         var message = new Message
         {
             Topic = topic,
@@ -114,14 +130,6 @@ public class FirebaseNotificationService
         };
 
         await FirebaseMessaging.DefaultInstance.SendAsync(message);
-    }
-
-    /// <summary>
-    /// Subscribe user token to a topic (e.g., "ho_users", "zh_users")
-    /// </summary>
-    public async Task SubscribeToTopicAsync(string fcmToken, string topic)
-    {
-        await FirebaseMessaging.DefaultInstance.SubscribeToTopicAsync(new[] { fcmToken }, topic);
     }
 
     public async Task UnsubscribeFromTopicAsync(string fcmToken, string topic)

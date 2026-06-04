@@ -76,8 +76,6 @@ E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supp
 E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\Patrika .47427935.Up2Date
 E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\Patrika Supply Alteration.genruntimeconfig.cache
-E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\firebase-service-account.json
-E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\patrika-supply-alteration-firebase-adminsdk-fbsvc-6bc44518c4.json
 E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\FirebaseAdmin.dll
 E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\Google.Api.Gax.dll
 E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\Google.Api.Gax.Rest.dll
