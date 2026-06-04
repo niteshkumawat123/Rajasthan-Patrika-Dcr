@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <g id="home_icon" transform="translate(-359 -1286)">
+    <rect id="Rectangle_7" data-name="Rectangle 7" width="64" height="64" transform="translate(359 1286)" fill="none"/>
+    <g id="home-smile-svgrepo-com" transform="translate(365 1292)">
+      <path id="Path_7" data-name="Path 7" d="M2,26.5C2,21,2,18.258,3.247,15.98s3.524-3.691,8.079-6.518l4.8-2.98C20.942,3.494,23.35,2,26.01,2s5.067,1.494,9.882,4.482l4.8,2.98c4.555,2.827,6.832,4.24,8.079,6.518S50.019,21,50.019,26.5v3.652c0,9.366,0,14.049-2.813,16.958s-7.34,2.91-16.395,2.91h-9.6c-9.055,0-13.582,0-16.395-2.91S2,39.517,2,30.151Z" fill="none" stroke="#1c274c" stroke-width="4"/>
+      <path id="Path_8" data-name="Path 8" d="M9,16a11.808,11.808,0,0,0,14.17,0" transform="translate(9.925 19.642)" fill="none" stroke="#00bcf2" stroke-linecap="round" stroke-width="4"/>
+    </g>
+  </g>
+</svg>

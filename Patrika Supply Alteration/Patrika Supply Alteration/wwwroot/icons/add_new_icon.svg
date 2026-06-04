@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <g id="add_new_icon" transform="translate(-459 -1286)">
+    <rect id="Rectangle_8" data-name="Rectangle 8" width="64" height="64" transform="translate(459 1286)" fill="none"/>
+    <g id="add-circle-svgrepo-com" transform="translate(464.781 1291.781)">
+      <circle id="Ellipse_1" data-name="Ellipse 1" cx="24" cy="24" r="24" transform="translate(2.219 2.219)" fill="none" stroke="#1c274c" stroke-width="4"/>
+      <path id="Path_9" data-name="Path 9" d="M21.155,15.077H15.077m0,0H9m6.077,0V9m0,6.077v6.077" transform="translate(11.142 11.142)" fill="none" stroke="#00bcf2" stroke-linecap="round" stroke-width="4"/>
+    </g>
+  </g>
+</svg>

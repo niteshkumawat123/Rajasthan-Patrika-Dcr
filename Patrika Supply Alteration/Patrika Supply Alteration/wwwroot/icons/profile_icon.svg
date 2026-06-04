@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <g id="user_icon" transform="translate(-259 -1286)">
+    <rect id="Rectangle_6" data-name="Rectangle 6" width="64" height="64" transform="translate(259 1286)" fill="none"/>
+    <g id="profile-circle-svgrepo-com" transform="translate(265 1292)">
+      <path id="Path_4" data-name="Path 4" d="M16.84,21.872a2.3,2.3,0,0,0-.573,0,7.833,7.833,0,1,1,.573,0Z" transform="translate(9.329 5.872)" fill="none" stroke="#00bcf2" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+      <path id="Path_5" data-name="Path 5" d="M37.451,24.856a23.832,23.832,0,0,1-32.192,0c.239-2.245,1.672-4.442,4.227-6.161,6.543-4.346,17.242-4.346,23.738,0C35.78,20.414,37.213,22.611,37.451,24.856Z" transform="translate(4.525 18.649)" fill="none" stroke="#00bcf2" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+      <path id="Path_6" data-name="Path 6" d="M25.881,49.762A23.881,23.881,0,1,0,2,25.881,23.881,23.881,0,0,0,25.881,49.762Z" fill="none" stroke="#1c274c" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+    </g>
+  </g>
+</svg>
