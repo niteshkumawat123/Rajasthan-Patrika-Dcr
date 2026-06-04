@@ -36,6 +36,7 @@ public class HOController : Controller
             HoApproved = stats.hoApproved,
             TotalIncreased = stats.totalIncreased,
             TotalDecreased = stats.totalDecreased,
+            HoRejected = stats.hoRejected,
             SelectedDate = date,
             PendingRequests = pending,
             User = user
@@ -58,34 +59,74 @@ public class HOController : Controller
         return Json(new { success, message = success ? "Request approved and pushed to ERP." : "Failed to approve." });
     }
 
-    [HttpGet]
-    public async Task<IActionResult> FilteredRequests(string status, string? branch, string? approvedBy)
+    [HttpPost]
+    public async Task<IActionResult> Reject(decimal reqId, string remarks)
     {
         var user = GetUser();
-        var allRequests = await _dbService.GetHOHistoryAsync(user.ComCode!);
-        var filtered = status switch
+        var success = await _dbService.HORejectAsync(reqId, user.EmpCode!, remarks ?? "", user.ComCode!);
+        if (success)
         {
-            "awaiting" => allRequests.Where(r => r.Status == "PENDING_HO").ToList(),
-            "approved" => allRequests.Where(r => r.Status == "HO_APPROVED").ToList(),
-            "increased" => allRequests.Where(r => r.IncDec == "I" && r.Status == "HO_APPROVED").ToList(),
-            "decreased" => allRequests.Where(r => r.IncDec == "D" && r.Status == "HO_APPROVED").ToList(),
-            _ => allRequests
-        };
+            _ = _notificationService.SendToTopicAsync("ZH", "HO Rejected", $"Request #{reqId} rejected by HO.");
+            _ = _notificationService.SendToTopicAsync("Executive", "Request Rejected", $"Request #{reqId} has been rejected by HO.");
+        }
+        return Json(new { success, message = success ? "Request rejected." : "Failed to reject." });
+    }
 
-        if (!string.IsNullOrEmpty(branch))
-            filtered = filtered.Where(r => r.BranchCode == branch).ToList();
+    [HttpGet]
+    public async Task<IActionResult> RejectedByMe()
+    {
+        var user = GetUser();
+        var branchCodes = user.BranchDetails?.Select(b => b.BranchCode).Where(b => b != null).ToList();
+        var allRequests = await _dbService.GetHOHistoryAsync(user.ComCode!, branchCodes);
+        var rejected = allRequests.Where(r => r.Status == "HO_REJECTED" && r.ActionBy == user.EmpCode).ToList();
+        return Json(rejected);
+    }
 
-        if (!string.IsNullOrEmpty(approvedBy))
-            filtered = filtered.Where(r => r.ActionBy == approvedBy).ToList();
+    [HttpGet]
+    public async Task<IActionResult> AwaitingHO()
+    {
+        var user = GetUser();
+        var branchCodes = user.BranchDetails?.Select(b => b.BranchCode).Where(b => b != null).ToList();
+        var pending = await _dbService.GetHOPendingAsync(user.ComCode!, branchCodes);
+        return Json(pending);
+    }
 
-        return Json(filtered);
+    [HttpGet]
+    public async Task<IActionResult> ApprovedByMe()
+    {
+        var user = GetUser();
+        var branchCodes = user.BranchDetails?.Select(b => b.BranchCode).Where(b => b != null).ToList();
+        var allRequests = await _dbService.GetHOHistoryApproveByMeAsync(user.ComCode!, branchCodes);
+        var approved = allRequests.Where(r => r.Status == "HO_APPROVED" && r.ActionBy == user.EmpCode).ToList();
+        return Json(approved);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> IncreasedRequests()
+    {
+        var user = GetUser();
+        var branchCodes = user.BranchDetails?.Select(b => b.BranchCode).Where(b => b != null).ToList();
+        var allRequests = await _dbService.GetHOHistoryIncreaseAndDecrease(user.ComCode!, branchCodes);
+        var increased = allRequests.Where(r => r.IncDec == "I" && r.Status == "HO_APPROVED").ToList();
+        return Json(increased);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> DecreasedRequests()
+    {
+        var user = GetUser();
+        var branchCodes = user.BranchDetails?.Select(b => b.BranchCode).Where(b => b != null).ToList();
+        var allRequests = await _dbService.GetHOHistoryIncreaseAndDecrease(user.ComCode!, branchCodes);
+        var decreased = allRequests.Where(r => r.IncDec == "D" && r.Status == "HO_APPROVED").ToList();
+        return Json(decreased);
     }
 
     [HttpGet]
     public async Task<IActionResult> History()
     {
         var user = GetUser();
-        var list = await _dbService.GetHOHistoryAsync(user.ComCode!);
+        var branchCodes = user.BranchDetails?.Select(b => b.BranchCode).Where(b => b != null).ToList();
+        var list = await _dbService.GetHOHistoryAsync(user.ComCode!, branchCodes);
         return View(list);
     }
 

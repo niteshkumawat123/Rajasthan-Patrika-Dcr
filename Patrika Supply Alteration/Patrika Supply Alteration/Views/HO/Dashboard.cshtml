@@ -1,28 +1,32 @@
 ﻿@model HODashboardViewModel
 <div class="topbar">
-    <div class="topbar-logo">&#x1F4F0; <span>Patrika Supply Alteration</span></div>
+    <div class="topbar-logo"><img src="/icons/japur_ho_icon.svg" width="22" height="22" style="vertical-align:middle;"> <span>Patrika Supply Alteration</span></div>
     <div class="topbar-user">
         <b>@Model.User?.EmpName</b>
         <span class="role-badge role-ho">Jaipur HO</span>
     </div>
 </div>
 <div class="scroll-area">
-    <div class="stats-row fade-in" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">
-        <div class="stat-card orange" onclick="loadFiltered('awaiting')" style="cursor:pointer;padding:10px 6px;min-height:auto;">
-            <div class="stat-num orange" style="font-size:22px;">@Model.AwaitingHo</div>
-            <div class="stat-label" style="font-size:10px;">Awaiting HO</div>
+    <div class="stats-row fade-in" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px;">
+        <div class="stat-card orange" onclick="loadFiltered('awaiting')" style="cursor:pointer;padding:10px 4px;min-height:auto;">
+            <div class="stat-num orange" style="font-size:20px;">@Model.AwaitingHo</div>
+            <div class="stat-label" style="font-size:9px;">Awaiting</div>
         </div>
-        <div class="stat-card green" onclick="loadFiltered('approved')" style="cursor:pointer;padding:10px 6px;min-height:auto;">
-            <div class="stat-num green" style="font-size:22px;">@Model.HoApproved</div>
-            <div class="stat-label" style="font-size:10px;">HO Approved</div>
+        <div class="stat-card green" onclick="loadFiltered('approved')" style="cursor:pointer;padding:10px 4px;min-height:auto;">
+            <div class="stat-num green" style="font-size:20px;">@Model.HoApproved</div>
+            <div class="stat-label" style="font-size:9px;">Approved</div>
         </div>
-        <div class="stat-card blue" onclick="loadFiltered('increased')" style="cursor:pointer;padding:10px 6px;min-height:auto;">
-            <div class="stat-num blue" style="font-size:22px;">@Model.TotalIncreased</div>
-            <div class="stat-label" style="font-size:10px;">Increased</div>
+        <div class="stat-card blue" onclick="loadFiltered('increased')" style="cursor:pointer;padding:10px 4px;min-height:auto;">
+            <div class="stat-num blue" style="font-size:20px;">@Model.TotalIncreased</div>
+            <div class="stat-label" style="font-size:9px;">Increased</div>
         </div>
-        <div class="stat-card red" onclick="loadFiltered('decreased')" style="cursor:pointer;padding:10px 6px;min-height:auto;">
-            <div class="stat-num red" style="font-size:22px;">@Model.TotalDecreased</div>
-            <div class="stat-label" style="font-size:10px;">Decreased</div>
+        <div class="stat-card red" onclick="loadFiltered('decreased')" style="cursor:pointer;padding:10px 4px;min-height:auto;">
+            <div class="stat-num red" style="font-size:20px;">@Model.TotalDecreased</div>
+            <div class="stat-label" style="font-size:9px;">Decreased</div>
+        </div>
+        <div class="stat-card" onclick="loadFiltered('rejected')" style="cursor:pointer;padding:10px 4px;min-height:auto;border:1px solid #e0e0e0;">
+            <div class="stat-num" style="font-size:20px;color:#e74c3c;">@Model.HoRejected</div>
+            <div class="stat-label" style="font-size:9px;">Rejected</div>
         </div>
     </div>
     <div class="fade-in-2" id="filtered-section">
@@ -30,20 +34,7 @@
             <div class="section-title" id="section-title-text">Pending HO Approval</div>
             <span class="status-pill pending" id="section-count">@Model.PendingRequests.Count</span>
         </div>
-        <div id="filter-bar" style="display:none;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-            <select id="branch-filter" onchange="applyFilters()" style="padding:6px 10px;border-radius:8px;border:1px solid #ddd;font-size:12px;">
-                <option value="">All Branches</option>
-                @if(Model.User?.BranchDetails != null){
-                    @foreach(var b in Model.User.BranchDetails.Where(x => x.BranchCode != null).Select(x => x.BranchCode).Distinct()){
-                        <option value="@b">@b</option>
-                    }
-                }
-            </select>
-            <select id="approvedby-filter" onchange="applyFilters()" style="padding:6px 10px;border-radius:8px;border:1px solid #ddd;font-size:12px;display:none;">
-                <option value="">All Approved By</option>
-            </select>
-        </div>
-        <div id="filtered-list" style="display:flex;flex-direction:column;gap:8px;">
+        <div id="filtered-list"
             @foreach (var req in Model.PendingRequests)
             {
                 <div class="req-item" onclick="openAuditModal(@req.ReqId)">
@@ -66,6 +57,7 @@
                         <span class="status-pill pending-ho">PENDING_HO</span>
                         <div style="display:flex;flex-direction:row;gap:6px;">
                             <button class="quick-approve-btn" onclick="event.stopPropagation();hoApprove(@req.ReqId,'@req.Agcd','@req.Dpcd','@req.Publ','@req.Edtn','@req.SupplyTypeCode',@(req.ChangedSupply??0),'@req.ChangedSupplyDate?.ToString("yyyy-MM-dd")')" title="Approve & Push ERP">✅</button>
+                            <button class="quick-approve-btn" style="background:rgba(231,76,60,0.1);" onclick="event.stopPropagation();hoReject(@req.ReqId)" title="Reject">❌</button>
                         </div>
                     </div>
                 </div>
@@ -74,49 +66,29 @@
     </div>
 </div>
 <div class="bottom-nav">
-    <a class="nav-btn active" href="@Url.Action("Dashboard","HO")"><span class="nav-icon">&#x1F3E0;</span>Home</a>
-    <a class="nav-btn" href="@Url.Action("History","HO")"><span class="nav-icon">&#x1F4CB;</span>History</a>
-    <a class="nav-btn" href="@Url.Action("Reports","HO")"><span class="nav-icon">&#x1F4CA;</span>Reports</a>
-    <a class="nav-btn" href="@Url.Action("Index","Profile")"><span class="nav-icon">&#x1F464;</span>Profile</a>
+    <a class="nav-btn active" href="@Url.Action("Dashboard","HO")"><span class="nav-icon"><img src="/icons/home_icon.svg" width="20" height="20"></span>Home</a>
+    <a class="nav-btn" href="@Url.Action("History","HO")"><span class="nav-icon"><img src="/icons/history_icon.svg" width="20" height="20"></span>History</a>
+    <a class="nav-btn" href="@Url.Action("Reports","HO")"><span class="nav-icon"><img src="/icons/history_icon.svg" width="20" height="20"></span>Reports</a>
+    <a class="nav-btn" href="@Url.Action("Index","Profile")"><span class="nav-icon"><img src="/icons/profile_icon.svg" width="20" height="20"></span>Profile</a>
 </div>
 @section Scripts {
 <script>
 let hoReqData={};
 let activeFilter='awaiting';
+let hoActionType='approve';
 
 function loadFiltered(status){
     activeFilter=status;
-    let titles={'awaiting':'Pending HO Approval','approved':'HO Approved','increased':'Total Increased','decreased':'Total Decreased'};
+    let titles={'awaiting':'Pending HO Approval','approved':'HO Approved (By Me)','increased':'Total Increased','decreased':'Total Decreased','rejected':'HO Rejected (By Me)'};
     document.getElementById('section-title-text').textContent=titles[status]||'Requests';
-    document.getElementById('filtered-list').innerHTML='<div style="text-align:center;padding:20px;color:#999;">Loading...</div>';
 
     document.querySelectorAll('.stat-card').forEach(c=>c.style.outline='none');
-    let idx={'awaiting':0,'approved':1,'increased':2,'decreased':3};
+    let idx={'awaiting':0,'approved':1,'increased':2,'decreased':3,'rejected':4};
     let cards=document.querySelectorAll('.stat-card');
     if(cards[idx[status]]) cards[idx[status]].style.outline='2px solid #4e8cff';
 
-    // Show filter bar and approved-by filter for approved status
-    let filterBar=document.getElementById('filter-bar');
-    filterBar.style.display='flex';
-    let approvedBySelect=document.getElementById('approvedby-filter');
-    approvedBySelect.style.display=(status==='approved')?'inline-block':'none';
-    // Reset filters
-    document.getElementById('branch-filter').value='';
-    approvedBySelect.value='';
-
-    fetchFilteredData(status);
-}
-
-function applyFilters(){
-    fetchFilteredData(activeFilter);
-}
-
-function fetchFilteredData(status){
-    let branch=document.getElementById('branch-filter').value;
-    let approvedBy=document.getElementById('approvedby-filter').value;
-    let url='/HO/FilteredRequests?status='+status;
-    if(branch) url+='&branch='+encodeURIComponent(branch);
-    if(approvedBy) url+='&approvedBy='+encodeURIComponent(approvedBy);
+    let urlMap={'awaiting':'/HO/AwaitingHO','approved':'/HO/ApprovedByMe','increased':'/HO/IncreasedRequests','decreased':'/HO/DecreasedRequests','rejected':'/HO/RejectedByMe'};
+    let url=urlMap[status]||'/HO/AwaitingHO';
 
     document.getElementById('filtered-list').innerHTML='<div style="text-align:center;padding:20px;color:#999;">Loading...</div>';
 
@@ -127,17 +99,6 @@ function fetchFilteredData(status){
             return;
         }
 
-        // Populate approved-by dropdown if status is approved
-        if(status==='approved'){
-            let approvedBySelect=document.getElementById('approvedby-filter');
-            let currentVal=approvedBySelect.value;
-            // Get unique actionBy from full unfiltered set - only repopulate if branch changed
-            let uniqueUsers=[...new Set(data.map(r=>r.actionBy).filter(Boolean))];
-            let opts='<option value="">All Approved By</option>';
-            uniqueUsers.forEach(u=>{opts+='<option value="'+u+'">'+u+'</option>';});
-            approvedBySelect.innerHTML=opts;
-            approvedBySelect.value=currentVal;
-        }
         let html='';
         data.forEach(req=>{
             let isInc=req.incDec==='I';
@@ -151,6 +112,7 @@ function fetchFilteredData(status){
                     <div class="req-agent">${req.agName||''}</div>
                     <div class="req-meta">
                         <span style="background:rgba(78,140,255,0.1);padding:2px 7px;border-radius:6px;font-size:11px;">${req.publ||''} / ${req.edtn||''}</span>
+                        ${req.branchCode?'<span style="background:rgba(120,80,255,0.1);padding:2px 7px;border-radius:6px;font-size:11px;">'+req.branchCode+'</span>':''}
                         <span style="font-size:11px;color:var(--muted);">${dateStr}</span>
                     </div>
                     <div class="req-by">${req.agcd||''} &middot; ${req.baseSupply||0} → ${req.changedSupply||0} ${isInc?'↑':'↓'} &middot; By ${req.creationBy||''}</div>
@@ -159,6 +121,7 @@ function fetchFilteredData(status){
                     <span class="status-pill ${statusCls}">${statusLabel}</span>
                     ${showActions?`<div style="display:flex;flex-direction:row;gap:6px;">
                         <button class="quick-approve-btn" onclick="event.stopPropagation();hoApprove(${req.reqId},'${req.agcd}','${req.dpcd}','${req.publ}','${req.edtn}','${req.supplyTypeCode||''}',${req.changedSupply||0},'${req.changedSupplyDate?req.changedSupplyDate.substring(0,10):''}')" title="Approve & Push ERP">✅</button>
+                        <button class="quick-approve-btn" style="background:rgba(231,76,60,0.1);" onclick="event.stopPropagation();hoReject(${req.reqId})" title="Reject">❌</button>
                     </div>`:''}
                 </div>
             </div>`;
@@ -169,6 +132,7 @@ function fetchFilteredData(status){
 
 function hoApprove(reqId,agcd,dpcd,publ,edtn,stc,cs,csd){
     hoReqData={reqId,agcd,dpcd,publ,edtn,supplyTypeCode:stc,changedSupply:cs,changedSupplyDate:csd};
+    hoActionType='approve';
     document.getElementById('remarks-modal-title').textContent='Approve & Push to ERP';
     document.getElementById('remarks-modal-label').textContent='Remarks (optional)';
     document.getElementById('remarks-modal-input').value='';
@@ -178,20 +142,43 @@ function hoApprove(reqId,agcd,dpcd,publ,edtn,stc,cs,csd){
     openModal('remarks-modal');
 }
 
+function hoReject(reqId){
+    hoReqData={reqId};
+    hoActionType='reject';
+    document.getElementById('remarks-modal-title').textContent='Reject Request';
+    document.getElementById('remarks-modal-label').textContent='Reason for rejection';
+    document.getElementById('remarks-modal-input').value='';
+    var btn=document.getElementById('remarks-confirm-btn');
+    btn.textContent='Reject';
+    btn.className='btn btn-primary';
+    btn.style.background='#e74c3c';
+    openModal('remarks-modal');
+}
+
 function confirmRemarksAction(){
     let remarks=document.getElementById('remarks-modal-input').value;
-    let body='reqId='+hoReqData.reqId+'&remarks='+encodeURIComponent(remarks)
-        +'&agcd='+hoReqData.agcd+'&dpcd='+hoReqData.dpcd
-        +'&publ='+hoReqData.publ+'&edtn='+hoReqData.edtn
-        +'&supplyTypeCode='+hoReqData.supplyTypeCode
-        +'&changedSupply='+hoReqData.changedSupply
-        +'&changedSupplyDate='+hoReqData.changedSupplyDate;
-    fetch('/HO/Approve',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body})
-        .then(r=>r.json()).then(d=>{
-            closeModal('remarks-modal');
-            showToast(d.message,d.success?'success':'error');
-            if(d.success) setTimeout(()=>location.reload(),1000);
-        });
+    if(hoActionType==='reject'){
+        let body='reqId='+hoReqData.reqId+'&remarks='+encodeURIComponent(remarks);
+        fetch('/HO/Reject',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body})
+            .then(r=>r.json()).then(d=>{
+                closeModal('remarks-modal');
+                showToast(d.message,d.success?'success':'error');
+                if(d.success) setTimeout(()=>location.reload(),1000);
+            });
+    } else {
+        let body='reqId='+hoReqData.reqId+'&remarks='+encodeURIComponent(remarks)
+            +'&agcd='+hoReqData.agcd+'&dpcd='+hoReqData.dpcd
+            +'&publ='+hoReqData.publ+'&edtn='+hoReqData.edtn
+            +'&supplyTypeCode='+hoReqData.supplyTypeCode
+            +'&changedSupply='+hoReqData.changedSupply
+            +'&changedSupplyDate='+hoReqData.changedSupplyDate;
+        fetch('/HO/Approve',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body})
+            .then(r=>r.json()).then(d=>{
+                closeModal('remarks-modal');
+                showToast(d.message,d.success?'success':'error');
+                if(d.success) setTimeout(()=>location.reload(),1000);
+            });
+    }
 }
 
 function openAuditModal(reqId){

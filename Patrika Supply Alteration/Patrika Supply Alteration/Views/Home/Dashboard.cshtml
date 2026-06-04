@@ -1,6 +1,6 @@
 @model DashboardViewModel
 <div class="topbar">
-    <div class="topbar-logo">&#x1F4F0; <span>Patrika Supply Alteration</span></div>
+    <div class="topbar-logo"><img src="/icons/sales_executive_icon.svg" width="22" height="22" style="vertical-align:middle;"> <span>Patrika Supply Alteration</span></div>
     <div class="topbar-user">
         <b>@Model.User?.EmpName</b>
         <span class="role-badge role-se">@Model.User?.RoleName</span>
@@ -48,15 +48,15 @@
     </div>
 </div>
 <div class="bottom-nav">
-    <a class="nav-btn active" href="@Url.Action("Dashboard","Home")"><span class="nav-icon">&#x1F3E0;</span>Home</a>
+    <a class="nav-btn active" href="@Url.Action("Dashboard","Home")"><span class="nav-icon"><img src="/icons/home_icon.svg" width="20" height="20"></span>Home</a>
     @if(Model.CanAddRequest){
-    <a class="nav-btn" href="@Url.Action("NewRequest","Home")"><span class="nav-icon">&#x2795;</span>New</a>
+    <a class="nav-btn" href="@Url.Action("NewRequest","Home")"><span class="nav-icon"><img src="/icons/add_new_icon.svg" width="20" height="20"></span>New</a>
     }
     @if(Model.CanApprove){
-    <a class="nav-btn" href="@Url.Action("Dashboard","ZH")"><span class="nav-icon">&#x2705;</span>Approve</a>
+    <a class="nav-btn" href="@Url.Action("Dashboard","ZH")"><span class="nav-icon"><img src="/icons/zonal_head_icon.svg" width="20" height="20"></span>Approve</a>
     }
-    <a class="nav-btn" href="@Url.Action("History","Home")"><span class="nav-icon">&#x1F4CB;</span>History</a>
-    <a class="nav-btn" href="@Url.Action("Index","Profile")"><span class="nav-icon">&#x1F464;</span>Profile</a>
+    <a class="nav-btn" href="@Url.Action("History","Home")"><span class="nav-icon"><img src="/icons/history_icon.svg" width="20" height="20"></span>History</a>
+    <a class="nav-btn" href="@Url.Action("Index","Profile")"><span class="nav-icon"><img src="/icons/profile_icon.svg" width="20" height="20"></span>Profile</a>
 </div>
 @section Scripts {
 <script>

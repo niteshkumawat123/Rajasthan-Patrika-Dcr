@@ -1154,7 +1154,7 @@ public class OracleDbService
     }
 
     // QUERY 14: HO stats
-    public async Task<(int awaitingHo, int hoApproved, int totalIncreased, int totalDecreased)> GetHOStatsAsync(string compCode, DateTime selectedDate, List<string?>? branchCodes)
+    public async Task<(int awaitingHo, int hoApproved, int totalIncreased, int totalDecreased, int hoRejected)> GetHOStatsAsync(string compCode, DateTime selectedDate, List<string?>? branchCodes)
     {
         using var conn = GetConnection();
         await conn.OpenAsync();
@@ -1168,11 +1168,12 @@ public class OracleDbService
                     COUNT(CASE WHEN STATUS = 'PENDING_HO' THEN 1 END) AS AWAITING_HO,
                     COUNT(CASE WHEN STATUS = 'HO_APPROVED' THEN 1 END) AS HO_APPROVED,
                     NVL(SUM(CASE WHEN INC_DEC = 'I' AND STATUS = 'HO_APPROVED' THEN (CHANGED_SUPPLY - BASE_SUPPLY) ELSE 0 END),0) AS TOTAL_INCREASED,
-                    NVL(SUM(CASE WHEN INC_DEC = 'D' AND STATUS = 'HO_APPROVED' THEN (BASE_SUPPLY - CHANGED_SUPPLY) ELSE 0 END),0) AS TOTAL_DECREASED
+                    NVL(SUM(CASE WHEN INC_DEC = 'D' AND STATUS = 'HO_APPROVED' THEN (BASE_SUPPLY - CHANGED_SUPPLY) ELSE 0 END),0) AS TOTAL_DECREASED,
+                    COUNT(CASE WHEN STATUS = 'HO_REJECTED' THEN 1 END) AS HO_REJECTED
                     FROM APP_CIR_SUPPLY_REQ
                     WHERE COMP_CODE = :COMP_CODE
                     AND UNIT_CODE IN ({string.Join(",", branchParams)})";
-                    
+
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
         using var reader = await cmd.ExecuteReaderAsync();
@@ -1182,10 +1183,11 @@ public class OracleDbService
                 Convert.ToInt32(reader["AWAITING_HO"]),
                 Convert.ToInt32(reader["HO_APPROVED"]),
                 Convert.ToInt32(reader["TOTAL_INCREASED"]),
-                Convert.ToInt32(reader["TOTAL_DECREASED"])
+                Convert.ToInt32(reader["TOTAL_DECREASED"]),
+                Convert.ToInt32(reader["HO_REJECTED"])
             );
         }
-        return (0, 0, 0, 0);
+        return (0, 0, 0, 0, 0);
     }
 
     // QUERY 15: HO pending list
@@ -1357,6 +1359,42 @@ public class OracleDbService
         }
     }
 
+    // HO Reject
+    public async Task<bool> HORejectAsync(decimal reqId, string hoUserId, string remarks, string compCode)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            using var txn = conn.BeginTransaction();
+            try
+            {
+                var sql1 = @"INSERT INTO APP_CIR_SUPPLY_APPROVAL (
+                            APPROVAL_ID, REQ_ID, APPROVAL_LEVEL, APPR_ACTION, ACTION_BY,
+                            ACTION_DATE, REMARKS, FROM_STATUS, TO_STATUS, COMP_CODE
+                            ) VALUES (
+                            SEQ_SUPPLY_APPROVAL.NEXTVAL, :REQ_ID, 'HO', 'REJECTED', :HO_USERID,
+                            SYSDATE, :REMARKS, 'PENDING_HO', 'HO_REJECTED', :COMP_CODE)";
+                using var cmd1 = new OracleCommand(sql1, conn) { Transaction = txn };
+                cmd1.Parameters.Add(new OracleParameter("REQ_ID", reqId));
+                cmd1.Parameters.Add(new OracleParameter("HO_USERID", hoUserId));
+                cmd1.Parameters.Add(new OracleParameter("REMARKS", remarks));
+                cmd1.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+                await cmd1.ExecuteNonQueryAsync();
+
+                var sql2 = "UPDATE APP_CIR_SUPPLY_REQ SET STATUS='HO_REJECTED' WHERE REQ_ID=:REQ_ID";
+                using var cmd2 = new OracleCommand(sql2, conn) { Transaction = txn };
+                cmd2.Parameters.Add(new OracleParameter("REQ_ID", reqId));
+                await cmd2.ExecuteNonQueryAsync();
+
+                txn.Commit();
+                return true;
+            }
+            catch { txn.Rollback(); return false; }
+        }
+        catch { return false; }
+    }
+
     // QUERY 17: Branch-wise summary
     public async Task<List<BranchSummaryViewModel>> GetBranchSummaryAsync(string compCode, DateTime selectedDate)
     {
@@ -1497,15 +1535,23 @@ public class OracleDbService
     }
 
     // HO History (all requests)
-    public async Task<List<SupplyRequestViewModel>> GetHOHistoryAsync(string compCode)
+    public async Task<List<SupplyRequestViewModel>> GetHOHistoryAsync(string compCode, List<string?>? branchCodes = null)
     {
         var list = new List<SupplyRequestViewModel>();
         using var conn = GetConnection();
         await conn.OpenAsync();
-        var sql = @"SELECT R.REQ_ID, R.AGCD, R.DPCD, R.PUBL, R.EDTN,
+
+        var branchFilter = "";
+        if (branchCodes != null && branchCodes.Count > 0)
+        {
+            var branchParams = branchCodes.Select(b => "'" + (b ?? "").Replace("'", "''") + "'");
+            branchFilter = $" AND R.UNIT_CODE IN ({string.Join(",", branchParams)})";
+        }
+
+        var sql = $@"SELECT R.REQ_ID, R.AGCD, R.DPCD, R.PUBL, R.EDTN,
                     R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
                     R.STATUS, R.CREATION_DATE, R.REASON_CODE, R.REMARKS,
-                    A.AG_NAME,
+                    A.AG_NAME, R.UNIT_CODE,
                     AP.APPR_ACTION, AP.ACTION_BY, AP.ACTION_DATE, AP.REMARKS AS APPROVER_REMARKS,
                     HEM.NAME AS CREATION_BY
                     FROM APP_CIR_SUPPLY_REQ R
@@ -1513,11 +1559,92 @@ public class OracleDbService
                     LEFT JOIN (
                         SELECT REQ_ID, APPR_ACTION, ACTION_BY, ACTION_DATE, REMARKS
                         FROM APP_CIR_SUPPLY_APPROVAL AP1
-                        WHERE AP1.ACTION_DATE = (SELECT MAX(AP2.ACTION_DATE) FROM APP_CIR_SUPPLY_APPROVAL AP2 WHERE AP2.REQ_ID = AP1.REQ_ID)
+                        WHERE AP1.ACTION_DATE = 
+(SELECT MAX(AP2.ACTION_DATE) FROM APP_CIR_SUPPLY_APPROVAL AP2 WHERE AP2.REQ_ID = AP1.REQ_ID) 
                     ) AP ON AP.REQ_ID = R.REQ_ID
-                    LEFT JOIN LOGIN LGN ON LGN.""userid"" = R.USERID
+                    LEFT JOIN LOGIN LGN ON LGN.HR_CODE = R.USERID
                     LEFT JOIN HR_EMP_MST HEM ON LGN.HR_CODE = HEM.EMP_CODE
-                    WHERE R.COMP_CODE = :COMP_CODE
+                    WHERE R.COMP_CODE = :COMP_CODE{branchFilter}
+                    ORDER BY R.CREATION_DATE DESC";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(MapSupplyRequestWithApproval(reader));
+        }
+        return list;
+    }
+    public async Task<List<SupplyRequestViewModel>> GetHOHistoryApproveByMeAsync(string compCode, List<string?>? branchCodes = null)
+    {
+        var list = new List<SupplyRequestViewModel>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+
+        var branchFilter = "";
+        if (branchCodes != null && branchCodes.Count > 0)
+        {
+            var branchParams = branchCodes.Select(b => "'" + (b ?? "").Replace("'", "''") + "'");
+            branchFilter = $" AND R.UNIT_CODE IN ({string.Join(",", branchParams)})";
+        }
+
+        var sql = $@"SELECT R.REQ_ID, R.AGCD, R.DPCD, R.PUBL, R.EDTN,
+                    R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
+                    R.STATUS, R.CREATION_DATE, R.REASON_CODE, R.REMARKS,
+                    A.AG_NAME, R.UNIT_CODE,
+                    AP.APPR_ACTION, AP.ACTION_BY, AP.ACTION_DATE, AP.REMARKS AS APPROVER_REMARKS,
+                    HEM.NAME AS CREATION_BY
+                    FROM APP_CIR_SUPPLY_REQ R
+                    LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
+                    LEFT JOIN (
+                        SELECT REQ_ID, APPR_ACTION, ACTION_BY, ACTION_DATE, REMARKS
+                        FROM APP_CIR_SUPPLY_APPROVAL AP1
+                        WHERE AP1.ACTION_DATE = 
+(SELECT MAX(AP2.ACTION_DATE) FROM APP_CIR_SUPPLY_APPROVAL AP2 WHERE AP2.REQ_ID = AP1.REQ_ID) AND  AP1.APPR_ACTION ='PUSHED_TO_ERP'
+                    ) AP ON AP.REQ_ID = R.REQ_ID
+                    LEFT JOIN LOGIN LGN ON LGN.HR_CODE = R.USERID
+                    LEFT JOIN HR_EMP_MST HEM ON LGN.HR_CODE = HEM.EMP_CODE
+                    WHERE R.COMP_CODE = :COMP_CODE{branchFilter}
+                    ORDER BY R.CREATION_DATE DESC";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(MapSupplyRequestWithApproval(reader));
+        }
+        return list;
+    }
+    public async Task<List<SupplyRequestViewModel>> GetHOHistoryIncreaseAndDecrease(string compCode, List<string?>? branchCodes = null)
+    {
+        var list = new List<SupplyRequestViewModel>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+
+        var branchFilter = "";
+        if (branchCodes != null && branchCodes.Count > 0)
+        {
+            var branchParams = branchCodes.Select(b => "'" + (b ?? "").Replace("'", "''") + "'");
+            branchFilter = $" AND R.UNIT_CODE IN ({string.Join(",", branchParams)})";
+        }
+
+        var sql = $@"SELECT R.REQ_ID, R.AGCD, R.DPCD, R.PUBL, R.EDTN,
+                    R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
+                    R.STATUS, R.CREATION_DATE, R.REASON_CODE, R.REMARKS,
+                    A.AG_NAME, R.UNIT_CODE,
+                    AP.APPR_ACTION, AP.ACTION_BY, AP.ACTION_DATE, AP.REMARKS AS APPROVER_REMARKS,
+                    HEM.NAME AS CREATION_BY
+                    FROM APP_CIR_SUPPLY_REQ R
+                    LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
+                    LEFT JOIN (
+                        SELECT REQ_ID, APPR_ACTION, ACTION_BY, ACTION_DATE, REMARKS
+                        FROM APP_CIR_SUPPLY_APPROVAL AP1
+                        WHERE AP1.ACTION_DATE = 
+(SELECT MAX(AP2.ACTION_DATE) FROM APP_CIR_SUPPLY_APPROVAL AP2 WHERE AP2.REQ_ID = AP1.REQ_ID) AND  AP1.APPR_ACTION ='PUSHED_TO_ERP'
+                    ) AP ON AP.REQ_ID = R.REQ_ID
+                    LEFT JOIN LOGIN LGN ON LGN.HR_CODE = R.USERID
+                    LEFT JOIN HR_EMP_MST HEM ON LGN.HR_CODE = HEM.EMP_CODE
+                    WHERE R.COMP_CODE = :COMP_CODE{branchFilter}
                     ORDER BY R.CREATION_DATE DESC";
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
