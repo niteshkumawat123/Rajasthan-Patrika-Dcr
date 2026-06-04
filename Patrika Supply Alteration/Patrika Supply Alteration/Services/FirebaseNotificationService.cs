@@ -83,6 +83,22 @@ public class FirebaseNotificationService
     }
 
     /// <summary>
+    /// Subscribe a token to a topic for role-based notifications
+    /// </summary>
+    public async Task SubscribeToTopicAsync(string token, string topic)
+    {
+        try
+        {
+            var response = await FirebaseMessaging.DefaultInstance.SubscribeToTopicAsync(new List<string> { token }, topic);
+            Console.WriteLine($"Subscribed to topic '{topic}': {response.SuccessCount} success, {response.FailureCount} failure");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error subscribing to topic: {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Send notification to all HO users (topic-based)
     /// </summary>
     public async Task SendToTopicAsync(string topic, string title, string body)
