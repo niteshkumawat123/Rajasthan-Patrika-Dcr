@@ -155,8 +155,9 @@ function searchAgent(v){
                 }
                 let html='';
                 results.forEach(a=>{
+                    var dpName = a.droppointname ? '/' + a.droppointname : '';
                     html+=`<div class="agent-option" onclick="selectAgent('${a.agcd}','${a.dpcd}','${(a.branchname||'').replace(/'/g,"\\'")}','${(a.branchCode||'').replace(/'/g,"\\'")}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;transition:background .15s;">
-                        <b style="color:var(--paper);">${a.agName}</b> <span style="color:var(--blue);font-size:11px;">${a.agcd}/${a.dpcd}/${a.branchname||''}</span>
+                        <b style="color:var(--paper);">${a.agName}</b> <span style="color:var(--blue);font-size:11px;">${a.agcd}/${a.dpcd}/${a.branchname||''}${dpName}</span>
                     </div>`;
                 });
                 dropdown.innerHTML=html;

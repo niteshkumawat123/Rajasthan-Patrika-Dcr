@@ -21,6 +21,10 @@
                 <input type="password" name="Password" placeholder="Enter password">
             </div>
             <div class="forgot-link"><a asp-action="ForgotPassword" style="color:var(--blue);text-decoration:none;">Forgot Password?</a></div>
+            @if (!string.IsNullOrEmpty(ViewBag.SuccessMessage as string) || !string.IsNullOrEmpty(TempData["PasswordChanged"] as string))
+            {
+                <div class="login-success" style="display:block;color:green;margin-bottom:10px;font-size:14px;">@(ViewBag.SuccessMessage ?? TempData["PasswordChanged"])</div>
+            }
             @if (!string.IsNullOrEmpty(Model.ErrorMessage))
             {
                 <div class="login-error" style="display:block;">@Model.ErrorMessage</div>

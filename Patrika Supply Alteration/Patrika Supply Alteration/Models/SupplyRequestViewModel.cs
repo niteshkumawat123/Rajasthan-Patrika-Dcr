@@ -30,9 +30,16 @@ public class SupplyRequestViewModel
     public DateTime? ActionDate { get; set; }
     public string? ApproverRemarks { get; set; }
     public string? BranchCode { get; set; }
+    public string? ZhAction { get; set; }
     public string? ZhApprovedBy { get; set; }
     public string? ZhRemarks { get; set; }
     public DateTime? ZhActionDate { get; set; }
+    public string? HoAction { get; set; }
+    public string? HoApprovedBy { get; set; }
+    public string? HoRemarks { get; set; }
+    public DateTime? HoActionDate { get; set; }
+    public string? ErpPushedBy { get; set; }
+    public DateTime? ErpPushedDate { get; set; }
     public string? CreationBy { get; set; }
     public string? CreationByCode { get; set; }
     public string? EmployeeCode { get; set; }

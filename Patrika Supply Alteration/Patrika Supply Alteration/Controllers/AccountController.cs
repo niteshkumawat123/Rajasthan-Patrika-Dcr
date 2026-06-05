@@ -56,6 +56,74 @@ public class AccountController : Controller
             return View(model);
         }
 
+        // If first login, redirect to change password screen
+        if (user.FirstLoginFlag)
+        {
+            TempData["FirstLoginEmpCode"] = user.EmpCode;
+            return RedirectToAction("ChangePassword");
+        }
+
+        _sessionService.SetUser(HttpContext.Session, user);
+
+        // Determine redirect based on role(s)
+        var roles = user.RoleDetails ?? new List<RoleDetails>();
+        bool canAdd = roles.Any(r => r.RoleId == "1" || r.RoleId == "3" || r.RoleId == "4" || r.RoleId == "6");
+        bool canApproveZH = roles.Any(r => r.RoleId == "4");
+        bool canApproveHO = roles.Any(r => r.RoleId == "7");
+
+        if (canApproveHO && !canAdd)
+            return RedirectToAction("Dashboard", "HO");
+        if (canApproveZH)
+            return RedirectToAction("Dashboard", "ZH");
+        if (canAdd)
+            return RedirectToAction("Dashboard", "Home");
+
+        return RedirectToAction("Dashboard", "Home");
+    }
+
+    [HttpGet]
+    public IActionResult ChangePassword()
+    {
+        var empCode = TempData["FirstLoginEmpCode"]?.ToString();
+        if (string.IsNullOrEmpty(empCode))
+        {
+            return RedirectToAction("Login");
+        }
+
+        var model = new ChangePasswordViewModel { EmployeeCode = empCode };
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+    {
+        if (string.IsNullOrEmpty(model.EmployeeCode))
+        {
+            return RedirectToAction("Login");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            model.ErrorMessage = ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage;
+            return View(model);
+        }
+
+        var result = await _dbService.ChangePasswordAsync(model.EmployeeCode, model.NewPassword);
+        if (!result)
+        {
+            model.ErrorMessage = "Failed to change password. Please try again.";
+            return View(model);
+        }
+
+        // After password change, login again with new password
+        var user = await _dbService.LoginAsync(model.EmployeeCode, model.NewPassword);
+        if (user == null)
+        {
+            TempData["PasswordChanged"] = "Password changed successfully. Please login with your new password.";
+            return RedirectToAction("Login");
+        }
+
         _sessionService.SetUser(HttpContext.Session, user);
 
         // Determine redirect based on role(s)

@@ -17,6 +17,7 @@ public class UserSessionModel
     public string? HierarchyCode { get; set; }
     public string? SelectedRole { get; set; }
     public string? UnitCode { get; set; }
+    public bool FirstLoginFlag { get; set; }
     public List<BranchDetail> BranchDetails { get; set; }
     public List<RoleDetails> RoleDetails { get; set; }
 }

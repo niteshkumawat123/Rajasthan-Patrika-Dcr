@@ -104,7 +104,8 @@ public class OracleDbService
 
         try
         {
-            LoginVerify = await UserCheckOnLogin(username, password);
+            var (verified, firstLoginFlag) = await UserCheckOnLoginWithFlag(username, password);
+            LoginVerify = verified;
 
             if(LoginVerify==false)
             {
@@ -115,6 +116,7 @@ public class OracleDbService
             var execData = await CheckUserExecutive(username);
             if(execData!=null && !string.IsNullOrEmpty(execData.HrCode))
             {
+                execData.FirstLoginFlag = firstLoginFlag;
                 return execData;
             }
             #endregion Complete Executive 
@@ -123,6 +125,7 @@ public class OracleDbService
             var otherData = await OTHERLOGINUSER(username);
             if(otherData!=null && otherData.BranchDetails!=null && otherData.BranchDetails.Count()>0)
             {
+                otherData.FirstLoginFlag = firstLoginFlag;
                 return otherData;
             }
 
@@ -236,16 +239,24 @@ public class OracleDbService
 
     public async Task<bool> UserCheckOnLogin(string username, string password)
     {
+        var (verified, _) = await UserCheckOnLoginWithFlag(username, password);
+        return verified;
+    }
+
+    public async Task<(bool verified, bool firstLoginFlag)> UserCheckOnLoginWithFlag(string username, string password)
+    {
         using var conn = GetConnection();
         await conn.OpenAsync();
         bool LoginVerify = false;
+        bool firstLogin = false;
 
         try
         {
             var sql = @"SELECT L.""userid"" AS USERID, L.HR_CODE, L.COM_CODE, L.STATUS,
                     E.EMP_CODE, E.NAME, E.DESIG, E.BRAN_CODE,
-                    E.MOBILE, E.EMAIL, E.ZONE, E.REPORT_TO
-                    
+                    E.MOBILE, E.EMAIL, E.ZONE, E.REPORT_TO,
+                    NVL(L.FIRST_LOGIN_FLAG, 0) AS FIRST_LOGIN_FLAG
+
                     FROM LOGIN L
                     LEFT JOIN HR_EMP_MST E ON E.EMP_CODE = L.HR_CODE                   
                     WHERE L.HR_CODE = :USERNAME
@@ -278,6 +289,9 @@ public class OracleDbService
                 {
                     LoginVerify = true;
                 }
+
+                var flagValue = reader["FIRST_LOGIN_FLAG"] != DBNull.Value ? Convert.ToInt32(reader["FIRST_LOGIN_FLAG"]) : 0;
+                firstLogin = flagValue == 0;
             }
         }
 
@@ -287,7 +301,36 @@ public class OracleDbService
         {
 
         }
-        return LoginVerify;
+        return (LoginVerify, firstLogin);
+    }
+
+    public async Task<bool> ChangePasswordAsync(string employeeCode, string newPassword)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            using var txn = conn.BeginTransaction();
+            try
+            {
+                var sql = @"UPDATE LOGIN SET SUPPLY_ALTERATION_PASSWORD = :NEW_PASSWORD, FIRST_LOGIN_FLAG = 1 WHERE HR_CODE = :EMP_CODE AND STATUS = 'A'";
+                using var cmd = new OracleCommand(sql, conn) { Transaction = txn };
+                cmd.Parameters.Add(new OracleParameter("NEW_PASSWORD", newPassword));
+                cmd.Parameters.Add(new OracleParameter("EMP_CODE", employeeCode));
+                var rows = await cmd.ExecuteNonQueryAsync();
+                txn.Commit();
+                return rows > 0;
+            }
+            catch
+            {
+                txn.Rollback();
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            return false;
+        }
     }
 
     public async Task<UserSessionModel> CheckUserExecutive(string EmployeeCode)
@@ -579,15 +622,34 @@ public class OracleDbService
             
 
        var sql = $@"SELECT * FROM (
-                    SELECT CA.AGCD, CA.DPCD, CA.AG_NAME, CA.BRANCH_CODE, PCM.""Pub_cent_Code"", PCM.""Pub_Cent_name"" 
-                    FROM CIR_AGMAST CA 
-                    LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = CA.UNIT
-                    WHERE CA.COMP_CODE = :COMP_CODE AND CA.SUSPEND = 'N'
-                    AND (CA.SUPPLY_STOP_FLAG IS NULL OR CA.SUPPLY_STOP_FLAG = 'N')
-                    AND (UPPER(CA.AG_NAME) LIKE UPPER(:KEYWORD) OR UPPER(CA.AGCD) LIKE UPPER(:KEYWORD))
-                    AND PCM.""Pub_cent_Code"" IN ({string.Join(",", branchParams)})
-                    ORDER BY AG_NAME
-                    ) WHERE ROWNUM <= 15";
+    SELECT CA.AGCD,
+           CA.DPCD,
+           CA.AG_NAME,
+           CA.BRANCH_CODE,
+           PCM.""Pub_cent_Code"",
+           PCM.""Pub_Cent_name"",
+           (
+               SELECT FF.DROP_POINT_NAME
+               FROM CIR_AGMAST MM
+               INNER JOIN CIR_DROP_POINT_MAST FF
+                   ON MM.STATION_CODE = FF.DROP_POINT
+               WHERE MM.AGCD = CA.AGCD
+                 AND MM.DPCD = CA.DPCD
+                 AND MM.COMP_CODE = CA.COMP_CODE
+                 AND ROWNUM = 1
+           ) AS DROP_POINT_NAME
+    FROM CIR_AGMAST CA
+    LEFT JOIN PUB_CENT_MAST PCM
+        ON PCM.""Pub_cent_Code"" = CA.UNIT
+    WHERE CA.COMP_CODE = :COMP_CODE
+      AND CA.SUSPEND = 'N'
+      AND (CA.SUPPLY_STOP_FLAG IS NULL OR CA.SUPPLY_STOP_FLAG = 'N')
+      AND (UPPER(CA.AG_NAME) LIKE UPPER(:KEYWORD)
+           OR UPPER(CA.AGCD) LIKE UPPER(:KEYWORD))
+      AND PCM.""Pub_cent_Code"" IN ({string.Join(",", branchParams)})
+    ORDER BY CA.DPCD ASC, CA.AG_NAME ASC
+) 
+WHERE ROWNUM <= 15";
 
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
@@ -604,7 +666,8 @@ public class OracleDbService
                 dpcd = reader["DPCD"]?.ToString(),
                 agName = reader["AG_NAME"]?.ToString(),
                 branchCode = reader["Pub_cent_Code"]?.ToString(),
-                branchname = reader["Pub_Cent_name"]?.ToString()
+                branchname = reader["Pub_Cent_name"]?.ToString(),
+                droppointname = reader["DROP_POINT_NAME"]?.ToString()
             });
         }
         return list;
@@ -672,46 +735,56 @@ public class OracleDbService
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = @"INSERT INTO APP_CIR_SUPPLY_REQ (
-                        REQ_ID, COMP_CODE, UNIT_CODE, AGCD, DPCD,
-                        PUBL, EDTN, SUPPLY_TYPE_CODE,
-                        BASE_SUPPLY, INC_DEC, CHANGED_SUPPLY,
-                        REASON_CODE, ZONE_CODE, USERID, CREATION_DATE,
-                        CHANGED_SUPPLY_DATE, REMARKS, STATUS, ERP_PUSH_FLAG,
-                        SUPPLY_MON, SUPPLY_TUE, SUPPLY_WED, SUPPLY_THU, SUPPLY_FRI, SUPPLY_SAT, SUPPLY_SUN, IS_DAYWISE_SUPPLY
-                        ) VALUES (
-                        SEQ_SUPPLY_REQ.NEXTVAL, :COMP_CODE, :UNIT_CODE, :AGCD, :DPCD,
-                        :PUBL, :EDTN, :SUPPLY_TYPE_CODE,
-                        :BASE_SUPPLY, :INC_DEC, :CHANGED_SUPPLY,
-                        :REASON_CODE, :ZONE_CODE, :SE_USERID, SYSDATE,
-                        :CHANGED_SUPPLY_DATE, :REMARKS, 'PENDING_ZH', 'N',
-                        :SUPPLY_MON, :SUPPLY_TUE, :SUPPLY_WED, :SUPPLY_THU, :SUPPLY_FRI, :SUPPLY_SAT, :SUPPLY_SUN, :IS_DAYWISE_SUPPLY)";
-            using var cmd = new OracleCommand(sql, conn);
-            cmd.Parameters.Add(new OracleParameter("COMP_CODE", model.CompCode));
-            cmd.Parameters.Add(new OracleParameter("UNIT_CODE", model.UnitCode));
-            cmd.Parameters.Add(new OracleParameter("AGCD", model.Agcd));
-            cmd.Parameters.Add(new OracleParameter("DPCD", model.Dpcd));
-            cmd.Parameters.Add(new OracleParameter("PUBL", model.Publ));
-            cmd.Parameters.Add(new OracleParameter("EDTN", model.Edtn));
-            cmd.Parameters.Add(new OracleParameter("SUPPLY_TYPE_CODE", model.SupplyTypeCode));
-            cmd.Parameters.Add(new OracleParameter("BASE_SUPPLY", model.BaseSupply));
-            cmd.Parameters.Add(new OracleParameter("INC_DEC", model.IncDec));
-            cmd.Parameters.Add(new OracleParameter("CHANGED_SUPPLY", model.ChangedSupply));
-            cmd.Parameters.Add(new OracleParameter("REASON_CODE", model.ReasonCode));
-            cmd.Parameters.Add(new OracleParameter("ZONE_CODE", model.ZoneCode));
-            cmd.Parameters.Add(new OracleParameter("SE_USERID", model.EmployeeCode));
-            cmd.Parameters.Add(new OracleParameter("CHANGED_SUPPLY_DATE", model.ChangedSupplyDate));
-            cmd.Parameters.Add(new OracleParameter("REMARKS", model.Remarks));
-            cmd.Parameters.Add(new OracleParameter("SUPPLY_MON", model.SupplyMon ?? (object)DBNull.Value));
-            cmd.Parameters.Add(new OracleParameter("SUPPLY_TUE", model.SupplyTue ?? (object)DBNull.Value));
-            cmd.Parameters.Add(new OracleParameter("SUPPLY_WED", model.SupplyWed ?? (object)DBNull.Value));
-            cmd.Parameters.Add(new OracleParameter("SUPPLY_THU", model.SupplyThu ?? (object)DBNull.Value));
-            cmd.Parameters.Add(new OracleParameter("SUPPLY_FRI", model.SupplyFri ?? (object)DBNull.Value));
-            cmd.Parameters.Add(new OracleParameter("SUPPLY_SAT", model.SupplySat ?? (object)DBNull.Value));
-            cmd.Parameters.Add(new OracleParameter("SUPPLY_SUN", model.SupplySun ?? (object)DBNull.Value));
-            cmd.Parameters.Add(new OracleParameter("IS_DAYWISE_SUPPLY", model.IsDaywiseSupply));
-            await cmd.ExecuteNonQueryAsync();
-            return true;
+            using var txn = conn.BeginTransaction();
+            try
+            {
+                var sql = @"INSERT INTO APP_CIR_SUPPLY_REQ (
+                            REQ_ID, COMP_CODE, UNIT_CODE, AGCD, DPCD,
+                            PUBL, EDTN, SUPPLY_TYPE_CODE,
+                            BASE_SUPPLY, INC_DEC, CHANGED_SUPPLY,
+                            REASON_CODE, ZONE_CODE, USERID, CREATION_DATE,
+                            CHANGED_SUPPLY_DATE, REMARKS, STATUS, ERP_PUSH_FLAG,
+                            SUPPLY_MON, SUPPLY_TUE, SUPPLY_WED, SUPPLY_THU, SUPPLY_FRI, SUPPLY_SAT, SUPPLY_SUN, IS_DAYWISE_SUPPLY
+                            ) VALUES (
+                            SEQ_SUPPLY_REQ.NEXTVAL, :COMP_CODE, :UNIT_CODE, :AGCD, :DPCD,
+                            :PUBL, :EDTN, :SUPPLY_TYPE_CODE,
+                            :BASE_SUPPLY, :INC_DEC, :CHANGED_SUPPLY,
+                            :REASON_CODE, :ZONE_CODE, :SE_USERID, SYSDATE,
+                            :CHANGED_SUPPLY_DATE, :REMARKS, 'PENDING_ZH', 'N',
+                            :SUPPLY_MON, :SUPPLY_TUE, :SUPPLY_WED, :SUPPLY_THU, :SUPPLY_FRI, :SUPPLY_SAT, :SUPPLY_SUN, :IS_DAYWISE_SUPPLY)";
+                using var cmd = new OracleCommand(sql, conn) { Transaction = txn };
+                cmd.Parameters.Add(new OracleParameter("COMP_CODE", model.CompCode));
+                cmd.Parameters.Add(new OracleParameter("UNIT_CODE", model.UnitCode));
+                cmd.Parameters.Add(new OracleParameter("AGCD", model.Agcd));
+                cmd.Parameters.Add(new OracleParameter("DPCD", model.Dpcd));
+                cmd.Parameters.Add(new OracleParameter("PUBL", model.Publ));
+                cmd.Parameters.Add(new OracleParameter("EDTN", model.Edtn));
+                cmd.Parameters.Add(new OracleParameter("SUPPLY_TYPE_CODE", model.SupplyTypeCode));
+                cmd.Parameters.Add(new OracleParameter("BASE_SUPPLY", model.BaseSupply));
+                cmd.Parameters.Add(new OracleParameter("INC_DEC", model.IncDec));
+                cmd.Parameters.Add(new OracleParameter("CHANGED_SUPPLY", model.ChangedSupply));
+                cmd.Parameters.Add(new OracleParameter("REASON_CODE", model.ReasonCode));
+                cmd.Parameters.Add(new OracleParameter("ZONE_CODE", model.ZoneCode));
+                cmd.Parameters.Add(new OracleParameter("SE_USERID", model.EmployeeCode));
+                cmd.Parameters.Add(new OracleParameter("CHANGED_SUPPLY_DATE", model.ChangedSupplyDate));
+                cmd.Parameters.Add(new OracleParameter("REMARKS", model.Remarks));
+                cmd.Parameters.Add(new OracleParameter("SUPPLY_MON", model.SupplyMon ?? (object)DBNull.Value));
+                cmd.Parameters.Add(new OracleParameter("SUPPLY_TUE", model.SupplyTue ?? (object)DBNull.Value));
+                cmd.Parameters.Add(new OracleParameter("SUPPLY_WED", model.SupplyWed ?? (object)DBNull.Value));
+                cmd.Parameters.Add(new OracleParameter("SUPPLY_THU", model.SupplyThu ?? (object)DBNull.Value));
+                cmd.Parameters.Add(new OracleParameter("SUPPLY_FRI", model.SupplyFri ?? (object)DBNull.Value));
+                cmd.Parameters.Add(new OracleParameter("SUPPLY_SAT", model.SupplySat ?? (object)DBNull.Value));
+                cmd.Parameters.Add(new OracleParameter("SUPPLY_SUN", model.SupplySun ?? (object)DBNull.Value));
+                cmd.Parameters.Add(new OracleParameter("IS_DAYWISE_SUPPLY", model.IsDaywiseSupply));
+                await cmd.ExecuteNonQueryAsync();
+                txn.Commit();
+                return true;
+            }
+            catch
+            {
+                txn.Rollback();
+                return false;
+            }
         }
         catch(Exception ex)
         { return false; }
@@ -727,15 +800,12 @@ public class OracleDbService
                     R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
                     R.STATUS, R.CREATION_DATE, R.CHANGED_SUPPLY_DATE, R.REASON_CODE, R.REMARKS,
                     A.AG_NAME,
-                    AP.APPR_ACTION, AP.ACTION_BY, AP.ACTION_DATE, AP.REMARKS AS APPROVER_REMARKS,
-                    HEM.NAME AS CREATION_BY,HEM.EMP_CODE
+                    AP.ZH_ACTION AS APPR_ACTION, AP.ZH_ACTION_BY AS ACTION_BY, AP.ZH_ACTION_DATE AS ACTION_DATE, AP.ZH_REMARKS AS APPROVER_REMARKS,
+                    AP.HO_ACTION, AP.HO_ACTION_BY, AP.HO_ACTION_DATE, AP.HO_REMARKS,
+                    HEM.NAME AS CREATION_BY, HEM.EMP_CODE
                     FROM APP_CIR_SUPPLY_REQ R
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
-                    LEFT JOIN (
-                        SELECT REQ_ID, APPR_ACTION, ACTION_BY, ACTION_DATE, REMARKS
-                        FROM APP_CIR_SUPPLY_APPROVAL AP1
-                        WHERE AP1.ACTION_DATE = (SELECT MAX(AP2.ACTION_DATE) FROM APP_CIR_SUPPLY_APPROVAL AP2 WHERE AP2.REQ_ID = AP1.REQ_ID)
-                    ) AP ON AP.REQ_ID = R.REQ_ID
+                    LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
                     LEFT JOIN LOGIN LGN ON LGN.HR_CODE = R.USERID
                     LEFT JOIN HR_EMP_MST HEM ON LGN.HR_CODE = HEM.EMP_CODE
                     WHERE R.USERID = :SE_USERID AND R.COMP_CODE = :COMP_CODE
@@ -807,15 +877,15 @@ public class OracleDbService
                R.CREATION_DATE, R.CHANGED_SUPPLY_DATE, R.STATUS,
                A.AG_NAME, A.BRANCH_CODE,
                HEM.NAME AS CREATION_BY, HEM.EMP_CODE,
-               AP.ACTION_DATE, AP.REMARKS AS APPROVER_REMARKS
+               AP.ZH_ACTION_DATE AS ACTION_DATE, AP.ZH_REMARKS AS APPROVER_REMARKS
         FROM APP_CIR_SUPPLY_REQ R
         INNER JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
-            AND AP.APPROVAL_LEVEL = 'ZH' AND AP.APPR_ACTION = 'APPROVED' AND AP.ACTION_BY = :EMP_CODE
+            AND AP.ZH_ACTION = 'APPROVED' AND AP.ZH_ACTION_BY = :EMP_CODE
         LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.COMP_CODE = R.COMP_CODE
         LEFT JOIN HR_EMP_MST HEM ON HEM.EMP_CODE = R.USERID
         WHERE R.COMP_CODE = :COMP_CODE
           AND R.UNIT_CODE IN ({string.Join(",", branchParams)})
-        ORDER BY AP.ACTION_DATE DESC";
+        ORDER BY AP.ZH_ACTION_DATE DESC";
 
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("EMP_CODE", empCode));
@@ -1013,29 +1083,35 @@ public class OracleDbService
                         zhOnlyApproval = increaseAmount <= tenPercent;
                     }
 
+                    string zhToStatus = zhOnlyApproval ? "HO_APPROVED" : "PENDING_HO";
+                    string reqStatus = zhOnlyApproval ? "HO_APPROVED" : "PENDING_HO";
+
+                    // Insert single approval row with ZH data
+                    var sqlApproval = @"INSERT INTO APP_CIR_SUPPLY_APPROVAL (
+                                    APPROVAL_ID, REQ_ID, COMP_CODE, ZH_ACTION, ZH_ACTION_BY,
+                                    ZH_ACTION_DATE, ZH_REMARKS, ZH_FROM_STATUS, ZH_TO_STATUS, STATUS
+                                    ) VALUES (
+                                    SEQ_SUPPLY_APPROVAL.NEXTVAL, :REQ_ID, :COMP_CODE, :ZH_ACTION, :ZH_USERID,
+                                    SYSDATE, :ZH_REMARKS, 'PENDING_ZH', :ZH_TO_STATUS, :STATUS)";
+                    using var cmdApproval = new OracleCommand(sqlApproval, conn) { Transaction = txn };
+                    cmdApproval.Parameters.Add(new OracleParameter("REQ_ID", reqId));
+                    cmdApproval.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+                    cmdApproval.Parameters.Add(new OracleParameter("ZH_ACTION", action));
+                    cmdApproval.Parameters.Add(new OracleParameter("ZH_USERID", zhUserId));
+                    cmdApproval.Parameters.Add(new OracleParameter("ZH_REMARKS", remarks));
+                    cmdApproval.Parameters.Add(new OracleParameter("ZH_TO_STATUS", zhToStatus));
+                    cmdApproval.Parameters.Add(new OracleParameter("STATUS", reqStatus));
+                    await cmdApproval.ExecuteNonQueryAsync();
+
+                    // Update request status
+                    var sql2 = $"UPDATE APP_CIR_SUPPLY_REQ SET STATUS = :STATUS, ERP_PUSH_FLAG = 'N' WHERE REQ_ID = :REQ_ID";
+                    using var cmd2 = new OracleCommand(sql2, conn) { Transaction = txn };
+                    cmd2.Parameters.Add(new OracleParameter("STATUS", reqStatus));
+                    cmd2.Parameters.Add(new OracleParameter("REQ_ID", reqId));
+                    await cmd2.ExecuteNonQueryAsync();
+
                     if (zhOnlyApproval)
                     {
-                        // ZH approves and pushes directly to ERP (skip HO)
-                        var sql1 = @"INSERT INTO APP_CIR_SUPPLY_APPROVAL (
-                                    APPROVAL_ID, REQ_ID, APPROVAL_LEVEL, APPR_ACTION, ACTION_BY,
-                                    ACTION_DATE, REMARKS, FROM_STATUS, TO_STATUS, COMP_CODE
-                                    ) VALUES (
-                                    SEQ_SUPPLY_APPROVAL.NEXTVAL, :REQ_ID, 'ZH', :ACTION, :ZH_USERID,
-                                    SYSDATE, :ZH_REMARKS, 'PENDING_ZH', 'HO_APPROVED', :COMP_CODE)";
-                        using var cmd1 = new OracleCommand(sql1, conn) { Transaction = txn };
-                        cmd1.Parameters.Add(new OracleParameter("REQ_ID", reqId));
-                        cmd1.Parameters.Add(new OracleParameter("ACTION", action));
-                        cmd1.Parameters.Add(new OracleParameter("ZH_USERID", zhUserId));
-                        cmd1.Parameters.Add(new OracleParameter("ZH_REMARKS", remarks));
-                        cmd1.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
-                        await cmd1.ExecuteNonQueryAsync();
-
-                        // Update status to HO_APPROVED
-                        var sql2 = "UPDATE APP_CIR_SUPPLY_REQ SET STATUS = 'HO_APPROVED', ERP_PUSH_FLAG = 'N' WHERE REQ_ID = :REQ_ID";
-                        using var cmd2 = new OracleCommand(sql2, conn) { Transaction = txn };
-                        cmd2.Parameters.Add(new OracleParameter("REQ_ID", reqId));
-                        await cmd2.ExecuteNonQueryAsync();
-
                         // Push to ERP (update CIR_SUPPLY)
                         string sql3;
                         if (isDaywiseSupply == 1)
@@ -1085,58 +1161,29 @@ public class OracleDbService
                         cmd4a.Parameters.Add(new OracleParameter("REQ_ID", reqId));
                         await cmd4a.ExecuteNonQueryAsync();
 
-                        // Log ERP push
-                        var sql4b = @"INSERT INTO APP_CIR_SUPPLY_APPROVAL (
-                                    APPROVAL_ID, REQ_ID, APPROVAL_LEVEL, APPR_ACTION, ACTION_BY,
-                                    ACTION_DATE, REMARKS, FROM_STATUS, TO_STATUS, COMP_CODE
-                                    ) VALUES (
-                                    SEQ_SUPPLY_APPROVAL.NEXTVAL, :REQ_ID, 'ZH', 'PUSHED_TO_ERP', :ZH_USERID,
-                                    SYSDATE, :ZH_REMARKS, 'HO_APPROVED', 'HO_APPROVED', :COMP_CODE)";
+                        // Update approval row with ERP push info
+                        var sql4b = "UPDATE APP_CIR_SUPPLY_APPROVAL SET ERP_PUSHED_BY=:ZH_USERID, ERP_PUSHED_DATE=SYSDATE WHERE REQ_ID=:REQ_ID";
                         using var cmd4b = new OracleCommand(sql4b, conn) { Transaction = txn };
-                        cmd4b.Parameters.Add(new OracleParameter("REQ_ID", reqId));
                         cmd4b.Parameters.Add(new OracleParameter("ZH_USERID", zhUserId));
-                        cmd4b.Parameters.Add(new OracleParameter("ZH_REMARKS", remarks));
-                        cmd4b.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+                        cmd4b.Parameters.Add(new OracleParameter("REQ_ID", reqId));
                         await cmd4b.ExecuteNonQueryAsync();
-                    }
-                    else
-                    {
-                        // Forward to HO (increase > 10% or decrease)
-                        var sql1 = @"INSERT INTO APP_CIR_SUPPLY_APPROVAL (
-                                    APPROVAL_ID, REQ_ID, APPROVAL_LEVEL, APPR_ACTION, ACTION_BY,
-                                    ACTION_DATE, REMARKS, FROM_STATUS, TO_STATUS, COMP_CODE
-                                    ) VALUES (
-                                    SEQ_SUPPLY_APPROVAL.NEXTVAL, :REQ_ID, 'ZH', :ACTION, :ZH_USERID,
-                                    SYSDATE, :ZH_REMARKS, 'PENDING_ZH', 'PENDING_HO', :COMP_CODE)";
-                        using var cmd1 = new OracleCommand(sql1, conn) { Transaction = txn };
-                        cmd1.Parameters.Add(new OracleParameter("REQ_ID", reqId));
-                        cmd1.Parameters.Add(new OracleParameter("ACTION", action));
-                        cmd1.Parameters.Add(new OracleParameter("ZH_USERID", zhUserId));
-                        cmd1.Parameters.Add(new OracleParameter("ZH_REMARKS", remarks));
-                        cmd1.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
-                        await cmd1.ExecuteNonQueryAsync();
-
-                        var sql2 = "UPDATE APP_CIR_SUPPLY_REQ SET STATUS = 'PENDING_HO' WHERE REQ_ID = :REQ_ID";
-                        using var cmd2 = new OracleCommand(sql2, conn) { Transaction = txn };
-                        cmd2.Parameters.Add(new OracleParameter("REQ_ID", reqId));
-                        await cmd2.ExecuteNonQueryAsync();
                     }
                 }
                 else
                 {
-                    // Rejection
-                    var sql1 = @"INSERT INTO APP_CIR_SUPPLY_APPROVAL (
-                                APPROVAL_ID, REQ_ID, APPROVAL_LEVEL, APPR_ACTION, ACTION_BY,
-                                ACTION_DATE, REMARKS, FROM_STATUS, TO_STATUS, COMP_CODE
+                    // Rejection - Insert single row with ZH rejection
+                    var sqlApproval = @"INSERT INTO APP_CIR_SUPPLY_APPROVAL (
+                                APPROVAL_ID, REQ_ID, COMP_CODE, ZH_ACTION, ZH_ACTION_BY,
+                                ZH_ACTION_DATE, ZH_REMARKS, ZH_FROM_STATUS, ZH_TO_STATUS, STATUS
                                 ) VALUES (
-                                SEQ_SUPPLY_APPROVAL.NEXTVAL, :REQ_ID, 'ZH', :ACTION, :ZH_USERID,
-                                SYSDATE, :ZH_REMARKS, 'PENDING_ZH', 'ZH_REJECTED', :COMP_CODE)";
-                    using var cmd1 = new OracleCommand(sql1, conn) { Transaction = txn };
+                                SEQ_SUPPLY_APPROVAL.NEXTVAL, :REQ_ID, :COMP_CODE, :ZH_ACTION, :ZH_USERID,
+                                SYSDATE, :ZH_REMARKS, 'PENDING_ZH', 'ZH_REJECTED', 'ZH_REJECTED')";
+                    using var cmd1 = new OracleCommand(sqlApproval, conn) { Transaction = txn };
                     cmd1.Parameters.Add(new OracleParameter("REQ_ID", reqId));
-                    cmd1.Parameters.Add(new OracleParameter("ACTION", action));
+                    cmd1.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+                    cmd1.Parameters.Add(new OracleParameter("ZH_ACTION", action));
                     cmd1.Parameters.Add(new OracleParameter("ZH_USERID", zhUserId));
                     cmd1.Parameters.Add(new OracleParameter("ZH_REMARKS", remarks));
-                    cmd1.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
                     await cmd1.ExecuteNonQueryAsync();
 
                     var sql2 = "UPDATE APP_CIR_SUPPLY_REQ SET STATUS = 'ZH_REJECTED' WHERE REQ_ID = :REQ_ID";
@@ -1207,15 +1254,14 @@ public class OracleDbService
                     R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
                     R.REASON_CODE, R.ZONE_CODE, R.USERID, R.CREATION_DATE, R.CHANGED_SUPPLY_DATE,
                     A.AG_NAME, A.BRANCH_CODE,
-                    ZH_AP.ACTION_BY AS ZH_APPROVED_BY,
-                    ZH_AP.REMARKS AS ZH_REMARKS,
-                    ZH_AP.ACTION_DATE AS ZH_ACTION_DATE,R.STATUS,HEM.EMP_CODE , HEM.NAME AS CREATION_BY,
-                    AP.REMARKS AS APPROVER_REMARKS,NULL AS DROP_POINT_NAME,R.UNIT_CODE,R.SUPPLY_TYPE_CODE
+                    AP.ZH_ACTION_BY AS ZH_APPROVED_BY,
+                    AP.ZH_REMARKS AS ZH_REMARKS,
+                    AP.ZH_ACTION_DATE AS ZH_ACTION_DATE, R.STATUS, HEM.EMP_CODE, HEM.NAME AS CREATION_BY,
+                    AP.ZH_REMARKS AS APPROVER_REMARKS, NULL AS DROP_POINT_NAME, R.UNIT_CODE, R.SUPPLY_TYPE_CODE
                     FROM APP_CIR_SUPPLY_REQ R
                     LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
                     LEFT JOIN hr_emp_mst HEM ON HEM.EMP_CODE = R.USERID
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
-                    LEFT JOIN APP_CIR_SUPPLY_APPROVAL ZH_AP ON ZH_AP.REQ_ID = R.REQ_ID AND ZH_AP.APPROVAL_LEVEL = 'ZH' AND ZH_AP.APPR_ACTION = 'APPROVED'
                     WHERE R.STATUS = 'PENDING_HO' AND R.COMP_CODE = :COMP_CODE
                     AND R.UNIT_CODE IN ({string.Join(",", branchParams)})
                     ORDER BY R.CREATION_DATE ASC";
@@ -1243,18 +1289,17 @@ public class OracleDbService
             using var txn = conn.BeginTransaction();
             try
             {
-                // Step 1
-                var sql1 = @"INSERT INTO APP_CIR_SUPPLY_APPROVAL (
-                            APPROVAL_ID, REQ_ID, APPROVAL_LEVEL, APPR_ACTION, ACTION_BY,
-                            ACTION_DATE, REMARKS, FROM_STATUS, TO_STATUS, COMP_CODE
-                            ) VALUES (
-                            SEQ_SUPPLY_APPROVAL.NEXTVAL, :REQ_ID, 'HO', 'APPROVED', :HO_USERID,
-                            SYSDATE, :REMARKS, 'PENDING_HO', 'HO_APPROVED', :COMP_CODE)";
+                // Step 1: Update existing approval row with HO data
+                var sql1 = @"UPDATE APP_CIR_SUPPLY_APPROVAL SET
+                            HO_ACTION = 'APPROVED', HO_ACTION_BY = :HO_USERID,
+                            HO_ACTION_DATE = SYSDATE, HO_REMARKS = :REMARKS,
+                            HO_FROM_STATUS = 'PENDING_HO', HO_TO_STATUS = 'HO_APPROVED',
+                            STATUS = 'HO_APPROVED'
+                            WHERE REQ_ID = :REQ_ID";
                 using var cmd1 = new OracleCommand(sql1, conn) { Transaction = txn };
-                cmd1.Parameters.Add(new OracleParameter("REQ_ID", reqId));
                 cmd1.Parameters.Add(new OracleParameter("HO_USERID", hoUserId));
                 cmd1.Parameters.Add(new OracleParameter("REMARKS", remarks));
-                cmd1.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+                cmd1.Parameters.Add(new OracleParameter("REQ_ID", reqId));
                 await cmd1.ExecuteNonQueryAsync();
 
                 // Step 2
@@ -1334,18 +1379,11 @@ public class OracleDbService
                 cmd4a.Parameters.Add(new OracleParameter("REQ_ID", reqId));
                 await cmd4a.ExecuteNonQueryAsync();
 
-                // Step 4b
-                var sql4b = @"INSERT INTO APP_CIR_SUPPLY_APPROVAL (
-                            APPROVAL_ID, REQ_ID, APPROVAL_LEVEL, APPR_ACTION, ACTION_BY,
-                            ACTION_DATE, REMARKS, FROM_STATUS, TO_STATUS, COMP_CODE
-                            ) VALUES (
-                            SEQ_SUPPLY_APPROVAL.NEXTVAL, :REQ_ID, 'HO', 'PUSHED_TO_ERP', :HO_USERID,
-                            SYSDATE, :REMARKS, 'HO_APPROVED', 'HO_APPROVED', :COMP_CODE)";
+                // Step 4b: Update approval row with ERP push info
+                var sql4b = "UPDATE APP_CIR_SUPPLY_APPROVAL SET ERP_PUSHED_BY=:HO_USERID, ERP_PUSHED_DATE=SYSDATE WHERE REQ_ID=:REQ_ID";
                 using var cmd4b = new OracleCommand(sql4b, conn) { Transaction = txn };
-                cmd4b.Parameters.Add(new OracleParameter("REQ_ID", reqId));
                 cmd4b.Parameters.Add(new OracleParameter("HO_USERID", hoUserId));
-                cmd4b.Parameters.Add(new OracleParameter("REMARKS", remarks));
-                cmd4b.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+                cmd4b.Parameters.Add(new OracleParameter("REQ_ID", reqId));
                 await cmd4b.ExecuteNonQueryAsync();
 
                 txn.Commit();
@@ -1369,17 +1407,17 @@ public class OracleDbService
             using var txn = conn.BeginTransaction();
             try
             {
-                var sql1 = @"INSERT INTO APP_CIR_SUPPLY_APPROVAL (
-                            APPROVAL_ID, REQ_ID, APPROVAL_LEVEL, APPR_ACTION, ACTION_BY,
-                            ACTION_DATE, REMARKS, FROM_STATUS, TO_STATUS, COMP_CODE
-                            ) VALUES (
-                            SEQ_SUPPLY_APPROVAL.NEXTVAL, :REQ_ID, 'HO', 'REJECTED', :HO_USERID,
-                            SYSDATE, :REMARKS, 'PENDING_HO', 'HO_REJECTED', :COMP_CODE)";
+                // Update existing approval row with HO rejection
+                var sql1 = @"UPDATE APP_CIR_SUPPLY_APPROVAL SET
+                            HO_ACTION = 'REJECTED', HO_ACTION_BY = :HO_USERID,
+                            HO_ACTION_DATE = SYSDATE, HO_REMARKS = :REMARKS,
+                            HO_FROM_STATUS = 'PENDING_HO', HO_TO_STATUS = 'HO_REJECTED',
+                            STATUS = 'HO_REJECTED'
+                            WHERE REQ_ID = :REQ_ID";
                 using var cmd1 = new OracleCommand(sql1, conn) { Transaction = txn };
-                cmd1.Parameters.Add(new OracleParameter("REQ_ID", reqId));
                 cmd1.Parameters.Add(new OracleParameter("HO_USERID", hoUserId));
                 cmd1.Parameters.Add(new OracleParameter("REMARKS", remarks));
-                cmd1.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+                cmd1.Parameters.Add(new OracleParameter("REQ_ID", reqId));
                 await cmd1.ExecuteNonQueryAsync();
 
                 var sql2 = "UPDATE APP_CIR_SUPPLY_REQ SET STATUS='HO_REJECTED' WHERE REQ_ID=:REQ_ID";
@@ -1442,10 +1480,10 @@ public class OracleDbService
         await conn.OpenAsync();
         var sql = @"SELECT R.REQ_ID, R.AGCD, A.AG_NAME,
                     R.PUBL, R.EDTN, R.BASE_SUPPLY, R.CHANGED_SUPPLY, R.INC_DEC,
-                    R.ERP_PUSH_DATE, AP.ACTION_BY AS PUSHED_BY
+                    R.ERP_PUSH_DATE, AP.ERP_PUSHED_BY AS PUSHED_BY
                     FROM APP_CIR_SUPPLY_REQ R
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
-                    LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID AND AP.APPR_ACTION = 'PUSHED_TO_ERP'
+                    LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
                     WHERE R.COMP_CODE = :COMP_CODE AND R.ERP_PUSH_FLAG = 'Y'
                     AND TRUNC(R.ERP_PUSH_DATE) = TRUNC(:SELECTED_DATE)
                     ORDER BY R.ERP_PUSH_DATE DESC";
@@ -1482,19 +1520,20 @@ public class OracleDbService
                     R.PUBL, R.EDTN, R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
                     R.REASON_CODE, R.USERID AS SUBMITTED_BY, R.CREATION_DATE, R.STATUS,
                     R.REMARKS, R.ZONE_CODE, R.CHANGED_SUPPLY_DATE,
-                    AP.APPROVAL_LEVEL, AP.APPR_ACTION, AP.ACTION_BY,
-                    AP.ACTION_DATE, AP.REMARKS AS APPROVER_REMARKS,
-                    AP.FROM_STATUS, AP.TO_STATUS,
-                    A.BRANCH_CODE , PCM.""Pub_Cent_name"" ,
-                    HEM.NAME AS SUBMITTED_BY_NAME,HEM.EMP_CODE
+                    AP.ZH_ACTION, AP.ZH_ACTION_BY, AP.ZH_ACTION_DATE, AP.ZH_REMARKS,
+                    AP.ZH_FROM_STATUS, AP.ZH_TO_STATUS,
+                    AP.HO_ACTION, AP.HO_ACTION_BY, AP.HO_ACTION_DATE, AP.HO_REMARKS,
+                    AP.HO_FROM_STATUS, AP.HO_TO_STATUS,
+                    AP.ERP_PUSHED_BY, AP.ERP_PUSHED_DATE,
+                    A.BRANCH_CODE, PCM.""Pub_Cent_name"",
+                    HEM.NAME AS SUBMITTED_BY_NAME, HEM.EMP_CODE
                     FROM APP_CIR_SUPPLY_REQ R
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
                     LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = A.BRANCH_CODE 
                     LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
                     LEFT JOIN Login LGN ON R.USERID = LGN.HR_CODE 
                     LEFT JOIN hr_emp_mst HEM ON LGN.HR_CODE = HEM.EMP_CODE
-                    WHERE R.REQ_ID = :REQ_ID
-                    ORDER BY AP.ACTION_DATE ASC";
+                    WHERE R.REQ_ID = :REQ_ID";
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("REQ_ID", reqId));
         using var reader = await cmd.ExecuteReaderAsync();
@@ -1507,7 +1546,7 @@ public class OracleDbService
                 AgName = reader["AG_NAME"]?.ToString(),
                 Publ = reader["PUBL"]?.ToString(),
                 Edtn = reader["EDTN"]?.ToString(),
-                BaseSupply =Convert.ToInt32(reader["BASE_SUPPLY"]),
+                BaseSupply = Convert.ToInt32(reader["BASE_SUPPLY"]),
                 IncDec = reader["INC_DEC"]?.ToString(),
                 ChangedSupply = Convert.ToInt32(reader["CHANGED_SUPPLY"]),
                 ReasonCode = reader["REASON_CODE"]?.ToString(),
@@ -1518,17 +1557,23 @@ public class OracleDbService
                 SubmittedBy = reader["SUBMITTED_BY"]?.ToString(),
                 CreationDate = reader["CREATION_DATE"] as DateTime?,
                 Status = reader["STATUS"]?.ToString(),
-                ApprovalLevel = reader["APPROVAL_LEVEL"]?.ToString(),
-                ApprAction = reader["APPR_ACTION"]?.ToString(),
-                ActionBy = reader["ACTION_BY"]?.ToString(),
-                ActionDate = reader["ACTION_DATE"] as DateTime?,
-                ApproverRemarks = reader["APPROVER_REMARKS"]?.ToString(),
-                FromStatus = reader["FROM_STATUS"]?.ToString(),
-                ToStatus = reader["TO_STATUS"]?.ToString(),
+                ZhAction = reader["ZH_ACTION"]?.ToString(),
+                ZhActionBy = reader["ZH_ACTION_BY"]?.ToString(),
+                ZhActionDate = reader["ZH_ACTION_DATE"] as DateTime?,
+                ZhRemarks = reader["ZH_REMARKS"]?.ToString(),
+                ZhFromStatus = reader["ZH_FROM_STATUS"]?.ToString(),
+                ZhToStatus = reader["ZH_TO_STATUS"]?.ToString(),
+                HoAction = reader["HO_ACTION"]?.ToString(),
+                HoActionBy = reader["HO_ACTION_BY"]?.ToString(),
+                HoActionDate = reader["HO_ACTION_DATE"] as DateTime?,
+                HoRemarks = reader["HO_REMARKS"]?.ToString(),
+                HoFromStatus = reader["HO_FROM_STATUS"]?.ToString(),
+                HoToStatus = reader["HO_TO_STATUS"]?.ToString(),
+                ErpPushedBy = reader["ERP_PUSHED_BY"]?.ToString(),
+                ErpPushedDate = reader["ERP_PUSHED_DATE"] as DateTime?,
                 BranchName = reader["Pub_Cent_name"]?.ToString(),
                 SUBMITTEDBYNAME = reader["SUBMITTED_BY_NAME"]?.ToString(),
                 CreationByCode = reader["EMP_CODE"]?.ToString()
-
             });
         }
         return list;
@@ -1552,16 +1597,11 @@ public class OracleDbService
                     R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
                     R.STATUS, R.CREATION_DATE, R.REASON_CODE, R.REMARKS,
                     A.AG_NAME, R.UNIT_CODE,
-                    AP.APPR_ACTION, AP.ACTION_BY, AP.ACTION_DATE, AP.REMARKS AS APPROVER_REMARKS,
+                    AP.ZH_ACTION AS APPR_ACTION, AP.ZH_ACTION_BY AS ACTION_BY, AP.ZH_ACTION_DATE AS ACTION_DATE, AP.ZH_REMARKS AS APPROVER_REMARKS,
                     HEM.NAME AS CREATION_BY
                     FROM APP_CIR_SUPPLY_REQ R
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
-                    LEFT JOIN (
-                        SELECT REQ_ID, APPR_ACTION, ACTION_BY, ACTION_DATE, REMARKS
-                        FROM APP_CIR_SUPPLY_APPROVAL AP1
-                        WHERE AP1.ACTION_DATE = 
-(SELECT MAX(AP2.ACTION_DATE) FROM APP_CIR_SUPPLY_APPROVAL AP2 WHERE AP2.REQ_ID = AP1.REQ_ID) 
-                    ) AP ON AP.REQ_ID = R.REQ_ID
+                    LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
                     LEFT JOIN LOGIN LGN ON LGN.HR_CODE = R.USERID
                     LEFT JOIN HR_EMP_MST HEM ON LGN.HR_CODE = HEM.EMP_CODE
                     WHERE R.COMP_CODE = :COMP_CODE{branchFilter}
@@ -1592,16 +1632,11 @@ public class OracleDbService
                     R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
                     R.STATUS, R.CREATION_DATE, R.REASON_CODE, R.REMARKS,
                     A.AG_NAME, R.UNIT_CODE,
-                    AP.APPR_ACTION, AP.ACTION_BY, AP.ACTION_DATE, AP.REMARKS AS APPROVER_REMARKS,
+                    AP.HO_ACTION AS APPR_ACTION, AP.ERP_PUSHED_BY AS ACTION_BY, AP.ERP_PUSHED_DATE AS ACTION_DATE, AP.HO_REMARKS AS APPROVER_REMARKS,
                     HEM.NAME AS CREATION_BY
                     FROM APP_CIR_SUPPLY_REQ R
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
-                    LEFT JOIN (
-                        SELECT REQ_ID, APPR_ACTION, ACTION_BY, ACTION_DATE, REMARKS
-                        FROM APP_CIR_SUPPLY_APPROVAL AP1
-                        WHERE AP1.ACTION_DATE = 
-(SELECT MAX(AP2.ACTION_DATE) FROM APP_CIR_SUPPLY_APPROVAL AP2 WHERE AP2.REQ_ID = AP1.REQ_ID) AND  AP1.APPR_ACTION ='PUSHED_TO_ERP'
-                    ) AP ON AP.REQ_ID = R.REQ_ID
+                    LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID AND AP.ERP_PUSHED_BY IS NOT NULL
                     LEFT JOIN LOGIN LGN ON LGN.HR_CODE = R.USERID
                     LEFT JOIN HR_EMP_MST HEM ON LGN.HR_CODE = HEM.EMP_CODE
                     WHERE R.COMP_CODE = :COMP_CODE{branchFilter}
@@ -1632,16 +1667,11 @@ public class OracleDbService
                     R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
                     R.STATUS, R.CREATION_DATE, R.REASON_CODE, R.REMARKS,
                     A.AG_NAME, R.UNIT_CODE,
-                    AP.APPR_ACTION, AP.ACTION_BY, AP.ACTION_DATE, AP.REMARKS AS APPROVER_REMARKS,
+                    AP.HO_ACTION AS APPR_ACTION, AP.ERP_PUSHED_BY AS ACTION_BY, AP.ERP_PUSHED_DATE AS ACTION_DATE, AP.HO_REMARKS AS APPROVER_REMARKS,
                     HEM.NAME AS CREATION_BY
                     FROM APP_CIR_SUPPLY_REQ R
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
-                    LEFT JOIN (
-                        SELECT REQ_ID, APPR_ACTION, ACTION_BY, ACTION_DATE, REMARKS
-                        FROM APP_CIR_SUPPLY_APPROVAL AP1
-                        WHERE AP1.ACTION_DATE = 
-(SELECT MAX(AP2.ACTION_DATE) FROM APP_CIR_SUPPLY_APPROVAL AP2 WHERE AP2.REQ_ID = AP1.REQ_ID) AND  AP1.APPR_ACTION ='PUSHED_TO_ERP'
-                    ) AP ON AP.REQ_ID = R.REQ_ID
+                    LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID AND AP.ERP_PUSHED_BY IS NOT NULL
                     LEFT JOIN LOGIN LGN ON LGN.HR_CODE = R.USERID
                     LEFT JOIN HR_EMP_MST HEM ON LGN.HR_CODE = HEM.EMP_CODE
                     WHERE R.COMP_CODE = :COMP_CODE{branchFilter}
