@@ -83,7 +83,7 @@ public class ZHController : Controller
         var user = GetUser();
         model.UserId = user.UserId;
         model.CompCode = user.ComCode;
-        model.UnitCode = user.UnitCode;
+        model.UnitCode = user.BranchDetails.Select(x=>x.BranchCode).FirstOrDefault();
         model.ZoneCode = user.Zone;
         model.EmployeeCode = user.EmpCode;
 
@@ -104,7 +104,7 @@ public class ZHController : Controller
     {
         var user = GetUser();
         var list = await _dbService.GetSEHistoryAsync(user.EmpCode!, user.ComCode!);
-        return View("~/Views/Home/History.cshtml", list);
+        return View(list);
     }
 
     [HttpPost]
@@ -150,7 +150,7 @@ public class ZHController : Controller
                 list = await _dbService.GetZHPendingAsync(user.EmpCode!, user.ComCode!, branchCodes);
                 break;
             case "approved":
-                list = await _dbService.GetZHApprovedByMeAsync(user.UserId!, user.ComCode!, branchCodes);
+                list = await _dbService.GetZHApprovedByMeAsync(user.EmpCode!, user.ComCode!, branchCodes);
                 break;
             case "atho":
                 list = await _dbService.GetZHAtHoAsync(user.EmpCode!, user.ComCode!, branchCodes);

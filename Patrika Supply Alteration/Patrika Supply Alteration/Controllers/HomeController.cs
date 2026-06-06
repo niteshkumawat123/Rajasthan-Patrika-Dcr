@@ -97,7 +97,7 @@ public class HomeController : Controller
     public async Task<IActionResult> History()
     {
         var user = GetUser();
-        var list = await _dbService.GetSEHistoryAsync(user.UserId!, user.ComCode!);
+        var list = await _dbService.GetSEHistoryAsync(user.EmpCode!, user.ComCode!);
         return View(list);
     }
 
