@@ -1,7 +1,10 @@
 ﻿@model ReportPageViewModel
+@{
+    var yesterday = Model.SelectedDate.AddDays(-1);
+}
 <div class="topbar">
     <a href="@Url.Action("Dashboard","HO")" class="btn btn-secondary btn-sm" style="width:auto;padding:4px 8px;text-decoration:none;">&#x2190; Back</a>
-    <div style="font-size:15px;font-weight:800;">Reports</div>
+    <div style="font-size:15px;font-weight:800;">Branch Report</div>
     <div style="width:60px;"></div>
 </div>
 <div class="scroll-area">
@@ -9,42 +12,114 @@
         <label>&#x1F4C5; Date</label>
         <input type="date" value="@Model.SelectedDate.ToString("yyyy-MM-dd")" onchange="window.location.href='/HO/Reports?selectedDate='+this.value">
     </div>
-    <div class="card fade-in">
-        <div class="card-title">Branch-wise Summary</div>
-        @foreach (var b in Model.BranchSummary)
+
+    <div class="card fade-in" style="margin-bottom:16px;">
+        <div class="card-title" style="margin-bottom:12px;">Branch-wise Summary</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:14px;display:flex;justify-content:space-between;">
+            <span>&#x1F4C5; Today: <b>@Model.SelectedDate.ToString("dd MMM yyyy")</b></span>
+            <span>vs Yesterday: <b>@yesterday.ToString("dd MMM yyyy")</b></span>
+        </div>
+
+        @{
+            var allBranches = Model.BranchSummary.Select(b => b.BranchCode)
+                .Union(Model.YesterdaySummary.Select(b => b.BranchCode))
+                .Distinct().ToList();
+        }
+
+        @if (allBranches.Any())
         {
-            <div class="report-branch-row">
-                <div class="request-row"><span style="font-weight:700;">@b.ZoneCode / @b.BranchCode</span><span>@b.TotalRequests requests</span></div>
-                <div class="request-row" style="font-size:12px;color:var(--muted);">
-                    <span style="color:var(--green);">&#x2191; @b.Increases (+@b.NetIncCopies)</span>
-                    <span style="color:var(--accent);">&#x2193; @b.Decreases (-@b.NetDecCopies)</span>
-                    <span>ERP: @b.PushedToErp</span>
+            @foreach (var branchCode in allBranches)
+            {
+                var today = Model.BranchSummary.FirstOrDefault(b => b.BranchCode == branchCode);
+                var prev = Model.YesterdaySummary.FirstOrDefault(b => b.BranchCode == branchCode);
+                var branchName = today?.BranchName ?? prev?.BranchName ?? branchCode;
+
+                var todayInc = today?.NetIncCopies ?? 0;
+                var todayDec = today?.NetDecCopies ?? 0;
+                var todayTotal = today?.TotalRequests ?? 0;
+                var todayErp = today?.PushedToErp ?? 0;
+                var todayIncCount = today?.Increases ?? 0;
+                var todayDecCount = today?.Decreases ?? 0;
+
+                var prevInc = prev?.NetIncCopies ?? 0;
+                var prevDec = prev?.NetDecCopies ?? 0;
+                var prevTotal = prev?.TotalRequests ?? 0;
+                var prevErp = prev?.PushedToErp ?? 0;
+                var prevIncCount = prev?.Increases ?? 0;
+                var prevDecCount = prev?.Decreases ?? 0;
+
+                var incDiff = todayInc - prevInc;
+                var decDiff = todayDec - prevDec;
+                var totalDiff = todayTotal - prevTotal;
+                var erpDiff = todayErp - prevErp;
+
+                <div class="report-branch-row" style="background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                        <div>
+                            <div style="font-weight:700;font-size:14px;color:var(--paper);">@branchName</div>
+                            <div style="font-size:11px;color:var(--muted);">@branchCode</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:20px;font-weight:800;color:var(--paper);">@todayTotal</div>
+                            <div style="font-size:10px;color:var(--muted);">requests today</div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                        <div style="background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.2);border-radius:8px;padding:10px;text-align:center;">
+                            <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">&#x2191; Increase</div>
+                            <div style="font-size:16px;font-weight:700;color:var(--green);">+@todayInc</div>
+                            <div style="font-size:11px;color:var(--muted);">@todayIncCount entries</div>
+                        </div>
+                        <div style="background:rgba(231,111,81,0.08);border:1px solid rgba(231,111,81,0.2);border-radius:8px;padding:10px;text-align:center;">
+                            <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">&#x2193; Decrease</div>
+                            <div style="font-size:16px;font-weight:700;color:var(--accent);">-@todayDec</div>
+                            <div style="font-size:11px;color:var(--muted);">@todayDecCount entries</div>
+                        </div>
+                    </div>
+
+                    <div style="background:rgba(78,140,255,0.06);border:1px solid var(--border);border-radius:8px;padding:10px;">
+                        <div style="font-size:10px;color:var(--muted);margin-bottom:6px;font-weight:600;">vs Yesterday (@yesterday.ToString("dd MMM"))</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;">
+                            <div style="text-align:center;">
+                                <div style="color:var(--muted);">Inc</div>
+                                <div style="font-weight:700;color:@(incDiff >= 0 ? "var(--green)" : "var(--accent)");">
+                                    @(incDiff >= 0 ? "+" : "")@incDiff
+                                </div>
+                                <div style="color:var(--muted);font-size:10px;">was +@prevInc</div>
+                            </div>
+                            <div style="text-align:center;">
+                                <div style="color:var(--muted);">Dec</div>
+                                <div style="font-weight:700;color:@(decDiff <= 0 ? "var(--green)" : "var(--accent)");">
+                                    @(decDiff >= 0 ? "+" : "")@decDiff
+                                </div>
+                                <div style="color:var(--muted);font-size:10px;">was -@prevDec</div>
+                            </div>
+                            <div style="text-align:center;">
+                                <div style="color:var(--muted);">Requests</div>
+                                <div style="font-weight:700;color:var(--blue);">
+                                    @(totalDiff >= 0 ? "+" : "")@totalDiff
+                                </div>
+                                <div style="color:var(--muted);font-size:10px;">was @prevTotal</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:8px;border-top:1px solid var(--border);">
+                        <span style="font-size:11px;color:var(--muted);">&#x2705; ERP Pushed: <b>@todayErp</b></span>
+                        <span style="font-size:11px;color:@(erpDiff >= 0 ? "var(--green)" : "var(--accent)");">
+                            @(erpDiff >= 0 ? "+" : "")@erpDiff vs yesterday
+                        </span>
+                    </div>
                 </div>
+            }
+        }
+        else
+        {
+            <div style="text-align:center;color:var(--muted);padding:30px 20px;">
+                <div style="font-size:32px;margin-bottom:8px;">&#x1F4CA;</div>
+                <div>No data for selected date.</div>
             </div>
-        }
-        @if (!Model.BranchSummary.Any())
-        {
-            <div style="text-align:center;color:var(--muted);padding:20px;">No data for selected date.</div>
-        }
-    </div>
-    <div class="card fade-in-3">
-        <div class="card-title">ERP Push Log</div>
-        @foreach (var e in Model.ErpPushLog)
-        {
-            <div class="request-card" style="margin-bottom:8px;">
-                <div class="request-row"><span style="font-weight:700;">#@e.ReqId @e.Agcd</span><span>@e.AgName</span></div>
-                <div class="request-row" style="font-size:12px;">
-                    <span>@e.Publ/@e.Edtn</span>
-                    <span>@e.BaseSupply &#x2192; @e.ChangedSupply @(e.IncDec=="I"?"&#x2191;":"&#x2193;")</span>
-                </div>
-                <div class="request-row" style="font-size:11px;color:var(--muted);">
-                    <span>Pushed by @e.PushedBy</span><span>@e.ErpPushDate?.ToString("dd MMM HH:mm")</span>
-                </div>
-            </div>
-        }
-        @if (!Model.ErpPushLog.Any())
-        {
-            <div style="text-align:center;color:var(--muted);padding:20px;">No ERP pushes for selected date.</div>
         }
     </div>
 </div>

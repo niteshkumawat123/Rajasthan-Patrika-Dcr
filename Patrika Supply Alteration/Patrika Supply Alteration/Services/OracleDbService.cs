@@ -1477,6 +1477,55 @@ WHERE ROWNUM <= 15";
         return list;
     }
 
+    // Branch-wise summary filtered by allowed branches (for HO)
+    public async Task<List<BranchSummaryViewModel>> GetBranchSummaryByBranchesAsync(string compCode, DateTime selectedDate, List<string?>? branchCodes)
+    {
+        var list = new List<BranchSummaryViewModel>();
+        if (branchCodes == null || branchCodes.Count == 0)
+            return list;
+
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+
+        var branchParams = new List<string>();
+        for (int i = 0; i < branchCodes.Count; i++)
+            branchParams.Add("'" + (branchCodes[i] ?? "").Replace("'", "''") + "'");
+
+        var sql = $@"SELECT R.UNIT_CODE AS BRANCH_CODE, PCM.""Pub_Cent_name"" AS BRANCH_NAME,
+                    COUNT(*) AS TOTAL_REQUESTS,
+                    COUNT(CASE WHEN R.INC_DEC = 'I' THEN 1 END) AS INCREASES,
+                    COUNT(CASE WHEN R.INC_DEC = 'D' THEN 1 END) AS DECREASES,
+                    NVL(SUM(CASE WHEN R.INC_DEC = 'I' THEN R.CHANGED_SUPPLY - R.BASE_SUPPLY ELSE 0 END),0) AS NET_INC_COPIES,
+                    NVL(SUM(CASE WHEN R.INC_DEC = 'D' THEN R.BASE_SUPPLY - R.CHANGED_SUPPLY ELSE 0 END),0) AS NET_DEC_COPIES,
+                    COUNT(CASE WHEN R.ERP_PUSH_FLAG = 'Y' THEN 1 END) AS PUSHED_TO_ERP
+                    FROM APP_CIR_SUPPLY_REQ R
+                    LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
+                    WHERE R.COMP_CODE = :COMP_CODE 
+                    AND TRUNC(R.CREATION_DATE) = TRUNC(:SELECTED_DATE)
+                    AND R.UNIT_CODE IN ({string.Join(",", branchParams)})
+                    GROUP BY R.UNIT_CODE, PCM.""Pub_Cent_name""
+                    ORDER BY R.UNIT_CODE";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+        cmd.Parameters.Add(new OracleParameter("SELECTED_DATE", selectedDate));
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(new BranchSummaryViewModel
+            {
+                BranchCode = reader["BRANCH_CODE"]?.ToString(),
+                BranchName = reader["BRANCH_NAME"]?.ToString(),
+                TotalRequests = Convert.ToInt32(reader["TOTAL_REQUESTS"]),
+                Increases = Convert.ToInt32(reader["INCREASES"]),
+                Decreases = Convert.ToInt32(reader["DECREASES"]),
+                NetIncCopies = Convert.ToInt32(reader["NET_INC_COPIES"]),
+                NetDecCopies = Convert.ToInt32(reader["NET_DEC_COPIES"]),
+                PushedToErp = Convert.ToInt32(reader["PUSHED_TO_ERP"])
+            });
+        }
+        return list;
+    }
+
     // QUERY 18: ERP push log
     public async Task<List<ErpPushLogViewModel>> GetErpPushLogAsync(string compCode, DateTime selectedDate)
     {
@@ -1736,5 +1785,25 @@ WHERE ROWNUM <= 15";
             return true;
         }
         catch { return false; }
+    }
+
+    // Get HO user's allowed branch codes from APP_CIR_HO_APPROVAL_MAST
+    public async Task<List<string>> GetHOAllowedBranchesAsync(string employeeCode)
+    {
+        var branches = new List<string>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT BRANCH_CODE FROM APP_CIR_HO_APPROVAL_MAST 
+                    WHERE EMPLOYEE_CODE = :EMP_CODE AND IS_ACTIVE = 'Y'";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("EMP_CODE", employeeCode));
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            var branch = reader["BRANCH_CODE"]?.ToString();
+            if (!string.IsNullOrEmpty(branch))
+                branches.Add(branch);
+        }
+        return branches;
     }
 }

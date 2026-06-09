@@ -4,6 +4,7 @@ public class BranchSummaryViewModel
 {
     public string? ZoneCode { get; set; }
     public string? BranchCode { get; set; }
+    public string? BranchName { get; set; }
     public int TotalRequests { get; set; }
     public int Increases { get; set; }
     public int Decreases { get; set; }
@@ -29,6 +30,7 @@ public class ErpPushLogViewModel
 public class ReportPageViewModel
 {
     public List<BranchSummaryViewModel> BranchSummary { get; set; } = new();
+    public List<BranchSummaryViewModel> YesterdaySummary { get; set; } = new();
     public List<ErpPushLogViewModel> ErpPushLog { get; set; } = new();
     public DateTime SelectedDate { get; set; }
 }

@@ -10,6 +10,8 @@ wwwroot\icons\home_icon.png
 wwwroot\icons\home_icon.svg
 wwwroot\icons\japur_ho_icon.png
 wwwroot\icons\japur_ho_icon.svg
+wwwroot\icons\PatrikaFaveIcon.jpeg
+wwwroot\icons\PatrikaLogo.jpeg
 wwwroot\icons\profile_icon.png
 wwwroot\icons\profile_icon.svg
 wwwroot\icons\sales_executive_icon.png
