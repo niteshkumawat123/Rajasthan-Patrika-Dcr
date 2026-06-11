@@ -18,23 +18,24 @@ public class AccountController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> RoleSelect()
-    {
-        var roles = await _dbService.GetRolesAsync();
-        return View(roles);
-    }
-
-    [HttpPost]
-    public IActionResult RoleSelect(string code, string name)
-    {
-        TempData["RoleCode"] = code;
-        TempData["RoleName"] = name;
-        return RedirectToAction("Login");
-    }
-
-    [HttpGet]
     public IActionResult Login()
     {
+        // If user is already logged in, redirect to dashboard
+        var user = _sessionService.GetUser(HttpContext.Session);
+        if (user != null)
+        {
+            var roles = user.RoleDetails ?? new List<RoleDetails>();
+            bool canApproveHO = roles.Any(r => r.RoleId == "7");
+            bool canApproveZH = roles.Any(r => r.RoleId == "4");
+            bool canAdd = roles.Any(r => r.RoleId == "1" || r.RoleId == "3" || r.RoleId == "4" || r.RoleId == "6");
+
+            if (canApproveHO && !canAdd)
+                return RedirectToAction("Dashboard", "HO");
+            if (canApproveZH)
+                return RedirectToAction("Dashboard", "ZH");
+            return RedirectToAction("Dashboard", "Home");
+        }
+
         var model = new LoginViewModel();
         return View(model);
     }

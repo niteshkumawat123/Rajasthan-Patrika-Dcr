@@ -22,7 +22,7 @@ public class SessionAuthFilter : IActionFilter
         var user = _sessionService.GetUser(context.HttpContext.Session);
         if (user == null)
         {
-            context.Result = new RedirectToActionResult("RoleSelect", "Account", null);
+            context.Result = new RedirectToActionResult("Login", "Account", null);
         }
     }
 

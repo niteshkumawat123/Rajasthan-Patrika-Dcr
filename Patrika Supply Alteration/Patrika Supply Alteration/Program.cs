@@ -11,6 +11,7 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromMinutes(60);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.Cookie.MaxAge = TimeSpan.FromMinutes(60);
 });
 builder.Services.AddScoped<OracleDbService>();
 builder.Services.AddScoped<EmailService>();
