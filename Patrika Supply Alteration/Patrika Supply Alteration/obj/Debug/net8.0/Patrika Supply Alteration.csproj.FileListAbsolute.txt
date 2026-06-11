@@ -45,6 +45,7 @@ E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debu
 E:\RajasthanPatrika\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\appsettings.Development.json
 E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\appsettings.json
+E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\firebase-service-account.json
 E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\Patrika Supply Alteration.staticwebassets.runtime.json
 E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\Patrika Supply Alteration.staticwebassets.endpoints.json
 E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\Patrika Supply Alteration.exe
@@ -100,3 +101,4 @@ E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supp
 E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\Patrika Supply Alteration.pdb
 E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\Patrika Supply Alteration.genruntimeconfig.cache
 E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supply Alteration\obj\Debug\net8.0\ref\Patrika Supply Alteration.dll
+E:\RajasthanPatrika\Rajasthan-Patrika-Dcr\Patrika Supply Alteration\Patrika Supply Alteration\bin\Debug\net8.0\web.config

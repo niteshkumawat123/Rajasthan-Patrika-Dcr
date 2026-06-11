@@ -10,11 +10,13 @@ public class HomeController : Controller
 {
     private readonly OracleDbService _dbService;
     private readonly SessionService _sessionService;
+    private readonly NotifyService _notifyService;
 
-    public HomeController(OracleDbService dbService, SessionService sessionService)
+    public HomeController(OracleDbService dbService, SessionService sessionService, NotifyService notifyService)
     {
         _dbService = dbService;
         _sessionService = sessionService;
+        _notifyService = notifyService;
     }
 
     private UserSessionModel GetUser() => _sessionService.GetUser(HttpContext.Session)!;
@@ -90,6 +92,15 @@ public class HomeController : Controller
             return Json(new { success = false, message = "A pending request already exists for this agency. Please wait for approval or cancellation before submitting a new one." });
 
         var success = await _dbService.SubmitRequestAsync(model);
+        if (success)
+        {
+            _ = Task.Run(async () =>
+            {
+                var branchCode = model.UnitCode;
+                if (!string.IsNullOrEmpty(branchCode))
+                    await _notifyService.NotifyZHByBranchAsync(branchCode, "New Supply Request", $"A new supply alteration request has been submitted by {user.EmpName} ({user.EmpCode}) for agent {model.Agcd}. Please review and take action.");
+            });
+        }
         return Json(new { success, message = success ? "Request submitted successfully! Redirecting..." : "Failed to submit request." });
     }
 

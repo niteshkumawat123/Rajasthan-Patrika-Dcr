@@ -14,4 +14,6 @@
     <PackageReference Include="MimeKit" Version="4.3.0" />
   </ItemGroup>
 
+  <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="ofghyeu-=].mg" /></VisualStudio></ProjectExtensions>
+
 </Project>

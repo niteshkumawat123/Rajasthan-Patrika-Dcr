@@ -1806,4 +1806,190 @@ WHERE ROWNUM <= 15";
         }
         return branches;
     }
+
+    // Get all active HO user emails from APP_CIR_HO_APPROVAL_MAST
+    public async Task<List<string>> GetHOEmailsAsync()
+    {
+        var emails = new List<string>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT DISTINCT EMAIL_ID FROM APP_CIR_HO_APPROVAL_MAST 
+                    WHERE IS_ACTIVE = 'Y' AND EMAIL_ID IS NOT NULL";
+        using var cmd = new OracleCommand(sql, conn);
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            var email = reader["EMAIL_ID"]?.ToString();
+            if (!string.IsNullOrEmpty(email))
+                emails.Add(email);
+        }
+        return emails;
+    }
+
+    // Get ZH user emails for branches that a request belongs to
+    public async Task<List<string>> GetZHEmailsByBranchAsync(string branchCode)
+    {
+        var emails = new List<string>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT DISTINCT HEM.EMAIL 
+                    FROM HR_EMP_MST HEM
+                    INNER JOIN CIR_PLI_HIERARCHY_MAST CPHM ON CPHM.EMP_CODE = HEM.EMP_CODE
+                    WHERE CPHM.HIERARCHY_CODE = '4'
+                    AND HEM.BRAN_CODE = :BRANCH_CODE
+                    AND HEM.EMAIL IS NOT NULL";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("BRANCH_CODE", branchCode));
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            var email = reader["EMAIL"]?.ToString();
+            if (!string.IsNullOrEmpty(email))
+                emails.Add(email);
+        }
+        return emails;
+    }
+
+    // Get email of a specific employee
+    public async Task<string?> GetEmployeeEmailAsync(string empCode)
+    {
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT EMAIL FROM HR_EMP_MST WHERE EMP_CODE = :EMP_CODE";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("EMP_CODE", empCode));
+        var result = await cmd.ExecuteScalarAsync();
+        return result?.ToString();
+    }
+
+    // Get the branch (UNIT_CODE) of a specific request
+    public async Task<string?> GetRequestBranchAsync(decimal reqId)
+    {
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT UNIT_CODE FROM APP_CIR_SUPPLY_REQ WHERE REQ_ID = :REQ_ID";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("REQ_ID", reqId));
+        var result = await cmd.ExecuteScalarAsync();
+        return result?.ToString();
+    }
+
+    // Get the creator (USERID) of a specific request
+    public async Task<string?> GetRequestCreatorAsync(decimal reqId)
+    {
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT USERID FROM APP_CIR_SUPPLY_REQ WHERE REQ_ID = :REQ_ID";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("REQ_ID", reqId));
+        var result = await cmd.ExecuteScalarAsync();
+        return result?.ToString();
+    }
+
+    // Save push token to LOGIN table for a user
+    public async Task SavePushTokenAsync(string empCode, string pushToken)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            using var txn = conn.BeginTransaction();
+            try
+            {
+                var sql = @"UPDATE LOGIN SET PUSH_TOKEN = :PUSH_TOKEN WHERE HR_CODE = :EMP_CODE AND STATUS = 'A'";
+                using var cmd = new OracleCommand(sql, conn) { Transaction = txn };
+                cmd.Parameters.Add(new OracleParameter("PUSH_TOKEN", pushToken));
+                cmd.Parameters.Add(new OracleParameter("EMP_CODE", empCode));
+                await cmd.ExecuteNonQueryAsync();
+                txn.Commit();
+            }
+            catch { txn.Rollback(); }
+        }
+        catch { }
+    }
+
+    // Clear push token on logout
+    public async Task ClearPushTokenAsync(string empCode)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            using var txn = conn.BeginTransaction();
+            try
+            {
+                var sql = @"UPDATE LOGIN SET PUSH_TOKEN = NULL WHERE HR_CODE = :EMP_CODE";
+                using var cmd = new OracleCommand(sql, conn) { Transaction = txn };
+                cmd.Parameters.Add(new OracleParameter("EMP_CODE", empCode));
+                await cmd.ExecuteNonQueryAsync();
+                txn.Commit();
+            }
+            catch { txn.Rollback(); }
+        }
+        catch { }
+    }
+
+    // Get push token for a specific employee
+    public async Task<string?> GetPushTokenByEmpCodeAsync(string empCode)
+    {
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT PUSH_TOKEN FROM LOGIN WHERE HR_CODE = :EMP_CODE AND STATUS = 'A' AND PUSH_TOKEN IS NOT NULL";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("EMP_CODE", empCode));
+        var result = await cmd.ExecuteScalarAsync();
+        return result?.ToString();
+    }
+
+    // Get push tokens for all users with a specific role (hierarchy_code) in a specific branch
+    public async Task<List<string>> GetPushTokensByRoleAndBranchAsync(string hierarchyCode, string branchCode)
+    {
+        var tokens = new List<string>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT DISTINCT L.PUSH_TOKEN 
+                    FROM LOGIN L
+                    INNER JOIN CIR_PLI_HIERARCHY_MAST CPHM ON CPHM.EMP_CODE = L.HR_CODE
+                    WHERE CPHM.HIERARCHY_CODE = :HIERARCHY_CODE
+                    AND CPHM.UNIT_CODE = :BRANCH_CODE
+                    AND CPHM.ISACTIVEFORPLI = 'Y'
+                    AND L.STATUS = 'A'
+                    AND L.PUSH_TOKEN IS NOT NULL";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("HIERARCHY_CODE", hierarchyCode));
+        cmd.Parameters.Add(new OracleParameter("BRANCH_CODE", branchCode));
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            var token = reader["PUSH_TOKEN"]?.ToString();
+            if (!string.IsNullOrEmpty(token))
+                tokens.Add(token);
+        }
+        return tokens;
+    }
+
+    // Get push tokens for all users with a specific role (any branch)
+    public async Task<List<string>> GetPushTokensByRoleAsync(string hierarchyCode)
+    {
+        var tokens = new List<string>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT DISTINCT L.PUSH_TOKEN 
+                    FROM LOGIN L
+                    INNER JOIN CIR_PLI_HIERARCHY_MAST CPHM ON CPHM.EMPLOYEE_CODE = L.HR_CODE
+                    WHERE CPHM.HIERARCHY_CODE = :HIERARCHY_CODE
+                    AND CPHM.ISACTIVEFORPLI = 'Y'
+                    AND L.STATUS = 'A'
+                    AND L.PUSH_TOKEN IS NOT NULL";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("HIERARCHY_CODE", hierarchyCode));
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            var token = reader["PUSH_TOKEN"]?.ToString();
+            if (!string.IsNullOrEmpty(token))
+                tokens.Add(token);
+        }
+        return tokens;
+    }
 }

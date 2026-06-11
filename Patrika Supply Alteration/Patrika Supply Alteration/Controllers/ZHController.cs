@@ -10,13 +10,13 @@ public class ZHController : Controller
 {
     private readonly OracleDbService _dbService;
     private readonly SessionService _sessionService;
-    private readonly FirebaseNotificationService _notificationService;
+    private readonly NotifyService _notifyService;
 
-    public ZHController(OracleDbService dbService, SessionService sessionService, FirebaseNotificationService notificationService)
+    public ZHController(OracleDbService dbService, SessionService sessionService, NotifyService notifyService)
     {
         _dbService = dbService;
         _sessionService = sessionService;
-        _notificationService = notificationService;
+        _notifyService = notifyService;
     }
 
     private UserSessionModel GetUser() => _sessionService.GetUser(HttpContext.Session)!;
@@ -94,7 +94,12 @@ public class ZHController : Controller
         var success = await _dbService.SubmitRequestAsync(model);
         if (success)
         {
-            _ = _notificationService.SendToTopicAsync("ZH", "New Supply Request", $"New request submitted by {user.EmpName} for agent {model.Agcd}");
+            _ = Task.Run(async () =>
+            {
+                var branchCode = model.UnitCode;
+                if (!string.IsNullOrEmpty(branchCode))
+                    await _notifyService.NotifyZHByBranchAsync(branchCode, "New Supply Request", $"A new supply alteration request has been submitted by {user.EmpName} for agent {model.Agcd}. Please review and take action.");
+            });
         }
         return Json(new { success, message = success ? "Request submitted successfully!" : "Failed to submit request." });
     }
@@ -114,7 +119,11 @@ public class ZHController : Controller
         var success = await _dbService.ZHApproveRejectAsync(reqId, "APPROVED", user.EmpCode!, remarks ?? "", user.ComCode!);
         if (success)
         {
-            _ = _notificationService.SendToTopicAsync("HO", "Request Approved by ZH", $"Request #{reqId} approved by {user.EmpName} and forwarded.");
+            _ = Task.Run(async () =>
+            {
+                await _notifyService.NotifyAllHOAsync("Request Approved by ZH", $"Request #{reqId} has been approved by ZH ({user.EmpName}) and forwarded to HO for final approval.");
+                await _notifyService.NotifyRequestCreatorAsync(reqId, "Request Forwarded to HO", $"Your request #{reqId} has been approved by ZH and forwarded to HO for final approval.");
+            });
         }
         return Json(new { success, message = success ? "Request approved." : "Failed to approve." });
     }
@@ -126,7 +135,11 @@ public class ZHController : Controller
         var success = await _dbService.ZHApproveRejectAsync(reqId, "REJECTED", user.EmpCode!, remarks ?? "", user.ComCode!);
         if (success)
         {
-            _ = _notificationService.SendToTopicAsync("Executive", "Request Rejected", $"Request #{reqId} has been rejected by ZH.");
+            _ = Task.Run(async () =>
+            {
+                var remarksText = !string.IsNullOrEmpty(remarks) ? $" Remarks: {remarks}" : "";
+                await _notifyService.NotifyRequestCreatorAsync(reqId, "Request Rejected by ZH", $"Your request #{reqId} has been rejected by ZH ({user.EmpName}).{remarksText}");
+            });
         }
         return Json(new { success, message = success ? "Request rejected." : "Failed to reject." });
     }

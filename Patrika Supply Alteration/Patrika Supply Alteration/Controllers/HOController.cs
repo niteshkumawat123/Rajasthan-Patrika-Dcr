@@ -10,13 +10,13 @@ public class HOController : Controller
 {
     private readonly OracleDbService _dbService;
     private readonly SessionService _sessionService;
-    private readonly FirebaseNotificationService _notificationService;
+    private readonly NotifyService _notifyService;
 
-    public HOController(OracleDbService dbService, SessionService sessionService, FirebaseNotificationService notificationService)
+    public HOController(OracleDbService dbService, SessionService sessionService, NotifyService notifyService)
     {
         _dbService = dbService;
         _sessionService = sessionService;
-        _notificationService = notificationService;
+        _notifyService = notifyService;
     }
 
     private UserSessionModel GetUser() => _sessionService.GetUser(HttpContext.Session)!;
@@ -60,8 +60,13 @@ public class HOController : Controller
             user.UnitCode!, agcd, dpcd, publ, edtn, supplyTypeCode, changedSupply, changedSupplyDate);
         if (success)
         {
-            _ = _notificationService.SendToTopicAsync("ZH", "HO Approved", $"Request #{reqId} approved by HO and pushed to ERP.");
-            _ = _notificationService.SendToTopicAsync("Executive", "Request Approved", $"Request #{reqId} has been approved and pushed to ERP.");
+            _ = Task.Run(async () =>
+            {
+                var branch = await _dbService.GetRequestBranchAsync(reqId);
+                if (!string.IsNullOrEmpty(branch))
+                    await _notifyService.NotifyZHByBranchAsync(branch, "HO Approved", $"Request #{reqId} has been approved by HO ({user.EmpName}) and pushed to ERP.");
+                await _notifyService.NotifyRequestCreatorAsync(reqId, "Request Approved", $"Your request #{reqId} has been approved by HO and pushed to ERP.");
+            });
         }
         return Json(new { success, message = success ? "Request approved and pushed to ERP." : "Failed to approve." });
     }
@@ -73,8 +78,14 @@ public class HOController : Controller
         var success = await _dbService.HORejectAsync(reqId, user.EmpCode!, remarks ?? "", user.ComCode!);
         if (success)
         {
-            _ = _notificationService.SendToTopicAsync("ZH", "HO Rejected", $"Request #{reqId} rejected by HO.");
-            _ = _notificationService.SendToTopicAsync("Executive", "Request Rejected", $"Request #{reqId} has been rejected by HO.");
+            _ = Task.Run(async () =>
+            {
+                var branch = await _dbService.GetRequestBranchAsync(reqId);
+                var remarksText = !string.IsNullOrEmpty(remarks) ? $" Remarks: {remarks}" : "";
+                if (!string.IsNullOrEmpty(branch))
+                    await _notifyService.NotifyZHByBranchAsync(branch, "HO Rejected", $"Request #{reqId} has been rejected by HO ({user.EmpName}).{remarksText}");
+                await _notifyService.NotifyRequestCreatorAsync(reqId, "Request Rejected", $"Your request #{reqId} has been rejected by HO.{remarksText}");
+            });
         }
         return Json(new { success, message = success ? "Request rejected." : "Failed to reject." });
     }

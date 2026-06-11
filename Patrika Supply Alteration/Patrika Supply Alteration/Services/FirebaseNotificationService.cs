@@ -9,12 +9,17 @@ public class FirebaseNotificationService
 {
     private static bool _initialized = false;
     private static readonly ConcurrentDictionary<string, List<string>> _userTokens = new();
+    private readonly ILogger<FirebaseNotificationService> _logger;
 
-    public FirebaseNotificationService(IWebHostEnvironment env)
+    public FirebaseNotificationService(IWebHostEnvironment env, ILogger<FirebaseNotificationService> logger)
     {
+        _logger = logger;
+
         if (!_initialized)
         {
             var path = Path.Combine(env.ContentRootPath, "firebase-service-account.json");
+            _logger.LogInformation("Looking for Firebase service account at: {Path}", path);
+
             if (File.Exists(path))
             {
                 try
@@ -24,15 +29,16 @@ public class FirebaseNotificationService
                         Credential = GoogleCredential.FromFile(path)
                     });
                     _initialized = true;
+                    _logger.LogInformation("Firebase initialized successfully.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Firebase initialization failed: {ex.Message}");
+                    _logger.LogWarning("Firebase initialization failed: {Message}", ex.Message);
                 }
             }
             else
             {
-                Console.WriteLine($"Firebase service account file not found at: {path}");
+                _logger.LogWarning("Firebase service account file not found at: {Path}. Push notifications will be disabled.", path);
             }
         }
     }
