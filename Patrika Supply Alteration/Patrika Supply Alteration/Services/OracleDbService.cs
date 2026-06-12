@@ -1834,7 +1834,7 @@ WHERE ROWNUM <= 15";
         await conn.OpenAsync();
         var sql = @"SELECT DISTINCT HEM.EMAIL 
                     FROM HR_EMP_MST HEM
-                    INNER JOIN CIR_PLI_HIERARCHY_MAST CPHM ON CPHM.EMP_CODE = HEM.EMP_CODE
+                    INNER JOIN CIR_PLI_HIERARCHY_MAST CPHM ON CPHM.EMPLOYEE_CODE = HEM.EMP_CODE
                     WHERE CPHM.HIERARCHY_CODE = '4'
                     AND HEM.BRAN_CODE = :BRANCH_CODE
                     AND HEM.EMAIL IS NOT NULL";
@@ -1949,7 +1949,7 @@ WHERE ROWNUM <= 15";
         await conn.OpenAsync();
         var sql = @"SELECT DISTINCT L.PUSH_TOKEN 
                     FROM LOGIN L
-                    INNER JOIN CIR_PLI_HIERARCHY_MAST CPHM ON CPHM.EMP_CODE = L.HR_CODE
+                    INNER JOIN CIR_PLI_HIERARCHY_MAST CPHM ON CPHM.EMPLOYEE_CODE = L.HR_CODE
                     WHERE CPHM.HIERARCHY_CODE = :HIERARCHY_CODE
                     AND CPHM.UNIT_CODE = :BRANCH_CODE
                     AND CPHM.ISACTIVEFORPLI = 'Y'

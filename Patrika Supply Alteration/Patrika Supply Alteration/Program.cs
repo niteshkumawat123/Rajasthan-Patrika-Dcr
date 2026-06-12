@@ -20,7 +20,7 @@ builder.Services.AddScoped<SessionAuthFilter>();
 builder.Services.AddSingleton<FirebaseNotificationService>();
 builder.Services.AddScoped<NotifyService>();
 
-builder.WebHost.UseUrls("http://0.0.0.0:5000");
+//builder.WebHost.UseUrls("http://0.0.0.0:5000");
 
 var app = builder.Build();
 
