@@ -1,5 +1,4 @@
 wwwroot\css\site.css
-wwwroot\css\style.css
 wwwroot\favicon.ico
 wwwroot\firebase-messaging-sw.js
 wwwroot\icons\add_new_icon.png
@@ -80,3 +79,4 @@ wwwroot\lib\jquery\dist\jquery.min.js
 wwwroot\lib\jquery\dist\jquery.min.map
 wwwroot\lib\jquery\LICENSE.txt
 wwwroot\manifest.json
+wwwroot\css\style.css
