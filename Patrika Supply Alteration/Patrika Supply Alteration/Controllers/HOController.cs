@@ -35,7 +35,7 @@ public class HOController : Controller
         var date = selectedDate ?? DateTime.Today;
         var branchCodes = await GetHOBranchCodesAsync();
 
-        var stats = await _dbService.GetHOStatsAsync(user.ComCode!, date, branchCodes);
+        var stats = await _dbService.GetHOStatsAsync(user.ComCode!, date, branchCodes, user.EmpCode!);
         var pending = await _dbService.GetHOPendingAsync(user.ComCode!, branchCodes);
         var model = new HODashboardViewModel
         {

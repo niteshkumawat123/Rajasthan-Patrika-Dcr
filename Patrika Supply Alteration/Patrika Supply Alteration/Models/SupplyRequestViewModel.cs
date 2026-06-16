@@ -44,6 +44,7 @@ public class SupplyRequestViewModel
     public string? CreationByCode { get; set; }
     public string? EmployeeCode { get; set; }
     public string? DropPointName { get; set; }
+    public string? BranchName { get; set; }
 
     // Day-wise supply fields
     public int? SupplyMon { get; set; }

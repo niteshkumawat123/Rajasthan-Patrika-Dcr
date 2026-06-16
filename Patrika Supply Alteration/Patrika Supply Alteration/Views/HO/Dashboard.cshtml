@@ -40,11 +40,11 @@
                 <div class="req-item" onclick="openAuditModal(@req.ReqId)">
                     <div class="req-icon @(req.IncDec=="I"?"increase":"decrease")">@(req.IncDec=="I"?"📈":"📉")</div>
                     <div class="req-info">
-                        <div class="req-agent">@req.AgName &middot;(@req.Agcd) </div>
+                        <div class="req-agent">@req.AgName @(!string.IsNullOrEmpty(req.DropPointName) ? $"· {req.DropPointName}" : "") &middot;(@req.Agcd) </div>
                         <div class="req-meta">
                             <span style="background:rgba(78,140,255,0.1);padding:2px 7px;border-radius:6px;font-size:11px;">@req.Publ / @req.Edtn</span>
                             @if(!string.IsNullOrEmpty(req.BranchCode)){
-                            <span style="background:rgba(120,80,255,0.1);padding:2px 7px;border-radius:6px;font-size:11px;">@req.BranchCode</span>
+                            <span style="background:rgba(120,80,255,0.1);padding:2px 7px;border-radius:6px;font-size:11px;">@req.BranchCode @(!string.IsNullOrEmpty(req.BranchName) ? $"- {req.BranchName}" : "")</span>
                             }
                             <span style="font-size:11px;color:var(--muted);">@req.CreationDate?.ToString("dd MMM yyyy")</span>
                         </div>
@@ -109,10 +109,10 @@ function loadFiltered(status){
             html+=`<div class="req-item" onclick="openAuditModal(${req.reqId})" style="cursor:pointer;">
                 <div class="req-icon ${isInc?'increase':'decrease'}">${isInc?'📈':'📉'}</div>
                 <div class="req-info">
-                    <div class="req-agent">${req.agName||''}</div>
+                    <div class="req-agent">${req.agName||''}${req.dropPointName?' · '+req.dropPointName:''}</div>
                     <div class="req-meta">
                         <span style="background:rgba(78,140,255,0.1);padding:2px 7px;border-radius:6px;font-size:11px;">${req.publ||''} / ${req.edtn||''}</span>
-                        ${req.branchCode?'<span style="background:rgba(120,80,255,0.1);padding:2px 7px;border-radius:6px;font-size:11px;">'+req.branchCode+'</span>':''}
+                        ${req.branchCode?'<span style="background:rgba(120,80,255,0.1);padding:2px 7px;border-radius:6px;font-size:11px;">'+req.branchCode+(req.branchName?' - '+req.branchName:'')+'</span>':''}
                         <span style="font-size:11px;color:var(--muted);">${dateStr}</span>
                     </div>
                     <div class="req-by">${req.agcd||''} &middot; ${req.baseSupply||0} → ${req.changedSupply||0} ${isInc?'↑':'↓'} &middot; By ${req.creationBy||''}</div>

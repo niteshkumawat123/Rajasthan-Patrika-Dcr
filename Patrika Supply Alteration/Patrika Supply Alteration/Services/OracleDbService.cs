@@ -121,6 +121,15 @@ public class OracleDbService
             }
             #endregion Complete Executive 
 
+            #region Check user does HO or not
+            var HOData = await CheckUserHO(username);
+            if (HOData != null && !string.IsNullOrEmpty(HOData.HrCode))
+            {
+                HOData.FirstLoginFlag = firstLoginFlag;
+                return HOData;
+            }
+            #endregion Complete HO 
+
             // If not executive, check other roles
             var otherData = await OTHERLOGINUSER(username);
             if(otherData!=null && otherData.BranchDetails!=null && otherData.BranchDetails.Count()>0)
@@ -455,6 +464,100 @@ public class OracleDbService
             return null;
         }
     }
+
+    public async Task<UserSessionModel> CheckUserHO(string EmployeeCode)
+    {
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        try
+        {
+            // ?? First Query: Get all branch details from executive master ??
+            var RoleDetails = new List<RoleDetails>();
+
+            var branchDetails = new List<BranchDetail>();
+
+            var sql1 = @"SELECT  CEM.BRANCH_CODE AS BranchCode, JPCM.""Pub_Cent_name"" AS BranchName
+                     FROM APP_CIR_HO_APPROVAL_MAST CEM 
+                     LEFT JOIN PUB_CENT_MAST JPCM ON JPCM.""Pub_cent_Code"" = CEM.BRANCH_CODE
+                     WHERE IS_ACTIVE = 'Y'                       
+                       AND EMPLOYEE_CODE = :EmployeeCode";
+
+            using (var cmd1 = new OracleCommand(sql1, conn))
+            {
+                cmd1.Parameters.Add(new OracleParameter("EmployeeCode", EmployeeCode));
+
+                using var reader1 = await cmd1.ExecuteReaderAsync();
+
+                while (await reader1.ReadAsync())   // ReadAsync all rows, not just first
+                {
+                    // Capture UNIT_CODE once (same for all rows)
+
+                    branchDetails.Add(new BranchDetail
+                    {
+                        BranchCode = reader1["BranchCode"]?.ToString(),
+                        BranchName = reader1["BranchName"]?.ToString()
+                    });
+                    RoleDetails.Add(new RoleDetails
+                    {
+                        RoleId = "7",
+                        RoleName = "HO"
+
+                    });
+                }
+
+                // If no rows found — employee is not an active executive
+                if (branchDetails.Count == 0)
+                {
+                    return null;
+                }
+            }
+
+            // ?? Second Query: Get user session details ??
+            var sql2 = @"SELECT L.""userid"" AS USERID, L.HR_CODE, L.COM_CODE, L.STATUS,
+                            E.EMP_CODE, E.NAME, E.DESIG, E.UNIT_CODE AS BRAN_CODE,
+                            E.MOBILE, E.EMAIL, E.ZONE, E.REPORT_TO
+                     FROM LOGIN L
+                     LEFT JOIN HR_EMP_MST E ON E.EMP_CODE = L.HR_CODE
+                     WHERE E.EMP_CODE = :EmployeeCode
+                       AND L.STATUS = 'A'";
+
+            using var cmd2 = new OracleCommand(sql2, conn);
+            cmd2.Parameters.Add(new OracleParameter("EmployeeCode", EmployeeCode));
+
+            using var reader2 = await cmd2.ExecuteReaderAsync();
+            if (await reader2.ReadAsync())
+            {
+                var data = new UserSessionModel
+                {
+                    UserId = reader2["USERID"]?.ToString(),
+                    HrCode = reader2["HR_CODE"]?.ToString(),
+                    ComCode = reader2["COM_CODE"]?.ToString(),
+                    EmpCode = reader2["EMP_CODE"]?.ToString(),
+                    EmpName = reader2["NAME"]?.ToString(),
+                    Designation = reader2["DESIG"]?.ToString(),
+                    BranchCode = reader2["BRAN_CODE"]?.ToString(),
+                    Mobile = reader2["MOBILE"]?.ToString(),
+                    Email = reader2["EMAIL"]?.ToString(),
+                    Zone = reader2["ZONE"]?.ToString(),
+                    ReportTo = reader2["REPORT_TO"]?.ToString(),
+                    // ?? Carry forward values from first query ??
+                    UnitCode = reader2["BRAN_CODE"]?.ToString(),
+                    BranchDetails = branchDetails,
+                    RoleDetails = RoleDetails,
+                    RoleName = RoleDetails.FirstOrDefault()?.RoleName ?? "Executive"
+                };
+
+                return data;
+            }
+
+            return null; // No matching login record found
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in CheckUserExecutive: {ex.Message}");
+            return null;
+        }
+    }
     // QUERY 3: Forgot password
     public async Task<(string? email, string? password)> GetForgotPasswordAsync(string empId)
     {
@@ -546,7 +649,7 @@ public class OracleDbService
             " R.STATUS, R.CREATION_DATE, R.REASON_CODE," +
             " R.CHANGED_SUPPLY_DATE, R.REMARKS," +
             " (SELECT AG_NAME FROM CIR_AGMAST WHERE AGCD = R.AGCD " +
-            " AND DPCD = R.DPCD AND COMP_CODE = R.COMP_CODE AND ROWNUM = 1) AS AG_NAME," +
+            " AND DPCD = R.DPCD AND COMP_CODE = R.COMP_CODE AND UNIT= R.UNIT_CODE AND ROWNUM = 1) AS AG_NAME," +
             " (SELECT FF.DROP_POINT_NAME FROM CIR_AGMAST MM INNER " +
             " JOIN CIR_DROP_POINT_MAST FF ON MM.STATION_CODE = FF.DROP_POINT" +
             " WHERE MM.AGCD = R.AGCD AND MM.DPCD = R.DPCD AND MM.COMP_CODE = R.COMP_CODE AND ROWNUM = 1) AS DROP_POINT_NAME," +
@@ -907,12 +1010,15 @@ WHERE ROWNUM <= 15";
                R.REASON_CODE, R.REMARKS, R.USERID,
                R.CREATION_DATE, R.CHANGED_SUPPLY_DATE, R.STATUS,
                A.AG_NAME, A.UNIT AS BRANCH_CODE,
+               PCM.""Pub_Cent_name"" AS BRANCH_NAME,
                HEM.NAME AS CREATION_BY, HEM.EMP_CODE,
-               AP.ZH_ACTION_DATE AS ACTION_DATE, AP.ZH_REMARKS AS APPROVER_REMARKS
+               AP.ZH_ACTION_DATE AS ACTION_DATE, AP.ZH_REMARKS AS APPROVER_REMARKS,
+               (SELECT FF.DROP_POINT_NAME FROM CIR_DROP_POINT_MAST FF WHERE FF.DROP_POINT = A.STATION_CODE AND ROWNUM = 1) AS DROP_POINT_NAME
         FROM APP_CIR_SUPPLY_REQ R
         INNER JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
             AND AP.ZH_ACTION = 'APPROVED' AND AP.ZH_ACTION_BY = :EMP_CODE
         LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.COMP_CODE = R.COMP_CODE AND A.UNIT = R.UNIT_CODE
+        LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
         LEFT JOIN HR_EMP_MST HEM ON HEM.EMP_CODE = R.USERID
         WHERE R.COMP_CODE = :COMP_CODE
           AND R.UNIT_CODE IN ({string.Join(",", branchParams)})
@@ -950,9 +1056,12 @@ WHERE ROWNUM <= 15";
                R.REASON_CODE, R.REMARKS, R.USERID,
                R.CREATION_DATE, R.CHANGED_SUPPLY_DATE, R.STATUS,
                A.AG_NAME, A.UNIT AS BRANCH_CODE,
-               HEM.NAME AS CREATION_BY, HEM.EMP_CODE
+               PCM.""Pub_Cent_name"" AS BRANCH_NAME,
+               HEM.NAME AS CREATION_BY, HEM.EMP_CODE,
+               (SELECT FF.DROP_POINT_NAME FROM CIR_DROP_POINT_MAST FF WHERE FF.DROP_POINT = A.STATION_CODE AND ROWNUM = 1) AS DROP_POINT_NAME
         FROM APP_CIR_SUPPLY_REQ R
         LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.COMP_CODE = R.COMP_CODE AND A.UNIT = R.UNIT_CODE
+        LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
         LEFT JOIN HR_EMP_MST HEM ON HEM.EMP_CODE = R.USERID
         WHERE R.STATUS = 'PENDING_HO'
           AND R.COMP_CODE = :COMP_CODE
@@ -985,9 +1094,12 @@ WHERE ROWNUM <= 15";
                R.REASON_CODE, R.REMARKS, R.USERID,
                R.CREATION_DATE, R.CHANGED_SUPPLY_DATE, R.STATUS,
                A.AG_NAME, A.UNIT AS BRANCH_CODE,
-               HEM.NAME AS CREATION_BY, HEM.EMP_CODE
+               PCM.""Pub_Cent_name"" AS BRANCH_NAME,
+               HEM.NAME AS CREATION_BY, HEM.EMP_CODE,
+               (SELECT FF.DROP_POINT_NAME FROM CIR_DROP_POINT_MAST FF WHERE FF.DROP_POINT = A.STATION_CODE AND ROWNUM = 1) AS DROP_POINT_NAME
         FROM APP_CIR_SUPPLY_REQ R
         LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.COMP_CODE = R.COMP_CODE AND A.UNIT = R.UNIT_CODE
+        LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
         LEFT JOIN HR_EMP_MST HEM ON HEM.EMP_CODE = R.USERID
         WHERE R.STATUS IN ('REJECTED','ZH_REJECTED')
           AND R.COMP_CODE = :COMP_CODE
@@ -1036,6 +1148,7 @@ WHERE ROWNUM <= 15";
             A.UNIT AS BRANCH_CODE,
             HEM.NAME AS CREATION_BY,
             HEM.EMP_CODE,
+            PCM.""Pub_Cent_name"" AS BRANCH_NAME,
             (
                 SELECT FF.DROP_POINT_NAME
                 FROM CIR_DROP_POINT_MAST FF
@@ -1048,6 +1161,7 @@ WHERE ROWNUM <= 15";
            AND A.DPCD = R.DPCD
              AND A.UNIT = R.UNIT_CODE
            AND A.COMP_CODE = R.COMP_CODE
+        LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
         LEFT JOIN HR_EMP_MST HEM ON HEM.EMP_CODE = R.USERID
         WHERE R.STATUS = 'PENDING_ZH'
           AND R.COMP_CODE = :COMP_CODE
@@ -1233,7 +1347,7 @@ WHERE ROWNUM <= 15";
     }
 
     // QUERY 14: HO stats
-    public async Task<(int awaitingHo, int hoApproved, int totalIncreased, int totalDecreased, int hoRejected)> GetHOStatsAsync(string compCode, DateTime selectedDate, List<string?>? branchCodes)
+    public async Task<(int awaitingHo, int hoApproved, int totalIncreased, int totalDecreased, int hoRejected)> GetHOStatsAsync(string compCode, DateTime selectedDate, List<string?>? branchCodes, string empCode = "")
     {
         using var conn = GetConnection();
         await conn.OpenAsync();
@@ -1244,16 +1358,19 @@ WHERE ROWNUM <= 15";
         }
 
         var sql = $@"SELECT
-                    COUNT(CASE WHEN STATUS = 'PENDING_HO' THEN 1 END) AS AWAITING_HO,
-                    COUNT(CASE WHEN STATUS = 'HO_APPROVED' THEN 1 END) AS HO_APPROVED,
-                    NVL(SUM(CASE WHEN INC_DEC = 'I' AND STATUS = 'HO_APPROVED' THEN (CHANGED_SUPPLY - BASE_SUPPLY) ELSE 0 END),0) AS TOTAL_INCREASED,
-                    NVL(SUM(CASE WHEN INC_DEC = 'D' AND STATUS = 'HO_APPROVED' THEN (BASE_SUPPLY - CHANGED_SUPPLY) ELSE 0 END),0) AS TOTAL_DECREASED,
-                    COUNT(CASE WHEN STATUS = 'HO_REJECTED' THEN 1 END) AS HO_REJECTED
-                    FROM APP_CIR_SUPPLY_REQ
-                    WHERE COMP_CODE = :COMP_CODE
-                    AND UNIT_CODE IN ({string.Join(",", branchParams)})";
+                    COUNT(CASE WHEN R.STATUS = 'PENDING_HO' THEN 1 END) AS AWAITING_HO,
+                    COUNT(CASE WHEN R.STATUS = 'HO_APPROVED' AND AP.HO_ACTION_BY = :EMP_CODE THEN 1 END) AS HO_APPROVED,
+                    NVL(SUM(CASE WHEN R.INC_DEC = 'I' AND R.STATUS = 'HO_APPROVED' AND AP.HO_ACTION_BY = :EMP_CODE THEN (R.CHANGED_SUPPLY - R.BASE_SUPPLY) ELSE 0 END),0) AS TOTAL_INCREASED,
+                    NVL(SUM(CASE WHEN R.INC_DEC = 'D' AND R.STATUS = 'HO_APPROVED' AND AP.HO_ACTION_BY = :EMP_CODE THEN (R.BASE_SUPPLY - R.CHANGED_SUPPLY) ELSE 0 END),0) AS TOTAL_DECREASED,
+                    COUNT(CASE WHEN R.STATUS = 'HO_REJECTED' AND AP.HO_ACTION_BY = :EMP_CODE THEN 1 END) AS HO_REJECTED
+                    FROM APP_CIR_SUPPLY_REQ R
+                    LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
+                    WHERE R.COMP_CODE = :COMP_CODE
+                    AND R.UNIT_CODE IN ({string.Join(",", branchParams)})";
 
         using var cmd = new OracleCommand(sql, conn);
+        cmd.BindByName = true;
+        cmd.Parameters.Add(new OracleParameter("EMP_CODE", empCode));
         cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
         using var reader = await cmd.ExecuteReaderAsync();
         if (await reader.ReadAsync())
@@ -1289,12 +1406,19 @@ WHERE ROWNUM <= 15";
                     AP.ZH_ACTION_BY AS ZH_APPROVED_BY,
                     AP.ZH_REMARKS AS ZH_REMARKS,
                     AP.ZH_ACTION_DATE AS ZH_ACTION_DATE, R.STATUS, HEM.EMP_CODE, HEM.NAME AS CREATION_BY,
-                    AP.ZH_REMARKS AS APPROVER_REMARKS, NULL AS DROP_POINT_NAME, R.UNIT_CODE, R.SUPPLY_TYPE_CODE
+                    AP.ZH_REMARKS AS APPROVER_REMARKS, 
+                    (SELECT FF.DROP_POINT_NAME FROM CIR_AGMAST MM INNER 
+                    JOIN CIR_DROP_POINT_MAST FF ON MM.STATION_CODE = FF.DROP_POINT
+                    WHERE MM.AGCD = R.AGCD AND MM.DPCD = R.DPCD AND MM.COMP_CODE = R.COMP_CODE 
+                    AND MM.UNIT=R.UNIT_CODE AND ROWNUM = 1) AS DROP_POINT_NAME,
+                    PCM.""Pub_Cent_name"" AS BRANCH_NAME,
+                     R.UNIT_CODE, R.SUPPLY_TYPE_CODE
                     FROM APP_CIR_SUPPLY_REQ R
                     LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
                     LEFT JOIN hr_emp_mst HEM ON HEM.EMP_CODE = R.USERID
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.COMP_CODE = R.COMP_CODE 
                     AND A.UNIT = R.UNIT_CODE
+                    LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
                     WHERE R.STATUS = 'PENDING_HO' AND R.COMP_CODE = :COMP_CODE
                     AND R.UNIT_CODE IN ({string.Join(",", branchParams)})
                     ORDER BY R.CREATION_DATE ASC";
@@ -1679,10 +1803,13 @@ WHERE ROWNUM <= 15";
                     R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
                     R.STATUS, R.CREATION_DATE, R.REASON_CODE, R.REMARKS,
                     A.AG_NAME, R.UNIT_CODE,
+                    PCM.""Pub_Cent_name"" AS BRANCH_NAME,
+                    (SELECT FF.DROP_POINT_NAME FROM CIR_DROP_POINT_MAST FF WHERE FF.DROP_POINT = A.STATION_CODE AND ROWNUM = 1) AS DROP_POINT_NAME,
                     AP.ZH_ACTION AS APPR_ACTION, AP.ZH_ACTION_BY AS ACTION_BY, AP.ZH_ACTION_DATE AS ACTION_DATE, AP.ZH_REMARKS AS APPROVER_REMARKS,
                     HEM.NAME AS CREATION_BY
                     FROM APP_CIR_SUPPLY_REQ R
-                    LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
+                    LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.UNIT = R.UNIT_CODE AND A.COMP_CODE = R.COMP_CODE
+                    LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
                     LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
                     LEFT JOIN LOGIN LGN ON LGN.HR_CODE = R.USERID
                     LEFT JOIN HR_EMP_MST HEM ON LGN.HR_CODE = HEM.EMP_CODE
@@ -1714,10 +1841,13 @@ WHERE ROWNUM <= 15";
                     R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
                     R.STATUS, R.CREATION_DATE, R.REASON_CODE, R.REMARKS,
                     A.AG_NAME, R.UNIT_CODE,
+                    PCM.""Pub_Cent_name"" AS BRANCH_NAME,
+                    (SELECT FF.DROP_POINT_NAME FROM CIR_DROP_POINT_MAST FF WHERE FF.DROP_POINT = A.STATION_CODE AND ROWNUM = 1) AS DROP_POINT_NAME,
                     AP.HO_ACTION AS APPR_ACTION, AP.ERP_PUSHED_BY AS ACTION_BY, AP.ERP_PUSHED_DATE AS ACTION_DATE, AP.HO_REMARKS AS APPROVER_REMARKS,
                     HEM.NAME AS CREATION_BY
                     FROM APP_CIR_SUPPLY_REQ R
-                    LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
+                    LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.UNIT = R.UNIT_CODE AND A.COMP_CODE = R.COMP_CODE
+                    LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
                     LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID AND AP.ERP_PUSHED_BY IS NOT NULL
                     LEFT JOIN LOGIN LGN ON LGN.HR_CODE = R.USERID
                     LEFT JOIN HR_EMP_MST HEM ON LGN.HR_CODE = HEM.EMP_CODE
@@ -1749,10 +1879,13 @@ WHERE ROWNUM <= 15";
                     R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
                     R.STATUS, R.CREATION_DATE, R.REASON_CODE, R.REMARKS,
                     A.AG_NAME, R.UNIT_CODE,
+                    PCM.""Pub_Cent_name"" AS BRANCH_NAME,
+                    (SELECT FF.DROP_POINT_NAME FROM CIR_DROP_POINT_MAST FF WHERE FF.DROP_POINT = A.STATION_CODE AND ROWNUM = 1) AS DROP_POINT_NAME,
                     AP.HO_ACTION AS APPR_ACTION, AP.ERP_PUSHED_BY AS ACTION_BY, AP.ERP_PUSHED_DATE AS ACTION_DATE, AP.HO_REMARKS AS APPROVER_REMARKS,
                     HEM.NAME AS CREATION_BY
                     FROM APP_CIR_SUPPLY_REQ R
-                    LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
+                    LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.UNIT = R.UNIT_CODE AND A.COMP_CODE = R.COMP_CODE
+                    LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
                     LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID AND AP.ERP_PUSHED_BY IS NOT NULL
                     LEFT JOIN LOGIN LGN ON LGN.HR_CODE = R.USERID
                     LEFT JOIN HR_EMP_MST HEM ON LGN.HR_CODE = HEM.EMP_CODE
@@ -1786,10 +1919,13 @@ WHERE ROWNUM <= 15";
             Remarks = HasColumn(reader, "REMARKS") ? reader["REMARKS"]?.ToString() : null,
             AgName = HasColumn(reader, "AG_NAME") ? reader["AG_NAME"]?.ToString() : null,
             DropPointName = HasColumn(reader, "DROP_POINT_NAME") ? reader["DROP_POINT_NAME"]?.ToString() : null,
+            BranchName = HasColumn(reader, "BRANCH_NAME") ? reader["BRANCH_NAME"]?.ToString() : null,
             CreationBy = HasColumn(reader, "CREATION_BY") ? reader["CREATION_BY"]?.ToString() : null,
             CreationByCode = HasColumn(reader, "EMP_CODE") ? reader["EMP_CODE"]?.ToString() : null,
             BranchCode = HasColumn(reader, "UNIT_CODE") ? reader["UNIT_CODE"]?.ToString() : null,
             SupplyTypeCode = HasColumn(reader, "SUPPLY_TYPE_CODE") ? reader["SUPPLY_TYPE_CODE"]?.ToString() : null,
+            
+
 
 
         };
