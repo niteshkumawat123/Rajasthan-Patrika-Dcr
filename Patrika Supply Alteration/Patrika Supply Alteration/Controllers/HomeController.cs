@@ -26,7 +26,7 @@ public class HomeController : Controller
     {
         var user = GetUser();
         var roles = user.RoleDetails ?? new List<RoleDetails>();
-        bool canAdd = roles.Any(r => r.RoleId == "1" || r.RoleId == "3" || r.RoleId == "4" || r.RoleId == "6");
+        bool canAdd = roles.Any(r => r.RoleId == "1" || r.RoleId == "2" || r.RoleId == "3" || r.RoleId == "4" || r.RoleId == "6");
         bool canApprove = roles.Any(r => r.RoleId == "4" || r.RoleId == "7");
 
         var stats = await _dbService.GetSEStatsAsync(user.EmpCode!, user.ComCode!);

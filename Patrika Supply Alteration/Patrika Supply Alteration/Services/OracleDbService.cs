@@ -178,6 +178,34 @@ public class OracleDbService
 
                     });
                 }
+                if(RoleDetails!=null && RoleDetails.Count()>0 && RoleDetails.Any(x=>x.RoleId=="4"))
+                {
+                    var SqlUpdate = @"SELECT DISTINCT(CPHM.UNIT_CODE)AS BranchCode, JPCM.""Pub_Cent_name"" AS BranchName FROM CIR_PLI_HIERARCHY_MAPPING CPHM
+                                 LEFT JOIN CIR_PLI_HIERARCHY_MAST HM ON CPHM.ZONAL_HEAD = HM.CODE
+                                 LEFT JOIN PUB_CENT_MAST JPCM ON JPCM.""Pub_cent_Code"" = CPHM.UNIT_CODE
+                                 WHERE HM.EMPLOYEE_CODE = :EmployeeCode";
+                    using (var cmdupdate = new OracleCommand(SqlUpdate, conn))
+                    {
+                        cmdupdate.Parameters.Add(new OracleParameter("EmployeeCode", EMPLOYEECODE));
+
+                        using var readerupdate = await cmdupdate.ExecuteReaderAsync();
+
+                        while (await readerupdate.ReadAsync())
+                        {
+
+                            branchDetails.Add(new BranchDetail
+                            {
+                                BranchCode = readerupdate["BranchCode"]?.ToString(),
+                                BranchName = readerupdate["BranchName"]?.ToString()
+                            });
+
+                          
+                        }
+
+
+
+                    }
+                }
 
                 // If no rows found — employee is not an active executive
                 if (branchDetails!=null && branchDetails.Count == 0)
@@ -344,9 +372,9 @@ public class OracleDbService
 
             var branchDetails = new List<BranchDetail>();
 
-            var sql1 = @"SELECT  BRANCH_CODE AS BranchCode, JPCM.""Pub_Cent_name"" AS BranchName
+            var sql1 = @"SELECT  CEM.UNIT_CODE AS BranchCode, JPCM.""Pub_Cent_name"" AS BranchName
                      FROM CIR_EXECUTIVE_MAST CEM 
-                     LEFT JOIN PUB_CENT_MAST JPCM ON JPCM.""Pub_cent_Code"" = CEM.BRANCH_CODE
+                     LEFT JOIN PUB_CENT_MAST JPCM ON JPCM.""Pub_cent_Code"" = CEM.UNIT_CODE
                      WHERE EXEC_DESIGNATION = 'EXEC' 
                        AND ISACTIVEFORPLI = 'Y' 
                        AND HR_CODE = :EmployeeCode";
@@ -383,7 +411,7 @@ public class OracleDbService
 
             // ?? Second Query: Get user session details ??
             var sql2 = @"SELECT L.""userid"" AS USERID, L.HR_CODE, L.COM_CODE, L.STATUS,
-                            E.EMP_CODE, E.NAME, E.DESIG, E.BRAN_CODE,
+                            E.EMP_CODE, E.NAME, E.DESIG, E.UNIT_CODE AS BRAN_CODE,
                             E.MOBILE, E.EMAIL, E.ZONE, E.REPORT_TO
                      FROM LOGIN L
                      LEFT JOIN HR_EMP_MST E ON E.EMP_CODE = L.HR_CODE
@@ -447,11 +475,12 @@ public class OracleDbService
     {
         using var conn = GetConnection();
         await conn.OpenAsync();
-        var sql = @"SELECT HEM1.EMP_CODE, HEM1.NAME, HEM1.REPORT_TO, HEM1.BRANCH, HEM1.DEPARTMENT,
+        var sql = @"SELECT HEM1.EMP_CODE, HEM1.NAME, HEM1.REPORT_TO, PCM.""Pub_Cent_name"" AS BRANCH, HEM1.DEPARTMENT,
                     HEM1.EMP_CURRENT_STATUS, HEM1.ZONE,
                     HEM2.NAME AS REPORTINGPERSONNAME,
                     CPH.NAME AS ROLEPOSITION
                     FROM HR_EMP_MST HEM1
+                    LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code""=HEM1.UNIT_CODE
                     LEFT JOIN HR_EMP_MST HEM2 ON HEM1.REPORT_TO = HEM2.EMP_CODE
                     LEFT JOIN CIR_PLI_HIERARCHY_MAST CPHM ON CPHM.EMPLOYEE_CODE = HEM1.EMP_CODE
                     LEFT JOIN CIR_PLI_HIERARCHY CPH ON CPH.CODE = CPHM.HIERARCHY_CODE
@@ -543,7 +572,7 @@ public class OracleDbService
     {
         using var conn = GetConnection();
         await conn.OpenAsync();
-        var sql = @"SELECT AGCD, DPCD, AG_NAME, BRANCH_CODE, EXECUTIVE_CODE,
+        var sql = @"SELECT AGCD, DPCD, AG_NAME,UNIT AS BRANCH_CODE, EXECUTIVE_CODE,
                     SUSPEND, SUPPLY_STOP_FLAG, MOBILE_NO1, ADDR1
                     FROM CIR_AGMAST
                     WHERE AGCD = :AGCD AND COMP_CODE = :COMP_CODE AND SUSPEND = 'N'
@@ -577,7 +606,7 @@ public class OracleDbService
         using var conn = GetConnection();
         await conn.OpenAsync();
         var sql = @"SELECT * FROM (
-                    SELECT CA.AGCD, CA.DPCD, CA.AG_NAME, CA.BRANCH_CODE,PCM.""Pub_cent_Code"",PCM.""Pub_Cent_name"" 
+                    SELECT CA.AGCD, CA.DPCD, CA.AG_NAME, CA.UNIT AS BRANCH_CODE,PCM.""Pub_cent_Code"",PCM.""Pub_Cent_name"" 
                     FROM CIR_AGMAST CA 
                     LEFT JOIN PUB_CENT_MAST PCM 
                     ON PCM.""Pub_cent_Code"" =  CA.UNIT
@@ -625,7 +654,7 @@ public class OracleDbService
     SELECT CA.AGCD,
            CA.DPCD,
            CA.AG_NAME,
-           CA.BRANCH_CODE,
+           CA.UNIT AS BRANCH_CODE,
            PCM.""Pub_cent_Code"",
            PCM.""Pub_Cent_name"",
            (
@@ -642,7 +671,6 @@ public class OracleDbService
     LEFT JOIN PUB_CENT_MAST PCM
         ON PCM.""Pub_cent_Code"" = CA.UNIT
     WHERE CA.COMP_CODE = :COMP_CODE
-      AND CA.SUSPEND = 'N'
       AND (CA.SUPPLY_STOP_FLAG IS NULL OR CA.SUPPLY_STOP_FLAG = 'N')
       AND (UPPER(CA.AG_NAME) LIKE UPPER(:KEYWORD)
            OR UPPER(CA.AGCD) LIKE UPPER(:KEYWORD))
@@ -878,7 +906,7 @@ WHERE ROWNUM <= 15";
                R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
                R.REASON_CODE, R.REMARKS, R.USERID,
                R.CREATION_DATE, R.CHANGED_SUPPLY_DATE, R.STATUS,
-               A.AG_NAME, A.BRANCH_CODE,
+               A.AG_NAME, A.UNIT AS BRANCH_CODE,
                HEM.NAME AS CREATION_BY, HEM.EMP_CODE,
                AP.ZH_ACTION_DATE AS ACTION_DATE, AP.ZH_REMARKS AS APPROVER_REMARKS
         FROM APP_CIR_SUPPLY_REQ R
@@ -921,7 +949,7 @@ WHERE ROWNUM <= 15";
                R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
                R.REASON_CODE, R.REMARKS, R.USERID,
                R.CREATION_DATE, R.CHANGED_SUPPLY_DATE, R.STATUS,
-               A.AG_NAME, A.BRANCH_CODE,
+               A.AG_NAME, A.UNIT AS BRANCH_CODE,
                HEM.NAME AS CREATION_BY, HEM.EMP_CODE
         FROM APP_CIR_SUPPLY_REQ R
         LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.COMP_CODE = R.COMP_CODE AND A.UNIT = R.UNIT_CODE
@@ -956,7 +984,7 @@ WHERE ROWNUM <= 15";
                R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
                R.REASON_CODE, R.REMARKS, R.USERID,
                R.CREATION_DATE, R.CHANGED_SUPPLY_DATE, R.STATUS,
-               A.AG_NAME, A.BRANCH_CODE,
+               A.AG_NAME, A.UNIT AS BRANCH_CODE,
                HEM.NAME AS CREATION_BY, HEM.EMP_CODE
         FROM APP_CIR_SUPPLY_REQ R
         LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.COMP_CODE = R.COMP_CODE AND A.UNIT = R.UNIT_CODE
@@ -1005,7 +1033,7 @@ WHERE ROWNUM <= 15";
             R.CHANGED_SUPPLY_DATE,
             R.STATUS,
             A.AG_NAME,
-            A.BRANCH_CODE,
+            A.UNIT AS BRANCH_CODE,
             HEM.NAME AS CREATION_BY,
             HEM.EMP_CODE,
             (
@@ -1257,7 +1285,7 @@ WHERE ROWNUM <= 15";
         var sql = $@"SELECT R.REQ_ID, R.AGCD, R.DPCD, R.PUBL, R.EDTN,
                     R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY,
                     R.REASON_CODE, R.ZONE_CODE, R.USERID, R.CREATION_DATE, R.CHANGED_SUPPLY_DATE,
-                    A.AG_NAME, A.BRANCH_CODE,
+                    A.AG_NAME, A.UNIT AS BRANCH_CODE,
                     AP.ZH_ACTION_BY AS ZH_APPROVED_BY,
                     AP.ZH_REMARKS AS ZH_REMARKS,
                     AP.ZH_ACTION_DATE AS ZH_ACTION_DATE, R.STATUS, HEM.EMP_CODE, HEM.NAME AS CREATION_BY,
@@ -1444,7 +1472,7 @@ WHERE ROWNUM <= 15";
         var list = new List<BranchSummaryViewModel>();
         using var conn = GetConnection();
         await conn.OpenAsync();
-        var sql = @"SELECT R.ZONE_CODE, A.BRANCH_CODE,
+        var sql = @"SELECT R.ZONE_CODE, A.UNIT AS BRANCH_CODE,
                     COUNT(*) AS TOTAL_REQUESTS,
                     COUNT(CASE WHEN R.INC_DEC = 'I' THEN 1 END) AS INCREASES,
                     COUNT(CASE WHEN R.INC_DEC = 'D' THEN 1 END) AS DECREASES,
@@ -1454,7 +1482,7 @@ WHERE ROWNUM <= 15";
                     FROM APP_CIR_SUPPLY_REQ R
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
                     WHERE R.COMP_CODE = :COMP_CODE AND TRUNC(R.CREATION_DATE) = TRUNC(:SELECTED_DATE)
-                    GROUP BY R.ZONE_CODE, A.BRANCH_CODE
+                    GROUP BY R.ZONE_CODE, A.UNIT
                     ORDER BY R.ZONE_CODE";
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
@@ -1579,11 +1607,11 @@ WHERE ROWNUM <= 15";
                     AP.HO_ACTION, AP.HO_ACTION_BY, AP.HO_ACTION_DATE, AP.HO_REMARKS,
                     AP.HO_FROM_STATUS, AP.HO_TO_STATUS,
                     AP.ERP_PUSHED_BY, AP.ERP_PUSHED_DATE,
-                    A.BRANCH_CODE, PCM.""Pub_Cent_name"",
+                    A.UNIT AS BRANCH_CODE, PCM.""Pub_Cent_name"",
                     HEM.NAME AS SUBMITTED_BY_NAME, HEM.EMP_CODE
                     FROM APP_CIR_SUPPLY_REQ R
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD
-                    LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = A.BRANCH_CODE 
+                    LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = A.UNIT 
                     LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
                     LEFT JOIN Login LGN ON R.USERID = LGN.HR_CODE 
                     LEFT JOIN hr_emp_mst HEM ON LGN.HR_CODE = HEM.EMP_CODE
@@ -1836,7 +1864,7 @@ WHERE ROWNUM <= 15";
                     FROM HR_EMP_MST HEM
                     INNER JOIN CIR_PLI_HIERARCHY_MAST CPHM ON CPHM.EMPLOYEE_CODE = HEM.EMP_CODE
                     WHERE CPHM.HIERARCHY_CODE = '4'
-                    AND HEM.BRAN_CODE = :BRANCH_CODE
+                    AND HEM.UNIT_CODE = :BRANCH_CODE
                     AND HEM.EMAIL IS NOT NULL";
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("BRANCH_CODE", branchCode));

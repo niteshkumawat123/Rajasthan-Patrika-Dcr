@@ -1,6 +1,5 @@
 using DCRSupplyApp.Services;
 using DCRSupplyApp.Filters;
-using DCRSupplyApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,8 +19,6 @@ builder.Services.AddScoped<SessionAuthFilter>();
 builder.Services.AddSingleton<FirebaseNotificationService>();
 builder.Services.AddScoped<NotifyService>();
 
-//builder.WebHost.UseUrls("http://0.0.0.0:5000");
-
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -30,14 +27,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor |
-                       Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
-});
-
-// HTTPS is handled by reverse proxy on Linux
-// app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseSession();
 app.UseRouting();

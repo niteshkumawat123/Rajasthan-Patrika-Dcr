@@ -27,7 +27,7 @@ public class AccountController : Controller
             var roles = user.RoleDetails ?? new List<RoleDetails>();
             bool canApproveHO = roles.Any(r => r.RoleId == "7");
             bool canApproveZH = roles.Any(r => r.RoleId == "4");
-            bool canAdd = roles.Any(r => r.RoleId == "1" || r.RoleId == "3" || r.RoleId == "4" || r.RoleId == "6");
+            bool canAdd = roles.Any(r => r.RoleId == "1" || r.RoleId == "2" || r.RoleId == "3" || r.RoleId == "4" || r.RoleId == "6");
 
             if (canApproveHO && !canAdd)
                 return RedirectToAction("Dashboard", "HO");
@@ -68,7 +68,7 @@ public class AccountController : Controller
 
         // Determine redirect based on role(s)
         var roles = user.RoleDetails ?? new List<RoleDetails>();
-        bool canAdd = roles.Any(r => r.RoleId == "1" || r.RoleId == "3" || r.RoleId == "4" || r.RoleId == "6");
+        bool canAdd = roles.Any(r => r.RoleId == "1" || r.RoleId == "3" || r.RoleId == "4" || r.RoleId == "6" || r.RoleId == "2");
         bool canApproveZH = roles.Any(r => r.RoleId == "4");
         bool canApproveHO = roles.Any(r => r.RoleId == "7");
 
@@ -129,7 +129,7 @@ public class AccountController : Controller
 
         // Determine redirect based on role(s)
         var roles = user.RoleDetails ?? new List<RoleDetails>();
-        bool canAdd = roles.Any(r => r.RoleId == "1" || r.RoleId == "3" || r.RoleId == "4" || r.RoleId == "6");
+        bool canAdd = roles.Any(r => r.RoleId == "1" || r.RoleId == "3" || r.RoleId == "4" || r.RoleId == "6" || r.RoleId == "2");
         bool canApproveZH = roles.Any(r => r.RoleId == "4");
         bool canApproveHO = roles.Any(r => r.RoleId == "7");
 
