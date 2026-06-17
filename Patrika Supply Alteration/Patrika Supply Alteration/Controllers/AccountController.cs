@@ -50,6 +50,8 @@ public class AccountController : Controller
             return View(model);
         }
 
+        model.EmployeeId = model.EmployeeId.Trim().ToUpper();
+
         var user = await _dbService.LoginAsync(model.EmployeeId, model.Password);
         if (user == null)
         {
@@ -153,6 +155,8 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ForgotPassword(string employeeId)
     {
+        employeeId = employeeId?.Trim().ToUpper();
+
         var (email, password) = await _dbService.GetForgotPasswordAsync(employeeId);
         if (email != null && password != null)
         {
