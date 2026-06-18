@@ -55,13 +55,14 @@ public class HomeController : Controller
     public async Task<IActionResult> AgentLookup(string agcd,string dpcd)
     {
         var user = GetUser();
-        var agent = await _dbService.GetAgentAsync(agcd, user.ComCode!);
+        var branchCodes = user.BranchDetails?.Select(b => b.BranchCode).Where(b => b != null).ToList();
+        var agent = await _dbService.GetAgentAsync(agcd, user.ComCode!, branchCodes);
         if (agent == null)
         {
             return Json(new { found = false });
         }
         agent.Dpcd = dpcd;
-        var supplies = await _dbService.GetSupplyAsync(agent.Agcd!, dpcd!, user.ComCode!);
+        var supplies = await _dbService.GetSupplyAsync(agent.Agcd!, dpcd!, user.ComCode!, branchCodes);
         return Json(new { found = true, agent, supplies });
     }
 

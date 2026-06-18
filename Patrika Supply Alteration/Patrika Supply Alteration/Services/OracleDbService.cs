@@ -671,15 +671,23 @@ public class OracleDbService
     }
 
     // QUERY 7: Agent lookup
-    public async Task<AgentLookupViewModel?> GetAgentAsync(string agcd, string compCode)
+    public async Task<AgentLookupViewModel?> GetAgentAsync(string agcd, string compCode, List<string?>? branchCodes)
     {
         using var conn = GetConnection();
         await conn.OpenAsync();
-        var sql = @"SELECT AGCD, DPCD, AG_NAME,UNIT AS BRANCH_CODE, EXECUTIVE_CODE,
-                    SUSPEND, SUPPLY_STOP_FLAG, MOBILE_NO1, ADDR1
-                    FROM CIR_AGMAST
-                    WHERE AGCD = :AGCD AND COMP_CODE = :COMP_CODE AND SUSPEND = 'N'
-                    AND (SUPPLY_STOP_FLAG IS NULL OR SUPPLY_STOP_FLAG = 'N')";
+
+        var branchParams = new List<string>();
+        for (int i = 0; i < branchCodes.Count; i++)
+        {
+            branchParams.Add("'" + (branchCodes[i] ?? "").Replace("'", "''") + "'");
+        }
+
+        var sql = $@"SELECT AGCD, DPCD, AG_NAME,UNIT AS BRANCH_CODE, EXECUTIVE_CODE,
+                        SUSPEND, SUPPLY_STOP_FLAG, MOBILE_NO1, ADDR1
+                        FROM CIR_AGMAST
+                        WHERE AGCD = :AGCD AND COMP_CODE = :COMP_CODE AND SUSPEND = 'N'
+                        AND (SUPPLY_STOP_FLAG IS NULL OR SUPPLY_STOP_FLAG = 'N')
+                        AND UNIT IN ({string.Join(",", branchParams)})";
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("AGCD", agcd));
         cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
@@ -805,17 +813,24 @@ WHERE ROWNUM <= 15";
     }
 
     // QUERY 8: Current supply
-    public async Task<List<SupplyViewModel>> GetSupplyAsync(string agcd, string dpcd, string compCode)
+    public async Task<List<SupplyViewModel>> GetSupplyAsync(string agcd, string dpcd, string compCode, List<string?>? branchCodes)
     {
         var list = new List<SupplyViewModel>();
         using var conn = GetConnection();
         await conn.OpenAsync();
-        var sql = @"SELECT BASE_SUPPLY, SUPPLY_MON, SUPPLY_TUE, SUPPLY_WED,
+        var branchParams = new List<string>();
+        for (int i = 0; i < branchCodes.Count; i++)
+        {
+            branchParams.Add("'" + (branchCodes[i] ?? "").Replace("'", "''") + "'");
+        }
+        var sql = $@"SELECT BASE_SUPPLY, SUPPLY_MON, SUPPLY_TUE, SUPPLY_WED,
                     SUPPLY_THU, SUPPLY_FRI, SUPPLY_SAT, SUPPLY_SUN,
                     SUPPLY_EFFECTIVE_DATE, SUPPLY_FLAG, PUBL, EDTN, SUPPLY_TYPE_CODE
                     FROM CIR_SUPPLY
-                    WHERE AGCD = :AGCD AND DPCD = :DPCD AND COMP_CODE = :COMP_CODE AND SUPPLY_FLAG = 'Y'
-                    ORDER BY PUBL, EDTN";
+                    WHERE AGCD = :AGCD AND DPCD = :DPCD AND COMP_CODE = :COMP_CODE AND SUPPLY_FLAG = 'Y'                    
+                    AND UNIT IN ({string.Join(",", branchParams)})
+                    ORDER BY PUBL, EDTN ";
+
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("AGCD", agcd));
         cmd.Parameters.Add(new OracleParameter("DPCD", dpcd));
@@ -1811,8 +1826,8 @@ WHERE ROWNUM <= 15";
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.UNIT = R.UNIT_CODE AND A.COMP_CODE = R.COMP_CODE
                     LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
                     LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
-                    LEFT JOIN LOGIN LGN ON LGN.HR_CODE = R.USERID
-                    LEFT JOIN HR_EMP_MST HEM ON LGN.HR_CODE = HEM.EMP_CODE
+                    
+                    LEFT JOIN HR_EMP_MST HEM ON  HEM.EMP_CODE = R.USERID
                     WHERE R.COMP_CODE = :COMP_CODE{branchFilter}
                     ORDER BY R.CREATION_DATE DESC";
         using var cmd = new OracleCommand(sql, conn);
@@ -1849,8 +1864,8 @@ WHERE ROWNUM <= 15";
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.UNIT = R.UNIT_CODE AND A.COMP_CODE = R.COMP_CODE
                     LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
                     LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID AND AP.ERP_PUSHED_BY IS NOT NULL
-                    LEFT JOIN LOGIN LGN ON LGN.HR_CODE = R.USERID
-                    LEFT JOIN HR_EMP_MST HEM ON LGN.HR_CODE = HEM.EMP_CODE
+                   
+                    LEFT JOIN HR_EMP_MST HEM ON  HEM.EMP_CODE =R.USERID
                     WHERE R.COMP_CODE = :COMP_CODE{branchFilter}
                     ORDER BY R.CREATION_DATE DESC";
         using var cmd = new OracleCommand(sql, conn);
@@ -1887,8 +1902,7 @@ WHERE ROWNUM <= 15";
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.UNIT = R.UNIT_CODE AND A.COMP_CODE = R.COMP_CODE
                     LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
                     LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID AND AP.ERP_PUSHED_BY IS NOT NULL
-                    LEFT JOIN LOGIN LGN ON LGN.HR_CODE = R.USERID
-                    LEFT JOIN HR_EMP_MST HEM ON LGN.HR_CODE = HEM.EMP_CODE
+                    LEFT JOIN HR_EMP_MST HEM ON  HEM.EMP_CODE = R.USERID
                     WHERE R.COMP_CODE = :COMP_CODE{branchFilter}
                     ORDER BY R.CREATION_DATE DESC";
         using var cmd = new OracleCommand(sql, conn);
