@@ -15,4 +15,5 @@ public class SupplyViewModel
     public string? Publ { get; set; }
     public string? Edtn { get; set; }
     public string? SupplyTypeCode { get; set; }
+    public string? droppointname { get; set; }
 }

@@ -14,7 +14,7 @@
                 <span class="status-pill @req.Status?.ToLower().Replace("_","-")">@req.Status</span>
             </div>
             <div class="request-row" style="font-size:12px;color:var(--muted);">
-                <span>@req.AgName</span><span>@req.Publ / @req.Edtn</span>
+                <span>@req.AgName</span><span>@req.Publ@(!string.IsNullOrEmpty(req.PublName) ? $" - {req.PublName}" : "") / @req.Edtn@(!string.IsNullOrEmpty(req.EdtnName) ? $" - {req.EdtnName}" : "")</span>
             </div>
             <div class="request-row" style="font-size:13px;">
                 <span>@req.BaseSupply &#x2192; @req.ChangedSupply

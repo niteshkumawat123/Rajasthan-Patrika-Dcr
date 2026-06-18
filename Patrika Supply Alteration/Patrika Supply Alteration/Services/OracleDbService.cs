@@ -653,9 +653,12 @@ public class OracleDbService
             " (SELECT FF.DROP_POINT_NAME FROM CIR_AGMAST MM INNER " +
             " JOIN CIR_DROP_POINT_MAST FF ON MM.STATION_CODE = FF.DROP_POINT" +
             " WHERE MM.AGCD = R.AGCD AND MM.DPCD = R.DPCD AND MM.COMP_CODE = R.COMP_CODE AND ROWNUM = 1) AS DROP_POINT_NAME," +
-            " LL.FIRSTNAME || ' ' || LL.LASTNAME AS CREATION_BY" +
+            " LL.FIRSTNAME || ' ' || LL.LASTNAME AS CREATION_BY," +
+            " CPM.PUBL_NAME, CEM.EDTN_NAME" +
             " FROM APP_CIR_SUPPLY_REQ R" +
             " LEFT JOIN LOGIN LL ON LL.HR_CODE = R.USERID" +
+            " LEFT JOIN CIR_PUBL_MAST CPM ON CPM.PUBL = R.PUBL" +
+            " LEFT JOIN CIR_EDTN_MAST CEM ON CEM.EDTN = R.EDTN" +
             " WHERE R.USERID = :SE_USERID AND R.COMP_CODE = :COMP_CODE" +
             " ORDER BY R.CREATION_DATE DESC" +
             ") WHERE ROWNUM <= 10";
@@ -776,6 +779,7 @@ public class OracleDbService
                WHERE MM.AGCD = CA.AGCD
                  AND MM.DPCD = CA.DPCD
                  AND MM.COMP_CODE = CA.COMP_CODE
+                 AND FF.UNIT_CODE = CA.UNIT
                  AND ROWNUM = 1
            ) AS DROP_POINT_NAME
     FROM CIR_AGMAST CA
@@ -788,7 +792,7 @@ public class OracleDbService
       AND PCM.""Pub_cent_Code"" IN ({string.Join(",", branchParams)})
     ORDER BY CA.DPCD ASC, CA.AG_NAME ASC
 ) 
-WHERE ROWNUM <= 15";
+";
 
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
@@ -813,7 +817,7 @@ WHERE ROWNUM <= 15";
     }
 
     // QUERY 8: Current supply
-    public async Task<List<SupplyViewModel>> GetSupplyAsync(string agcd, string dpcd, string compCode, List<string?>? branchCodes)
+    public async Task<List<SupplyViewModel>> GetSupplyAsync(string agcd, string dpcd, string compCode, List<string?>? branchCodes,string droppointname)
     {
         var list = new List<SupplyViewModel>();
         using var conn = GetConnection();
@@ -827,7 +831,7 @@ WHERE ROWNUM <= 15";
                     SUPPLY_THU, SUPPLY_FRI, SUPPLY_SAT, SUPPLY_SUN,
                     SUPPLY_EFFECTIVE_DATE, SUPPLY_FLAG, PUBL, EDTN, SUPPLY_TYPE_CODE
                     FROM CIR_SUPPLY
-                    WHERE AGCD = :AGCD AND DPCD = :DPCD AND COMP_CODE = :COMP_CODE AND SUPPLY_FLAG = 'Y'                    
+                    WHERE AGCD = :AGCD AND DPCD = :DPCD AND COMP_CODE = :COMP_CODE AND SUPPLY_FLAG = 'Y'  AND SUPPLY_TYPE_CODE= 'S01'                  
                     AND UNIT IN ({string.Join(",", branchParams)})
                     ORDER BY PUBL, EDTN ";
 
@@ -852,7 +856,8 @@ WHERE ROWNUM <= 15";
                 SupplyFlag = reader["SUPPLY_FLAG"]?.ToString(),
                 Publ = reader["PUBL"]?.ToString(),
                 Edtn = reader["EDTN"]?.ToString(),
-                SupplyTypeCode = reader["SUPPLY_TYPE_CODE"]?.ToString()
+                SupplyTypeCode = reader["SUPPLY_TYPE_CODE"]?.ToString(),
+                droppointname = droppointname
             });
         }
         return list;
@@ -948,13 +953,16 @@ WHERE ROWNUM <= 15";
                     A.AG_NAME,
                     AP.ZH_ACTION AS APPR_ACTION, AP.ZH_ACTION_BY AS ACTION_BY, AP.ZH_ACTION_DATE AS ACTION_DATE, AP.ZH_REMARKS AS APPROVER_REMARKS,
                     AP.HO_ACTION, AP.HO_ACTION_BY, AP.HO_ACTION_DATE, AP.HO_REMARKS,
-                    HEM.NAME AS CREATION_BY, HEM.EMP_CODE
+                    HEM.NAME AS CREATION_BY, HEM.EMP_CODE,
+                    CPM.PUBL_NAME, CEM.EDTN_NAME
                     FROM APP_CIR_SUPPLY_REQ R
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD  AND A.UNIT = R.UNIT_CODE
                     AND A.COMP_CODE = R.COMP_CODE
                     LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
                     LEFT JOIN LOGIN LGN ON LGN.HR_CODE = R.USERID
                     LEFT JOIN HR_EMP_MST HEM ON LGN.HR_CODE = HEM.EMP_CODE
+                    LEFT JOIN CIR_PUBL_MAST CPM ON CPM.PUBL = R.PUBL
+                    LEFT JOIN CIR_EDTN_MAST CEM ON CEM.EDTN = R.EDTN
                     WHERE R.USERID = :SE_USERID AND R.COMP_CODE = :COMP_CODE
                     ORDER BY R.CREATION_DATE DESC";
         using var cmd = new OracleCommand(sql, conn);
@@ -1028,13 +1036,16 @@ WHERE ROWNUM <= 15";
                PCM.""Pub_Cent_name"" AS BRANCH_NAME,
                HEM.NAME AS CREATION_BY, HEM.EMP_CODE,
                AP.ZH_ACTION_DATE AS ACTION_DATE, AP.ZH_REMARKS AS APPROVER_REMARKS,
-               (SELECT FF.DROP_POINT_NAME FROM CIR_DROP_POINT_MAST FF WHERE FF.DROP_POINT = A.STATION_CODE AND ROWNUM = 1) AS DROP_POINT_NAME
+               (SELECT FF.DROP_POINT_NAME FROM CIR_DROP_POINT_MAST FF WHERE FF.DROP_POINT = A.STATION_CODE AND ROWNUM = 1) AS DROP_POINT_NAME,
+               CPM.PUBL_NAME, CEM.EDTN_NAME
         FROM APP_CIR_SUPPLY_REQ R
         INNER JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
             AND AP.ZH_ACTION = 'APPROVED' AND AP.ZH_ACTION_BY = :EMP_CODE
         LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.COMP_CODE = R.COMP_CODE AND A.UNIT = R.UNIT_CODE
         LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
         LEFT JOIN HR_EMP_MST HEM ON HEM.EMP_CODE = R.USERID
+        LEFT JOIN CIR_PUBL_MAST CPM ON CPM.PUBL = R.PUBL
+        LEFT JOIN CIR_EDTN_MAST CEM ON CEM.EDTN = R.EDTN
         WHERE R.COMP_CODE = :COMP_CODE
           AND R.UNIT_CODE IN ({string.Join(",", branchParams)})
         ORDER BY AP.ZH_ACTION_DATE DESC";
@@ -1073,11 +1084,14 @@ WHERE ROWNUM <= 15";
                A.AG_NAME, A.UNIT AS BRANCH_CODE,
                PCM.""Pub_Cent_name"" AS BRANCH_NAME,
                HEM.NAME AS CREATION_BY, HEM.EMP_CODE,
-               (SELECT FF.DROP_POINT_NAME FROM CIR_DROP_POINT_MAST FF WHERE FF.DROP_POINT = A.STATION_CODE AND ROWNUM = 1) AS DROP_POINT_NAME
+               (SELECT FF.DROP_POINT_NAME FROM CIR_DROP_POINT_MAST FF WHERE FF.DROP_POINT = A.STATION_CODE AND ROWNUM = 1) AS DROP_POINT_NAME,
+               CPM.PUBL_NAME, CEM.EDTN_NAME
         FROM APP_CIR_SUPPLY_REQ R
         LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.COMP_CODE = R.COMP_CODE AND A.UNIT = R.UNIT_CODE
         LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
         LEFT JOIN HR_EMP_MST HEM ON HEM.EMP_CODE = R.USERID
+        LEFT JOIN CIR_PUBL_MAST CPM ON CPM.PUBL = R.PUBL
+        LEFT JOIN CIR_EDTN_MAST CEM ON CEM.EDTN = R.EDTN
         WHERE R.STATUS = 'PENDING_HO'
           AND R.COMP_CODE = :COMP_CODE
           AND R.UNIT_CODE IN ({string.Join(",", branchParams)})
@@ -1111,11 +1125,14 @@ WHERE ROWNUM <= 15";
                A.AG_NAME, A.UNIT AS BRANCH_CODE,
                PCM.""Pub_Cent_name"" AS BRANCH_NAME,
                HEM.NAME AS CREATION_BY, HEM.EMP_CODE,
-               (SELECT FF.DROP_POINT_NAME FROM CIR_DROP_POINT_MAST FF WHERE FF.DROP_POINT = A.STATION_CODE AND ROWNUM = 1) AS DROP_POINT_NAME
+               (SELECT FF.DROP_POINT_NAME FROM CIR_DROP_POINT_MAST FF WHERE FF.DROP_POINT = A.STATION_CODE AND ROWNUM = 1) AS DROP_POINT_NAME,
+               CPM.PUBL_NAME, CEM.EDTN_NAME
         FROM APP_CIR_SUPPLY_REQ R
         LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.COMP_CODE = R.COMP_CODE AND A.UNIT = R.UNIT_CODE
         LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
         LEFT JOIN HR_EMP_MST HEM ON HEM.EMP_CODE = R.USERID
+        LEFT JOIN CIR_PUBL_MAST CPM ON CPM.PUBL = R.PUBL
+        LEFT JOIN CIR_EDTN_MAST CEM ON CEM.EDTN = R.EDTN
         WHERE R.STATUS IN ('REJECTED','ZH_REJECTED')
           AND R.COMP_CODE = :COMP_CODE
           AND R.UNIT_CODE IN ({string.Join(",", branchParams)})
@@ -1169,7 +1186,9 @@ WHERE ROWNUM <= 15";
                 FROM CIR_DROP_POINT_MAST FF
                 WHERE FF.DROP_POINT = A.STATION_CODE
                 AND ROWNUM = 1
-            ) AS DROP_POINT_NAME
+            ) AS DROP_POINT_NAME,
+            CPM.PUBL_NAME,
+            CEM.EDTN_NAME
         FROM APP_CIR_SUPPLY_REQ R
         LEFT JOIN CIR_AGMAST A 
             ON A.AGCD = R.AGCD
@@ -1178,6 +1197,8 @@ WHERE ROWNUM <= 15";
            AND A.COMP_CODE = R.COMP_CODE
         LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
         LEFT JOIN HR_EMP_MST HEM ON HEM.EMP_CODE = R.USERID
+        LEFT JOIN CIR_PUBL_MAST CPM ON CPM.PUBL = R.PUBL
+        LEFT JOIN CIR_EDTN_MAST CEM ON CEM.EDTN = R.EDTN
         WHERE R.STATUS = 'PENDING_ZH'
           AND R.COMP_CODE = :COMP_CODE
           AND R.UNIT_CODE IN ({string.Join(",", branchParams)})
@@ -1427,13 +1448,16 @@ WHERE ROWNUM <= 15";
                     WHERE MM.AGCD = R.AGCD AND MM.DPCD = R.DPCD AND MM.COMP_CODE = R.COMP_CODE 
                     AND MM.UNIT=R.UNIT_CODE AND ROWNUM = 1) AS DROP_POINT_NAME,
                     PCM.""Pub_Cent_name"" AS BRANCH_NAME,
-                     R.UNIT_CODE, R.SUPPLY_TYPE_CODE
+                     R.UNIT_CODE, R.SUPPLY_TYPE_CODE,
+                    CPM.PUBL_NAME, CEM.EDTN_NAME
                     FROM APP_CIR_SUPPLY_REQ R
                     LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
                     LEFT JOIN hr_emp_mst HEM ON HEM.EMP_CODE = R.USERID
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.COMP_CODE = R.COMP_CODE 
                     AND A.UNIT = R.UNIT_CODE
                     LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
+                    LEFT JOIN CIR_PUBL_MAST CPM ON CPM.PUBL = R.PUBL
+                    LEFT JOIN CIR_EDTN_MAST CEM ON CEM.EDTN = R.EDTN
                     WHERE R.STATUS = 'PENDING_HO' AND R.COMP_CODE = :COMP_CODE
                     AND R.UNIT_CODE IN ({string.Join(",", branchParams)})
                     ORDER BY R.CREATION_DATE ASC";
@@ -1821,13 +1845,15 @@ WHERE ROWNUM <= 15";
                     PCM.""Pub_Cent_name"" AS BRANCH_NAME,
                     (SELECT FF.DROP_POINT_NAME FROM CIR_DROP_POINT_MAST FF WHERE FF.DROP_POINT = A.STATION_CODE AND ROWNUM = 1) AS DROP_POINT_NAME,
                     AP.ZH_ACTION AS APPR_ACTION, AP.ZH_ACTION_BY AS ACTION_BY, AP.ZH_ACTION_DATE AS ACTION_DATE, AP.ZH_REMARKS AS APPROVER_REMARKS,
-                    HEM.NAME AS CREATION_BY
+                    HEM.NAME AS CREATION_BY,
+                    CPM.PUBL_NAME, CEM.EDTN_NAME
                     FROM APP_CIR_SUPPLY_REQ R
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.UNIT = R.UNIT_CODE AND A.COMP_CODE = R.COMP_CODE
                     LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
                     LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
-                    
                     LEFT JOIN HR_EMP_MST HEM ON  HEM.EMP_CODE = R.USERID
+                    LEFT JOIN CIR_PUBL_MAST CPM ON CPM.PUBL = R.PUBL
+                    LEFT JOIN CIR_EDTN_MAST CEM ON CEM.EDTN = R.EDTN
                     WHERE R.COMP_CODE = :COMP_CODE{branchFilter}
                     ORDER BY R.CREATION_DATE DESC";
         using var cmd = new OracleCommand(sql, conn);
@@ -1859,12 +1885,14 @@ WHERE ROWNUM <= 15";
                     PCM.""Pub_Cent_name"" AS BRANCH_NAME,
                     (SELECT FF.DROP_POINT_NAME FROM CIR_DROP_POINT_MAST FF WHERE FF.DROP_POINT = A.STATION_CODE AND ROWNUM = 1) AS DROP_POINT_NAME,
                     AP.HO_ACTION AS APPR_ACTION, AP.ERP_PUSHED_BY AS ACTION_BY, AP.ERP_PUSHED_DATE AS ACTION_DATE, AP.HO_REMARKS AS APPROVER_REMARKS,
-                    HEM.NAME AS CREATION_BY
+                    HEM.NAME AS CREATION_BY,
+                    CPM.PUBL_NAME ,CEM.EDTN_NAME
                     FROM APP_CIR_SUPPLY_REQ R
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.UNIT = R.UNIT_CODE AND A.COMP_CODE = R.COMP_CODE
                     LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
                     LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID AND AP.ERP_PUSHED_BY IS NOT NULL
-                   
+                    LEFT JOIN CIR_PUBL_MAST CPM ON CPM.PUBL = R.PUBL
+                    LEFT JOIN CIR_EDTN_MAST CEM ON CEM.EDTN = R.EDTN
                     LEFT JOIN HR_EMP_MST HEM ON  HEM.EMP_CODE =R.USERID
                     WHERE R.COMP_CODE = :COMP_CODE{branchFilter}
                     ORDER BY R.CREATION_DATE DESC";
@@ -1897,12 +1925,15 @@ WHERE ROWNUM <= 15";
                     PCM.""Pub_Cent_name"" AS BRANCH_NAME,
                     (SELECT FF.DROP_POINT_NAME FROM CIR_DROP_POINT_MAST FF WHERE FF.DROP_POINT = A.STATION_CODE AND ROWNUM = 1) AS DROP_POINT_NAME,
                     AP.HO_ACTION AS APPR_ACTION, AP.ERP_PUSHED_BY AS ACTION_BY, AP.ERP_PUSHED_DATE AS ACTION_DATE, AP.HO_REMARKS AS APPROVER_REMARKS,
-                    HEM.NAME AS CREATION_BY
+                    HEM.NAME AS CREATION_BY,
+                    CPM.PUBL_NAME, CEM.EDTN_NAME
                     FROM APP_CIR_SUPPLY_REQ R
                     LEFT JOIN CIR_AGMAST A ON A.AGCD = R.AGCD AND A.DPCD = R.DPCD AND A.UNIT = R.UNIT_CODE AND A.COMP_CODE = R.COMP_CODE
                     LEFT JOIN PUB_CENT_MAST PCM ON PCM.""Pub_cent_Code"" = R.UNIT_CODE
                     LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID AND AP.ERP_PUSHED_BY IS NOT NULL
                     LEFT JOIN HR_EMP_MST HEM ON  HEM.EMP_CODE = R.USERID
+                    LEFT JOIN CIR_PUBL_MAST CPM ON CPM.PUBL = R.PUBL
+                    LEFT JOIN CIR_EDTN_MAST CEM ON CEM.EDTN = R.EDTN
                     WHERE R.COMP_CODE = :COMP_CODE{branchFilter}
                     ORDER BY R.CREATION_DATE DESC";
         using var cmd = new OracleCommand(sql, conn);
@@ -1938,7 +1969,8 @@ WHERE ROWNUM <= 15";
             CreationByCode = HasColumn(reader, "EMP_CODE") ? reader["EMP_CODE"]?.ToString() : null,
             BranchCode = HasColumn(reader, "UNIT_CODE") ? reader["UNIT_CODE"]?.ToString() : null,
             SupplyTypeCode = HasColumn(reader, "SUPPLY_TYPE_CODE") ? reader["SUPPLY_TYPE_CODE"]?.ToString() : null,
-            
+            PublName = HasColumn(reader, "PUBL_NAME") ? reader["PUBL_NAME"]?.ToString() : null,
+            EdtnName = HasColumn(reader, "EDTN_NAME") ? reader["EDTN_NAME"]?.ToString() : null,
 
 
 

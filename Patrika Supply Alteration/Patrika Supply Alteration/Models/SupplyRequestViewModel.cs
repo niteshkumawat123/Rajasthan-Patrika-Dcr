@@ -1,4 +1,5 @@
 using Org.BouncyCastle.Asn1;
+using Org.BouncyCastle.Tls;
 
 namespace DCRSupplyApp.Models;
 
@@ -56,4 +57,6 @@ public class SupplyRequestViewModel
     public int? SupplySun { get; set; }
     public bool DayWiseEnabled { get; set; }
     public int IsDaywiseSupply { get; set; }
+    public string? PublName { get; set; }
+    public string? EdtnName { get; set; }
 }

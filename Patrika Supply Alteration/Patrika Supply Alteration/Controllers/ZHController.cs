@@ -53,7 +53,7 @@ public class ZHController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> AgentLookup(string agcd, string dpcd)
+    public async Task<IActionResult> AgentLookup(string agcd, string dpcd, string droppointname)
     {
         var user = GetUser();
         var branchCodes = user.BranchDetails?.Select(b => b.BranchCode).Where(b => b != null).ToList();
@@ -64,7 +64,7 @@ public class ZHController : Controller
             return Json(new { found = false });
         }
         agent.Dpcd = dpcd;
-        var supplies = await _dbService.GetSupplyAsync(agent.Agcd!, dpcd!, user.ComCode!, branchCodes);
+        var supplies = await _dbService.GetSupplyAsync(agent.Agcd!, dpcd!, user.ComCode!, branchCodes, droppointname);
         return Json(new { found = true, agent, supplies });
     }
 

@@ -43,7 +43,7 @@
                     <div class="req-info">
                         <div class="req-agent">@req.AgName</div>
                         <div class="req-meta">
-                            <span style="background:rgba(78,140,255,0.1);padding:2px 7px;border-radius:6px;font-size:11px;">@req.Publ / @req.Edtn</span>
+                            <span style="background:rgba(78,140,255,0.1);padding:2px 7px;border-radius:6px;font-size:11px;">@req.Publ@(!string.IsNullOrEmpty(req.PublName) ? $" - {req.PublName}" : "") / @req.Edtn@(!string.IsNullOrEmpty(req.EdtnName) ? $" - {req.EdtnName}" : "")</span>
                             @if(!string.IsNullOrEmpty(req.BranchCode)){
                             <span style="background:rgba(120,80,255,0.1);padding:2px 7px;border-radius:6px;font-size:11px;">@req.BranchCode</span>
                             }
@@ -107,7 +107,7 @@ function loadFiltered(status){
                 <div class="req-info">
                     <div class="req-agent">${req.agName||''}</div>
                     <div class="req-meta">
-                        <span style="background:rgba(78,140,255,0.1);padding:2px 7px;border-radius:6px;font-size:11px;">${req.publ||''} / ${req.edtn||''}</span>
+                        <span style="background:rgba(78,140,255,0.1);padding:2px 7px;border-radius:6px;font-size:11px;">${req.publ||''}${req.publName?' - '+req.publName:''} / ${req.edtn||''}${req.edtnName?' - '+req.edtnName:''}</span>
                         <span style="font-size:11px;color:var(--muted);">${dateStr}</span>
                     </div>
                     <div class="req-by">${req.agcd||''} &middot; ${req.baseSupply||0} → ${req.changedSupply||0} ${isInc?'↑':'↓'} &middot; By ${req.creationBy||''}</div>
