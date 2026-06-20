@@ -17,7 +17,7 @@
         <div class="profile-row"><span>Department</span><span>@Model?.Department</span></div>
         <div class="profile-row"><span>Zone</span><span>@Model?.Zone</span></div>
         <div class="profile-row"><span>Reporting To</span><span>@Model?.ReportingPersonName</span></div>
-        <div class="profile-row"><span>Status</span><span style="color:var(--green);">@(Model?.EmpCurrentStatus == 1 ? "&#x25CF; Active" : "&#x25CB; Inactive")</span></div>
+        <div class="profile-row"><span>Status</span><span style="color:var(--green);">@(Model?.EmpCurrentStatus == "01" ? "Active" : "Inactive")</span></div>
     </div>
     <a href="@Url.Action("Logout","Account")" class="btn btn-secondary" style="margin-top:4px;display:block;text-align:center;text-decoration:none;">&#x1F6AA; Logout</a>
     <div style="height:8px;"></div>

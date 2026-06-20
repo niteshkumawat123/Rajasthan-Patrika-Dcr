@@ -56,7 +56,8 @@
                     <div style="flex-shrink:0;display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
                         <span class="status-pill pending-ho">PENDING_HO</span>
                         <div style="display:flex;flex-direction:row;gap:6px;">
-                            <button class="quick-approve-btn" onclick="event.stopPropagation();hoApprove(@req.ReqId,'@req.Agcd','@req.Dpcd','@req.Publ','@req.Edtn','@req.SupplyTypeCode',@(req.ChangedSupply??0),'@req.ChangedSupplyDate?.ToString("yyyy-MM-dd")')" title="Approve & Push ERP">✅</button>
+                            @{ var isHoBackDate = req.ChangedSupplyDate.HasValue && req.ChangedSupplyDate.Value.Date != DateTime.Today; }
+                            <button class="quick-approve-btn" onclick="event.stopPropagation();hoApprove(@req.ReqId,'@req.Agcd','@req.Dpcd','@req.Publ','@req.Edtn','@req.SupplyTypeCode',@(req.ChangedSupply??0),'@req.ChangedSupplyDate?.ToString("yyyy-MM-dd")')" title="@(isHoBackDate ? "You cannot approve back date entry" : "Approve & Push ERP")" @(isHoBackDate ? "disabled" : "") style="@(isHoBackDate ? "opacity:0.4;cursor:not-allowed;" : "")">✅</button>
                             <button class="quick-approve-btn" style="background:rgba(231,76,60,0.1);" onclick="event.stopPropagation();hoReject(@req.ReqId)" title="Reject">❌</button>
                         </div>
                     </div>
@@ -106,6 +107,7 @@ function loadFiltered(status){
             let statusCls=(req.status||'').toLowerCase().replace(/_/g,'-');
             let dateStr=req.creationDate?new Date(req.creationDate).toLocaleDateString('en-IN',{year:'numeric',month:'short',day:'2-digit'}):'';
             let showActions=(status==='awaiting');
+            let isBackDate=req.changedSupplyDate?new Date(req.changedSupplyDate).toDateString()!==new Date().toDateString():false;
             html+=`<div class="req-item" onclick="openAuditModal(${req.reqId})" style="cursor:pointer;">
                 <div class="req-icon ${isInc?'increase':'decrease'}">${isInc?'📈':'📉'}</div>
                 <div class="req-info">
@@ -120,7 +122,7 @@ function loadFiltered(status){
                 <div style="flex-shrink:0;display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
                     <span class="status-pill ${statusCls}">${statusLabel}</span>
                     ${showActions?`<div style="display:flex;flex-direction:row;gap:6px;">
-                        <button class="quick-approve-btn" onclick="event.stopPropagation();hoApprove(${req.reqId},'${req.agcd}','${req.dpcd}','${req.publ}','${req.edtn}','${req.supplyTypeCode||''}',${req.changedSupply||0},'${req.changedSupplyDate?req.changedSupplyDate.substring(0,10):''}')" title="Approve & Push ERP">✅</button>
+                        <button class="quick-approve-btn" onclick="event.stopPropagation();hoApprove(${req.reqId},'${req.agcd}','${req.dpcd}','${req.publ}','${req.edtn}','${req.supplyTypeCode||''}',${req.changedSupply||0},'${req.changedSupplyDate?req.changedSupplyDate.substring(0,10):''}')" title="${isBackDate?'You cannot approve back date entry':'Approve & Push ERP'}" ${isBackDate?'disabled':''} style="${isBackDate?'opacity:0.4;cursor:not-allowed;':''}">✅</button>
                         <button class="quick-approve-btn" style="background:rgba(231,76,60,0.1);" onclick="event.stopPropagation();hoReject(${req.reqId})" title="Reject">❌</button>
                     </div>`:''}
                 </div>
@@ -131,6 +133,10 @@ function loadFiltered(status){
 }
 
 function hoApprove(reqId,agcd,dpcd,publ,edtn,stc,cs,csd){
+    debugger;
+    if(csd && new Date(csd).toDateString()!==new Date().toDateString()){
+        showToast('You cannot approve back date entry','error');return;
+    }
     hoReqData={reqId,agcd,dpcd,publ,edtn,supplyTypeCode:stc,changedSupply:cs,changedSupplyDate:csd};
     hoActionType='approve';
     document.getElementById('remarks-modal-title').textContent='Approve & Push to ERP';

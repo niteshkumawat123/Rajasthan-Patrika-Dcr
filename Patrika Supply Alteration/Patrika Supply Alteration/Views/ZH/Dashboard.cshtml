@@ -54,7 +54,8 @@
                     <div style="flex-shrink:0;display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
                         <span class="status-pill pending-zh">PENDING_ZH</span>
                         <div style="display:flex;flex-direction:row;gap:6px;">
-                            <button class="quick-approve-btn" onclick="event.stopPropagation();zhAction(@req.ReqId,'approve')" title="Approve">✅</button>
+                            @{ var isZhBackDate = req.ChangedSupplyDate.HasValue && req.ChangedSupplyDate.Value.Date != DateTime.Today; }
+                            <button class="quick-approve-btn" onclick="event.stopPropagation();zhAction(@req.ReqId,'approve')" title="@(isZhBackDate ? "You cannot approve back date entry" : "Approve")" @(isZhBackDate ? "disabled" : "") style="@(isZhBackDate ? "opacity:0.4;cursor:not-allowed;" : "")">✅</button>
                             <button class="quick-approve-btn" onclick="event.stopPropagation();zhAction(@req.ReqId,'reject')" title="Reject" style="color:var(--accent);background:rgba(231,111,81,0.15);border-color:rgba(231,111,81,0.4);">✖</button>
                         </div>
                     </div>
@@ -102,6 +103,7 @@ function loadFiltered(status){
             let statusCls=(req.status||'').toLowerCase().replace(/_/g,'-');
             let dateStr=req.creationDate?new Date(req.creationDate).toLocaleDateString('en-IN',{year:'numeric',month:'short',day:'2-digit'}):'';
             let showActions=(status==='awaiting');
+            let isBackDate=req.changedSupplyDate?new Date(req.changedSupplyDate).toDateString()!==new Date().toDateString():false;
             html+=`<div class="req-item" onclick="openAuditModal(${req.reqId})" style="cursor:pointer;">
                 <div class="req-icon ${isInc?'increase':'decrease'}">${isInc?'📈':'📉'}</div>
                 <div class="req-info">
@@ -115,7 +117,7 @@ function loadFiltered(status){
                 <div style="flex-shrink:0;display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
                     <span class="status-pill ${statusCls}">${statusLabel}</span>
                     ${showActions?`<div style="display:flex;flex-direction:row;gap:6px;">
-                        <button class="quick-approve-btn" onclick="event.stopPropagation();zhAction(${req.reqId},'approve')" title="Approve">✅</button>
+                        <button class="quick-approve-btn" onclick="event.stopPropagation();zhAction(${req.reqId},'approve')" title="${isBackDate?'You cannot approve back date entry':'Approve'}" ${isBackDate?'disabled':''} style="${isBackDate?'opacity:0.4;cursor:not-allowed;':''}">✅</button>
                         <button class="quick-approve-btn" onclick="event.stopPropagation();zhAction(${req.reqId},'reject')" title="Reject" style="color:var(--accent);background:rgba(231,111,81,0.15);border-color:rgba(231,111,81,0.4);">✖</button>
                     </div>`:''}
                 </div>
@@ -126,6 +128,10 @@ function loadFiltered(status){
 }
 
 function zhAction(reqId, action){
+    if(action==='approve'){
+        var reqItem=document.querySelector(`.quick-approve-btn[onclick*="zhAction(${reqId},'approve')"]`);
+        if(reqItem&&reqItem.disabled){showToast('You cannot approve back date entry','error');return;}
+    }
     pendingReqId=reqId; pendingAction=action;
     document.getElementById('remarks-modal-title').textContent=action==='approve'?'Approve & Forward to HO':'Reject Request';
     document.getElementById('remarks-modal-label').textContent='Remarks'+(action==='reject'?' (required)':' (optional)');
@@ -201,10 +207,11 @@ function openAuditModal(reqId){
 
         let isPending=(r.status||'')==='PENDING_ZH';
         if(isPending){
+            let modalBackDate=r.changedSupplyDate?new Date(r.changedSupplyDate).toDateString()!==new Date().toDateString():false;
             document.getElementById('modal-actions').innerHTML=`
               <div style="display:flex;gap:12px;margin-top:16px;">
                 <button onclick="closeModal('detail-modal');zhAction(${r.reqId},'reject')" style="flex:1;padding:14px;border:none;border-radius:10px;background:#fde8e8;color:#e74c3c;font-weight:700;font-size:14px;cursor:pointer;">✖ Reject</button>
-                <button onclick="closeModal('detail-modal');zhAction(${r.reqId},'approve')" style="flex:1;padding:14px;border:none;border-radius:10px;background:#e8fdf0;color:#00b894;font-weight:700;font-size:14px;cursor:pointer;">☑️ Approve</button>
+                <button onclick="closeModal('detail-modal');zhAction(${r.reqId},'approve')" title="${modalBackDate?'You cannot approve back date entry':'Approve & Forward to HO'}" ${modalBackDate?'disabled':''} style="flex:1;padding:14px;border:none;border-radius:10px;background:${modalBackDate?'#ccc':'#e8fdf0'};color:${modalBackDate?'#888':'#00b894'};font-weight:700;font-size:14px;cursor:${modalBackDate?'not-allowed':'pointer'};${modalBackDate?'opacity:0.6;':''}">${modalBackDate?'🚫 Cannot Approve':'☑️ Approve'}</button>
               </div>`;
         } else {
             document.getElementById('modal-actions').innerHTML='';

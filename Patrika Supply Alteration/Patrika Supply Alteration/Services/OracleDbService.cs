@@ -579,7 +579,7 @@ public class OracleDbService
         using var conn = GetConnection();
         await conn.OpenAsync();
         var sql = @"SELECT HEM1.EMP_CODE, HEM1.NAME, HEM1.REPORT_TO, PCM.""Pub_Cent_name"" AS BRANCH, HEM1.DEPARTMENT,
-                    HEM1.EMP_CURRENT_STATUS, HEM1.ZONE,
+                    HEM1.POS_CODE as EMP_CURRENT_STATUS , HEM1.ZONE,
                     HEM2.NAME AS REPORTINGPERSONNAME,
                     CPH.NAME AS ROLEPOSITION
                     FROM HR_EMP_MST HEM1
@@ -600,7 +600,7 @@ public class OracleDbService
                 ReportTo = reader["REPORT_TO"]?.ToString(),
                 Branch = reader["BRANCH"]?.ToString(),
                 Department = reader["DEPARTMENT"]?.ToString(),
-                EmpCurrentStatus = reader["EMP_CURRENT_STATUS"] as decimal?,
+                EmpCurrentStatus = reader["EMP_CURRENT_STATUS"]?.ToString(),
                 Zone = reader["ZONE"]?.ToString(),
                 ReportingPersonName = reader["REPORTINGPERSONNAME"]?.ToString(),
                 RolePosition = reader["ROLEPOSITION"]?.ToString()
@@ -1968,13 +1968,14 @@ public class OracleDbService
             CreationBy = HasColumn(reader, "CREATION_BY") ? reader["CREATION_BY"]?.ToString() : null,
             CreationByCode = HasColumn(reader, "EMP_CODE") ? reader["EMP_CODE"]?.ToString() : null,
             BranchCode = HasColumn(reader, "UNIT_CODE") ? reader["UNIT_CODE"]?.ToString() : null,
-            SupplyTypeCode = HasColumn(reader, "SUPPLY_TYPE_CODE") ? reader["SUPPLY_TYPE_CODE"]?.ToString() : null,
-            PublName = HasColumn(reader, "PUBL_NAME") ? reader["PUBL_NAME"]?.ToString() : null,
-            EdtnName = HasColumn(reader, "EDTN_NAME") ? reader["EDTN_NAME"]?.ToString() : null,
+                SupplyTypeCode = HasColumn(reader, "SUPPLY_TYPE_CODE") ? reader["SUPPLY_TYPE_CODE"]?.ToString() : null,
+                PublName = HasColumn(reader, "PUBL_NAME") ? reader["PUBL_NAME"]?.ToString() : null,
+                EdtnName = HasColumn(reader, "EDTN_NAME") ? reader["EDTN_NAME"]?.ToString() : null,
+                ChangedSupplyDate = HasColumn(reader, "CHANGED_SUPPLY_DATE") ? reader["CHANGED_SUPPLY_DATE"] as DateTime? : null,
 
 
 
-        };
+            };
     }
 
     private SupplyRequestViewModel MapSupplyRequestWithApproval(System.Data.Common.DbDataReader reader)

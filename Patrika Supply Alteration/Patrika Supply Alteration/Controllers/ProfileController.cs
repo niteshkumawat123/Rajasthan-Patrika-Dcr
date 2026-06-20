@@ -21,6 +21,11 @@ public class ProfileController : Controller
     {
         var user = _sessionService.GetUser(HttpContext.Session)!;
         var profile = await _dbService.GetProfileAsync(user.EmpCode!);
+        if(profile!=null && !string.IsNullOrEmpty(profile.EmpCode))
+        {
+            profile.EmpCurrentStatus = profile.EmpCurrentStatus!=null && profile.EmpCurrentStatus.Contains("03,07") ? "03" : "01";
+        }
+
         return View(profile);
     }
 }
