@@ -34,7 +34,7 @@
             <div class="section-title" id="section-title-text">Pending HO Approval</div>
             <span class="status-pill pending" id="section-count">@Model.PendingRequests.Count</span>
         </div>
-        <div id="filtered-list"
+        <div id="filtered-list" style="display:flex;flex-direction:column;gap:10px;">
             @foreach (var req in Model.PendingRequests)
             {
                 <div class="req-item" onclick="openAuditModal(@req.ReqId)">
