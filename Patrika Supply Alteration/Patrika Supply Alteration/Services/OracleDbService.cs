@@ -1448,7 +1448,7 @@ public class OracleDbService
                     WHERE MM.AGCD = R.AGCD AND MM.DPCD = R.DPCD AND MM.COMP_CODE = R.COMP_CODE 
                     AND MM.UNIT=R.UNIT_CODE AND ROWNUM = 1) AS DROP_POINT_NAME,
                     PCM.""Pub_Cent_name"" AS BRANCH_NAME,
-                     R.UNIT_CODE, R.SUPPLY_TYPE_CODE,
+                    R.UNIT_CODE, R.SUPPLY_TYPE_CODE,
                     CPM.PUBL_NAME, CEM.EDTN_NAME
                     FROM APP_CIR_SUPPLY_REQ R
                     LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID

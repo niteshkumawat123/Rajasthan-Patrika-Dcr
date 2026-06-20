@@ -46,7 +46,7 @@ public class EmailService
             await client.AuthenticateAsync(smtp["Email"], smtp["Password"]);
             _logger.LogInformation("Authenticated. IsAuthenticated={Auth}", client.IsAuthenticated);
 
-            _logger.LogInformation("Sending email to {To}", "nitesh.kumawat@vertexplus.com");
+            _logger.LogInformation("Sending email to {To}", toEmail);
             var response = await client.SendAsync(message);
             _logger.LogInformation("SMTP server response: {Response}", response);
 
@@ -102,7 +102,7 @@ public class EmailService
             message.Body = bodyBuilder.ToMessageBody();
 
             using var client = new SmtpClient();
-            await client.ConnectAsync(smtp["Host"], int.Parse(smtp["PortNo"]!), MailKit.Security.SecureSocketOptions.StartTls);
+            await client.ConnectAsync(smtp["Host"], int.Parse(smtp["PortNo"]!), MailKit.Security.SecureSocketOptions.Auto);
             await client.AuthenticateAsync(smtp["Email"], smtp["Password"]);
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
