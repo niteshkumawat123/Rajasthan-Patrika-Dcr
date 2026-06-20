@@ -1,5 +1,4 @@
 using MailKit.Net.Smtp;
-using MailKit.Net.Smtp;
 using MimeKit;
 
 namespace DCRSupplyApp.Services;
@@ -18,25 +17,59 @@ public class EmailService
     public async Task SendForgotPasswordEmailAsync(string toEmail, string employeeId, string password)
     {
         var smtp = _config.GetSection("SMTP");
-        var message = new MimeMessage();
-        message.From.Add(new MailboxAddress(smtp["DisplayName"], smtp["Email"]));
-        message.To.Add(new MailboxAddress(employeeId, toEmail));
-        message.Subject = "DCR Supply App — Your Password";
 
-        var bodyBuilder = new BodyBuilder
+        try
         {
-            HtmlBody = $@"<p>Dear Employee <b>{employeeId}</b>,</p>
-                <p>Your password for DCR Supply App is: <b>{password}</b></p>
-                <p>Please keep this confidential.</p>
-                <p>— Vertex Plus Team</p>"
-        };
-        message.Body = bodyBuilder.ToMessageBody();
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(smtp["DisplayName"], smtp["Email"]));
+            message.To.Add(new MailboxAddress(employeeId, toEmail));
+            message.Subject = "DCR Supply App — Your Password";
 
-        using var client = new SmtpClient();
-        await client.ConnectAsync(smtp["Host"], int.Parse(smtp["PortNo"]!), MailKit.Security.SecureSocketOptions.StartTls);
-        await client.AuthenticateAsync(smtp["Email"], smtp["Password"]);
-        await client.SendAsync(message);
-        await client.DisconnectAsync(true);
+            var bodyBuilder = new BodyBuilder
+            {
+                HtmlBody = $@"<p>Dear Employee <b>{employeeId}</b>,</p>
+                    <p>Your password for DCR Supply App is: <b>{password}</b></p>
+                    <p>Please keep this confidential.</p>
+                    <p>— Rajasthan Patrika</p>"
+            };
+            message.Body = bodyBuilder.ToMessageBody();
+
+            using var client = new SmtpClient();
+            var port = int.Parse(smtp["PortNo"]!);
+            var host = smtp["Host"]!;
+
+            _logger.LogInformation("Connecting to SMTP: {Host}:{Port}", host, port);
+            await client.ConnectAsync(host, port, MailKit.Security.SecureSocketOptions.Auto);
+            _logger.LogInformation("SMTP connected. IsConnected={Connected}, IsSecure={Secure}", client.IsConnected, client.IsSecure);
+
+            _logger.LogInformation("Authenticating as {Email}", smtp["Email"]);
+            await client.AuthenticateAsync(smtp["Email"], smtp["Password"]);
+            _logger.LogInformation("Authenticated. IsAuthenticated={Auth}", client.IsAuthenticated);
+
+            _logger.LogInformation("Sending email to {To}", "nitesh.kumawat@vertexplus.com");
+            var response = await client.SendAsync(message);
+            _logger.LogInformation("SMTP server response: {Response}", response);
+
+            await client.DisconnectAsync(true);
+            _logger.LogInformation("Forgot password email sent successfully for employee {EmployeeId}", employeeId);
+        }
+        catch (MailKit.Security.AuthenticationException authEx)
+        {
+            _logger.LogError(authEx, "SMTP Authentication failed for {Email} on {Host}", smtp["Email"], smtp["Host"]);
+            throw;
+        }
+        catch (MailKit.Net.Smtp.SmtpCommandException smtpEx)
+        {
+            _logger.LogError(smtpEx, "SMTP command error. StatusCode={StatusCode}, ErrorCode={ErrorCode}, Message={Msg}",
+                smtpEx.StatusCode, smtpEx.ErrorCode, smtpEx.Message);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send forgot password email. ExceptionType={Type}, Message={Msg}",
+                ex.GetType().FullName, ex.Message);
+            throw;
+        }
     }
 
     /// <summary>

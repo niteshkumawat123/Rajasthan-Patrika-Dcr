@@ -165,8 +165,9 @@ public class AccountController : Controller
                 await _emailService.SendForgotPasswordEmailAsync(email, employeeId, password);
                 ViewBag.Success = "Password has been sent to your registered email.";
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"EMAIL ERROR: {ex}");
                 ViewBag.Error = "Failed to send email. Please try again later.";
             }
         }
