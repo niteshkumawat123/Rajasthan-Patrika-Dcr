@@ -11,4 +11,8 @@ public class AgentLookupViewModel
     public string? SupplyStopFlag { get; set; }
     public decimal? MobileNo1 { get; set; }
     public string? Addr1 { get; set; }
+    public string? PUBL { get; set; }
+    public string? EDTN { get; set; }
+    public string? PUBL_NAME { get; set; }
+    public string? EDTN_NAME { get; set; }
 }

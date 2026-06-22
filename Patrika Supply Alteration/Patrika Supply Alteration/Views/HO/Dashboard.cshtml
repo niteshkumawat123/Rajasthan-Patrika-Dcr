@@ -57,7 +57,7 @@
                         <span class="status-pill pending-ho">PENDING_HO</span>
                         <div style="display:flex;flex-direction:row;gap:6px;">
                             @{ var isHoBackDate = req.ChangedSupplyDate.HasValue && req.ChangedSupplyDate.Value.Date != DateTime.Today; }
-                            <button class="quick-approve-btn" onclick="event.stopPropagation();hoApprove(@req.ReqId,'@req.Agcd','@req.Dpcd','@req.Publ','@req.Edtn','@req.SupplyTypeCode',@(req.ChangedSupply??0),'@req.ChangedSupplyDate?.ToString("yyyy-MM-dd")')" title="@(isHoBackDate ? "You cannot approve back date entry" : "Approve & Push ERP")" @(isHoBackDate ? "disabled" : "") style="@(isHoBackDate ? "opacity:0.4;cursor:not-allowed;" : "")">✅</button>
+                            <button class="quick-approve-btn" onclick="event.stopPropagation();hoApprove(@req.ReqId,'@req.Agcd','@req.Dpcd','@req.Publ','@req.Edtn','@req.SupplyTypeCode',@(req.ChangedSupply??0),'@req.ChangedSupplyDate?.ToString("yyyy-MM-dd")','@req.UnitCode')" title="@(isHoBackDate ? "You cannot approve back date entry" : "Approve & Push ERP")" @(isHoBackDate ? "disabled" : "") style="@(isHoBackDate ? "opacity:0.4;cursor:not-allowed;" : "")">✅</button>
                             <button class="quick-approve-btn" style="background:rgba(231,76,60,0.1);" onclick="event.stopPropagation();hoReject(@req.ReqId)" title="Reject">❌</button>
                         </div>
                     </div>
@@ -122,7 +122,7 @@ function loadFiltered(status){
                 <div style="flex-shrink:0;display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
                     <span class="status-pill ${statusCls}">${statusLabel}</span>
                     ${showActions?`<div style="display:flex;flex-direction:row;gap:6px;">
-                        <button class="quick-approve-btn" onclick="event.stopPropagation();hoApprove(${req.reqId},'${req.agcd}','${req.dpcd}','${req.publ}','${req.edtn}','${req.supplyTypeCode||''}',${req.changedSupply||0},'${req.changedSupplyDate?req.changedSupplyDate.substring(0,10):''}')" title="${isBackDate?'You cannot approve back date entry':'Approve & Push ERP'}" ${isBackDate?'disabled':''} style="${isBackDate?'opacity:0.4;cursor:not-allowed;':''}">✅</button>
+                        <button class="quick-approve-btn" onclick="event.stopPropagation();hoApprove(${req.reqId},'${req.agcd}','${req.dpcd}','${req.publ}','${req.edtn}','${req.supplyTypeCode||''}',${req.changedSupply||0},'${req.changedSupplyDate?req.changedSupplyDate.substring(0,10):''}','${req.unitCode||''}')" title="${isBackDate?'You cannot approve back date entry':'Approve & Push ERP'}" ${isBackDate?'disabled':''} style="${isBackDate?'opacity:0.4;cursor:not-allowed;':''}">✅</button>
                         <button class="quick-approve-btn" style="background:rgba(231,76,60,0.1);" onclick="event.stopPropagation();hoReject(${req.reqId})" title="Reject">❌</button>
                     </div>`:''}
                 </div>
@@ -132,12 +132,12 @@ function loadFiltered(status){
     });
 }
 
-function hoApprove(reqId,agcd,dpcd,publ,edtn,stc,cs,csd){
+function hoApprove(reqId,agcd,dpcd,publ,edtn,stc,cs,csd,unitCode){
     debugger;
     if(csd && new Date(csd).toDateString()!==new Date().toDateString()){
         showToast('You cannot approve back date entry','error');return;
     }
-    hoReqData={reqId,agcd,dpcd,publ,edtn,supplyTypeCode:stc,changedSupply:cs,changedSupplyDate:csd};
+    hoReqData={reqId,agcd,dpcd,publ,edtn,supplyTypeCode:stc,changedSupply:cs,changedSupplyDate:csd,unitCode:unitCode};
     hoActionType='approve';
     document.getElementById('remarks-modal-title').textContent='Approve & Push to ERP';
     document.getElementById('remarks-modal-label').textContent='Remarks (optional)';
@@ -177,7 +177,8 @@ function confirmRemarksAction(){
             +'&publ='+hoReqData.publ+'&edtn='+hoReqData.edtn
             +'&supplyTypeCode='+hoReqData.supplyTypeCode
             +'&changedSupply='+hoReqData.changedSupply
-            +'&changedSupplyDate='+hoReqData.changedSupplyDate;
+            +'&changedSupplyDate='+hoReqData.changedSupplyDate
+            +'&unitCode='+encodeURIComponent(hoReqData.unitCode||'');
         fetch('/HO/Approve',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body})
             .then(r=>r.json()).then(d=>{
                 closeModal('remarks-modal');

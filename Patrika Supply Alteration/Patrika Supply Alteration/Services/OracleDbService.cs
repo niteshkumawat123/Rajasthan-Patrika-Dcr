@@ -107,14 +107,14 @@ public class OracleDbService
             var (verified, firstLoginFlag) = await UserCheckOnLoginWithFlag(username, password);
             LoginVerify = verified;
 
-            if(LoginVerify==false)
+            if (LoginVerify == false)
             {
                 return null;
             }
 
             #region Check user does executive or not
             var execData = await CheckUserExecutive(username);
-            if(execData!=null && !string.IsNullOrEmpty(execData.HrCode))
+            if (execData != null && !string.IsNullOrEmpty(execData.HrCode))
             {
                 execData.FirstLoginFlag = firstLoginFlag;
                 return execData;
@@ -132,7 +132,7 @@ public class OracleDbService
 
             // If not executive, check other roles
             var otherData = await OTHERLOGINUSER(username);
-            if(otherData!=null && otherData.BranchDetails!=null && otherData.BranchDetails.Count()>0)
+            if (otherData != null && otherData.BranchDetails != null && otherData.BranchDetails.Count() > 0)
             {
                 otherData.FirstLoginFlag = firstLoginFlag;
                 return otherData;
@@ -145,7 +145,7 @@ public class OracleDbService
 
         }
         return null;
-     
+
     }
 
     public async Task<UserSessionModel> OTHERLOGINUSER(string EMPLOYEECODE)
@@ -172,7 +172,7 @@ public class OracleDbService
 
                 using var reader1 = await cmd1.ExecuteReaderAsync();
 
-                while (await reader1.ReadAsync())   
+                while (await reader1.ReadAsync())
                 {
 
                     branchDetails.Add(new BranchDetail
@@ -181,13 +181,14 @@ public class OracleDbService
                         BranchName = reader1["BranchName"]?.ToString()
                     });
 
-                    RoleDetails.Add(new RoleDetails {
-                    RoleId  = reader1["ROLEID"]?.ToString(),
-                    RoleName = reader1["ROLENAME"]?.ToString()
+                    RoleDetails.Add(new RoleDetails
+                    {
+                        RoleId = reader1["ROLEID"]?.ToString(),
+                        RoleName = reader1["ROLENAME"]?.ToString()
 
                     });
                 }
-                if(RoleDetails!=null && RoleDetails.Count()>0 && RoleDetails.Any(x=>x.RoleId=="4"))
+                if (RoleDetails != null && RoleDetails.Count() > 0 && RoleDetails.Any(x => x.RoleId == "4"))
                 {
                     var SqlUpdate = @"SELECT DISTINCT(CPHM.UNIT_CODE)AS BranchCode, JPCM.""Pub_Cent_name"" AS BranchName FROM CIR_PLI_HIERARCHY_MAPPING CPHM
                                  LEFT JOIN CIR_PLI_HIERARCHY_MAST HM ON CPHM.ZONAL_HEAD = HM.CODE
@@ -208,7 +209,7 @@ public class OracleDbService
                                 BranchName = readerupdate["BranchName"]?.ToString()
                             });
 
-                          
+
                         }
 
 
@@ -217,7 +218,7 @@ public class OracleDbService
                 }
 
                 // If no rows found — employee is not an active executive
-                if (branchDetails!=null && branchDetails.Count == 0)
+                if (branchDetails != null && branchDetails.Count == 0)
                 {
                     return null;
                 }
@@ -322,7 +323,7 @@ public class OracleDbService
 
                 };
 
-                if(data!=null && data.UserId!=null)
+                if (data != null && data.UserId != null)
                 {
                     LoginVerify = true;
                 }
@@ -645,7 +646,7 @@ public class OracleDbService
         await conn.OpenAsync();
         var sql = "SELECT * FROM (" +
             " SELECT R.REQ_ID, R.AGCD, R.DPCD, R.PUBL, R.EDTN," +
-            " R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY, LL.HR_CODE AS EMP_CODE," +
+            " R.BASE_SUPPLY, R.INC_DEC, R.CHANGED_SUPPLY, LL.EMP_CODE ," +
             " R.STATUS, R.CREATION_DATE, R.REASON_CODE," +
             " R.CHANGED_SUPPLY_DATE, R.REMARKS," +
             " (SELECT AG_NAME FROM CIR_AGMAST WHERE AGCD = R.AGCD " +
@@ -653,10 +654,10 @@ public class OracleDbService
             " (SELECT FF.DROP_POINT_NAME FROM CIR_AGMAST MM INNER " +
             " JOIN CIR_DROP_POINT_MAST FF ON MM.STATION_CODE = FF.DROP_POINT" +
             " WHERE MM.AGCD = R.AGCD AND MM.DPCD = R.DPCD AND MM.COMP_CODE = R.COMP_CODE AND MM.UNIT = R.UNIT_CODE  AND ROWNUM = 1) AS DROP_POINT_NAME," +
-            " LL.FIRSTNAME || ' ' || LL.LASTNAME AS CREATION_BY," +
+            " LL.NAME AS CREATION_BY," +
             " CPM.PUBL_NAME, CEM.EDTN_NAME" +
             " FROM APP_CIR_SUPPLY_REQ R" +
-            " LEFT JOIN LOGIN LL ON LL.HR_CODE = R.USERID" +
+            " LEFT JOIN HR_EMP_MST LL ON LL.EMP_CODE = R.USERID" +
             " LEFT JOIN CIR_PUBL_MAST CPM ON CPM.PUBL = R.PUBL" +
             " LEFT JOIN CIR_EDTN_MAST CEM ON CEM.EDTN = R.EDTN" +
             " WHERE R.USERID = :SE_USERID AND R.COMP_CODE = :COMP_CODE" +
@@ -688,7 +689,7 @@ public class OracleDbService
         var sql = $@"SELECT AGCD, DPCD, AG_NAME,UNIT AS BRANCH_CODE, EXECUTIVE_CODE,
                         SUSPEND, SUPPLY_STOP_FLAG, MOBILE_NO1, ADDR1
                         FROM CIR_AGMAST
-                        WHERE AGCD = :AGCD AND COMP_CODE = :COMP_CODE AND SUSPEND = 'N'
+                        WHERE AGCD = :AGCD AND COMP_CODE = :COMP_CODE 
                         AND (SUPPLY_STOP_FLAG IS NULL OR SUPPLY_STOP_FLAG = 'N')
                         AND UNIT IN ({string.Join(",", branchParams)})";
         using var cmd = new OracleCommand(sql, conn);
@@ -762,9 +763,9 @@ public class OracleDbService
         {
             branchParams.Add("'" + (branchCodes[i] ?? "").Replace("'", "''") + "'");
         }
-            
 
-       var sql = $@"SELECT * FROM (
+
+        var sql = $@"SELECT * FROM (
     SELECT CA.AGCD,
            CA.DPCD,
            CA.AG_NAME,
@@ -781,12 +782,43 @@ public class OracleDbService
                  AND MM.COMP_CODE = CA.COMP_CODE
                  AND FF.UNIT_CODE = CA.UNIT
                  AND ROWNUM = 1
-           ) AS DROP_POINT_NAME
+           ) AS DROP_POINT_NAME,
+           CS.PUBL,
+           CS.EDTN,
+           CPM.PUBL_NAME,
+           CEM.EDTN_NAME,
+           CS.SUPPLY_TYPE_CODE,
+           CS.BASE_SUPPLY,
+           CS.SUPPLY_MON,
+           CS.SUPPLY_TUE,
+           CS.SUPPLY_WED,
+           CS.SUPPLY_THU,
+           CS.SUPPLY_FRI,
+           CS.SUPPLY_SAT,
+           CS.SUPPLY_SUN,
+           CS.UPDATED_DT
     FROM CIR_AGMAST CA
     LEFT JOIN PUB_CENT_MAST PCM
         ON PCM.""Pub_cent_Code"" = CA.UNIT
-    WHERE CA.COMP_CODE = :COMP_CODE
-      AND (CA.SUPPLY_STOP_FLAG IS NULL OR CA.SUPPLY_STOP_FLAG = 'N')
+    INNER JOIN CIR_SUPPLY CS 
+        ON CS.UNIT = CA.UNIT 
+       AND CS.AGCD = CA.AGCD 
+       AND CS.DPCD = CA.DPCD
+    LEFT JOIN CIR_PUBL_MAST CPM 
+        ON CPM.PUBL = CS.PUBL
+    LEFT JOIN CIR_EDTN_MAST CEM 
+        ON CEM.EDTN = CS.EDTN
+    WHERE (CA.SUPPLY_STOP_FLAG IS NULL OR CA.SUPPLY_STOP_FLAG = 'N')
+      AND CS.SUPPLY_FLAG = 'Y'
+      AND CS.SUPPLY_TYPE_CODE = 'S01'    
+     
+      AND NOT (
+                CS.BASE_SUPPLY = 0
+            AND (
+                    CS.UPDATED_DT IS NULL
+                 OR CS.UPDATED_DT < ADD_MONTHS(SYSDATE, -6)
+                )
+           )       
       AND (UPPER(CA.AG_NAME) LIKE UPPER(:KEYWORD)
            OR UPPER(CA.AGCD) LIKE UPPER(:KEYWORD))
       AND PCM.""Pub_cent_Code"" IN ({string.Join(",", branchParams)})
@@ -795,7 +827,6 @@ public class OracleDbService
 ";
 
         using var cmd = new OracleCommand(sql, conn);
-        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
         cmd.Parameters.Add(new OracleParameter("KEYWORD", "%" + keyword + "%"));
         //for (int i = 0; i < branchCodes.Count; i++)
         //    cmd.Parameters.Add(new OracleParameter($"BRANCH{i}", branchCodes[i] ?? ""));
@@ -810,14 +841,27 @@ public class OracleDbService
                 agName = reader["AG_NAME"]?.ToString(),
                 branchCode = reader["Pub_cent_Code"]?.ToString(),
                 branchname = reader["Pub_Cent_name"]?.ToString(),
-                droppointname = reader["DROP_POINT_NAME"]?.ToString()
+                droppointname = reader["DROP_POINT_NAME"]?.ToString(),
+                publ = reader["PUBL"]?.ToString(),
+                edtn = reader["EDTN"]?.ToString(),
+                publName = reader["PUBL_NAME"]?.ToString(),
+                edtnName = reader["EDTN_NAME"]?.ToString(),
+                supplyTypeCode = reader["SUPPLY_TYPE_CODE"]?.ToString(),
+                baseSupply = reader["BASE_SUPPLY"] != DBNull.Value ? Convert.ToInt32(reader["BASE_SUPPLY"]) : 0,
+                supplyMon = reader["SUPPLY_MON"] != DBNull.Value ? Convert.ToInt32(reader["SUPPLY_MON"]) : (int?)null,
+                supplyTue = reader["SUPPLY_TUE"] != DBNull.Value ? Convert.ToInt32(reader["SUPPLY_TUE"]) : (int?)null,
+                supplyWed = reader["SUPPLY_WED"] != DBNull.Value ? Convert.ToInt32(reader["SUPPLY_WED"]) : (int?)null,
+                supplyThu = reader["SUPPLY_THU"] != DBNull.Value ? Convert.ToInt32(reader["SUPPLY_THU"]) : (int?)null,
+                supplyFri = reader["SUPPLY_FRI"] != DBNull.Value ? Convert.ToInt32(reader["SUPPLY_FRI"]) : (int?)null,
+                supplySat = reader["SUPPLY_SAT"] != DBNull.Value ? Convert.ToInt32(reader["SUPPLY_SAT"]) : (int?)null,
+                supplySun = reader["SUPPLY_SUN"] != DBNull.Value ? Convert.ToInt32(reader["SUPPLY_SUN"]) : (int?)null
             });
         }
         return list;
     }
 
     // QUERY 8: Current supply
-    public async Task<List<SupplyViewModel>> GetSupplyAsync(string agcd, string dpcd, string compCode, List<string?>? branchCodes,string droppointname)
+    public async Task<List<SupplyViewModel>> GetSupplyAsync(string agcd, string dpcd, string compCode, List<string?>? branchCodes, string droppointname, AgentLookupViewModel model)
     {
         var list = new List<SupplyViewModel>();
         using var conn = GetConnection();
@@ -831,14 +875,15 @@ public class OracleDbService
                     SUPPLY_THU, SUPPLY_FRI, SUPPLY_SAT, SUPPLY_SUN,
                     SUPPLY_EFFECTIVE_DATE, SUPPLY_FLAG, PUBL, EDTN, SUPPLY_TYPE_CODE
                     FROM CIR_SUPPLY
-                    WHERE AGCD = :AGCD AND DPCD = :DPCD AND COMP_CODE = :COMP_CODE AND SUPPLY_FLAG = 'Y'  AND SUPPLY_TYPE_CODE= 'S01'                  
+                    WHERE AGCD = :AGCD AND DPCD = :DPCD AND PUBL=:PUBL AND EDTN = :EDTN AND SUPPLY_FLAG = 'Y'  AND SUPPLY_TYPE_CODE= 'S01'                  
                     AND UNIT IN ({string.Join(",", branchParams)})
                     ORDER BY PUBL, EDTN ";
 
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("AGCD", agcd));
         cmd.Parameters.Add(new OracleParameter("DPCD", dpcd));
-        cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+        cmd.Parameters.Add(new OracleParameter("PUBL", model.PUBL));
+        cmd.Parameters.Add(new OracleParameter("EDTN", model.EDTN));
         using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())
         {
@@ -937,7 +982,7 @@ public class OracleDbService
                 return false;
             }
         }
-        catch(Exception ex)
+        catch (Exception ex)
         { return false; }
     }
 
@@ -1587,8 +1632,8 @@ public class OracleDbService
             }
             catch { txn.Rollback(); return false; }
         }
-        catch(Exception ex)
-        { 
+        catch (Exception ex)
+        {
             return false;
         }
     }
@@ -1968,14 +2013,14 @@ public class OracleDbService
             CreationBy = HasColumn(reader, "CREATION_BY") ? reader["CREATION_BY"]?.ToString() : null,
             CreationByCode = HasColumn(reader, "EMP_CODE") ? reader["EMP_CODE"]?.ToString() : null,
             BranchCode = HasColumn(reader, "UNIT_CODE") ? reader["UNIT_CODE"]?.ToString() : null,
-                SupplyTypeCode = HasColumn(reader, "SUPPLY_TYPE_CODE") ? reader["SUPPLY_TYPE_CODE"]?.ToString() : null,
-                PublName = HasColumn(reader, "PUBL_NAME") ? reader["PUBL_NAME"]?.ToString() : null,
-                EdtnName = HasColumn(reader, "EDTN_NAME") ? reader["EDTN_NAME"]?.ToString() : null,
-                ChangedSupplyDate = HasColumn(reader, "CHANGED_SUPPLY_DATE") ? reader["CHANGED_SUPPLY_DATE"] as DateTime? : null,
+            SupplyTypeCode = HasColumn(reader, "SUPPLY_TYPE_CODE") ? reader["SUPPLY_TYPE_CODE"]?.ToString() : null,
+            PublName = HasColumn(reader, "PUBL_NAME") ? reader["PUBL_NAME"]?.ToString() : null,
+            EdtnName = HasColumn(reader, "EDTN_NAME") ? reader["EDTN_NAME"]?.ToString() : null,
+            ChangedSupplyDate = HasColumn(reader, "CHANGED_SUPPLY_DATE") ? reader["CHANGED_SUPPLY_DATE"] as DateTime? : null,
 
 
 
-            };
+        };
     }
 
     private SupplyRequestViewModel MapSupplyRequestWithApproval(System.Data.Common.DbDataReader reader)
@@ -2202,5 +2247,62 @@ public class OracleDbService
                 tokens.Add(token);
         }
         return tokens;
+    }
+
+    // Get approval bar data for a request
+    public async Task<object?> GetRequestApprovalBarAsync(decimal reqId)
+    {
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT R.REQ_ID, R.STATUS, R.USERID, R.CREATION_DATE,
+                    HEM_REQ.NAME AS REQUESTER_NAME,
+                    AP.ZH_ACTION, AP.ZH_ACTION_BY, AP.ZH_ACTION_DATE,
+                    HEM_ZH.NAME AS ZH_NAME,
+                    AP.HO_ACTION, AP.HO_ACTION_BY, AP.HO_ACTION_DATE,
+                    HEM_HO.NAME AS HO_NAME
+                    FROM APP_CIR_SUPPLY_REQ R
+                    LEFT JOIN APP_CIR_SUPPLY_APPROVAL AP ON AP.REQ_ID = R.REQ_ID
+                    LEFT JOIN HR_EMP_MST HEM_REQ ON HEM_REQ.EMP_CODE = R.USERID
+                    LEFT JOIN HR_EMP_MST HEM_ZH ON HEM_ZH.EMP_CODE = AP.ZH_ACTION_BY
+                    LEFT JOIN HR_EMP_MST HEM_HO ON HEM_HO.EMP_CODE = AP.HO_ACTION_BY
+                    WHERE R.REQ_ID = :REQ_ID";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("REQ_ID", reqId));
+        using var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            var status = reader["STATUS"]?.ToString() ?? "";
+            var zhAction = reader["ZH_ACTION"]?.ToString();
+            var hoAction = reader["HO_ACTION"]?.ToString();
+
+            string zhStatus = string.IsNullOrEmpty(zhAction) ? "pending" : (zhAction == "APPROVED" ? "approved" : "rejected");
+            string hoStatus;
+            if (status == "HO_APPROVED") hoStatus = "approved";
+            else if (status == "HO_REJECTED") hoStatus = "rejected";
+            else if (status == "PENDING_HO") hoStatus = "pending";
+            else hoStatus = "waiting";
+
+            return new
+            {
+                requester = new
+                {
+                    name = reader["REQUESTER_NAME"]?.ToString() ?? "",
+                    date = reader["CREATION_DATE"] != DBNull.Value ? Convert.ToDateTime(reader["CREATION_DATE"]).ToString("dd MMM yyyy HH:mm") : ""
+                },
+                zh = new
+                {
+                    status = zhStatus,
+                    approver = reader["ZH_NAME"]?.ToString() ?? "",
+                    date = reader["ZH_ACTION_DATE"] != DBNull.Value ? Convert.ToDateTime(reader["ZH_ACTION_DATE"]).ToString("dd MMM yyyy HH:mm") : ""
+                },
+                ho = new
+                {
+                    status = hoStatus,
+                    approver = reader["HO_NAME"]?.ToString() ?? "",
+                    date = reader["HO_ACTION_DATE"] != DBNull.Value ? Convert.ToDateTime(reader["HO_ACTION_DATE"]).ToString("dd MMM yyyy HH:mm") : ""
+                }
+            };
+        }
+        return null;
     }
 }

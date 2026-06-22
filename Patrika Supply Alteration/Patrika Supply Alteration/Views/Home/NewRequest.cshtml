@@ -48,6 +48,16 @@
                 <input type="text" id="agent-droppoint" placeholder="Auto-filled" readonly style="opacity:0.7;">
             </div>
         </div>
+        <div class="input-row">
+            <div class="field">
+                <label>Publication</label>
+                <input type="text" id="agent-publ-name" placeholder="Auto-filled" readonly style="opacity:0.7;">
+            </div>
+            <div class="field">
+                <label>Edition</label>
+                <input type="text" id="agent-edtn-name" placeholder="Auto-filled" readonly style="opacity:0.7;">
+            </div>
+        </div>
     </div>
    @*  <div class="card fade-in-3" id="supply-card" style="display:none;">
         <div class="card-title">Current Supply</div>
@@ -124,7 +134,7 @@
 </div>
 @section Scripts {
 <script>
-let selectedType='I', agentData=null, supplyData=[];
+let selectedType='I', agentData=null, supplyData=[], selectedBranchCode=null;
 function toggleDayWise(){
     var section=document.getElementById('daywise-section');
     section.style.display=document.getElementById('daywise-toggle').checked?'block':'none';
@@ -160,47 +170,44 @@ function searchAgent(v){
                     return;
                 }
                 let html='';
-                results.forEach(a=>{
+                results.forEach((a,idx)=>{
                     var dpName = a.droppointname ? '/' + a.droppointname : '';
-                    html+=`<div class="agent-option" onclick="selectAgent('${a.agcd}','${a.dpcd}','${(a.branchname||'').replace(/'/g,"\\'")}','${(a.branchCode||'').replace(/'/g,"\\'")}','${(a.droppointname||'').replace(/'/g,"\\'")}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;transition:background .15s;">
+                    html+=`<div class="agent-option" onclick="selectAgentByIndex(${idx})" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;transition:background .15s;">
                         <b style="color:var(--paper);">${a.agName}</b> <span style="color:var(--blue);font-size:11px;">${a.agcd}/${a.dpcd}/${a.branchname||''}${dpName}</span>
+                        <div style="font-size:11px;color:var(--muted);margin-top:2px;">PUBL: ${a.publName||''} / EDTN: ${a.edtnName||''}</div>
                     </div>`;
                 });
+                window._agentResults=results;
                 dropdown.innerHTML=html;
                 dropdown.style.display='block';
             });
     },300);
 }
-function selectAgent(agcd,dpcd,branchname,branchCode,droppointname){
+function selectAgentByIndex(idx){
+    var a=window._agentResults[idx];
+    if(!a) return;
+    selectedBranchCode=a.branchCode||null;
     document.getElementById('agent-dropdown').style.display='none';
-    document.getElementById('erp-loading').style.display='block';
-    document.getElementById('agent-search').value=agcd;
-    fetch(baseCtrl+'/AgentLookup?agcd='+encodeURIComponent(agcd)+'&dpcd='+encodeURIComponent(dpcd)+'&droppointname='+encodeURIComponent(droppointname||''))
-        .then(r=>r.json()).then(d=>{
-            document.getElementById('erp-loading').style.display='none';
-            if(d.found){
-                agentData=d.agent; supplyData=d.supplies;
-                document.getElementById('erp-ok').style.display='block';
-                document.getElementById('agent-name').value=d.agent.agName||'';
-                document.getElementById('agent-code').value=d.agent.agcd||'';
-                document.getElementById('agent-zone-disp').value=branchname||branchCode||'';
-                document.getElementById('agent-droppoint').value=droppointname||'';
-                document.getElementById('agent-search').value=d.agent.agName+' ('+d.agent.agcd+')';
-                if(d.supplies&&d.supplies.length>0){
-                    document.getElementById('old-supply').value=d.supplies[0].baseSupply||0;
-                    document.getElementById('prev-old').textContent=d.supplies[0].baseSupply||'—';
-                    // Populate day-wise inputs with actual values
-                    var s0=d.supplies[0];
-                    document.getElementById('dw-mon').value=s0.supplyMon||0;
-                    document.getElementById('dw-tue').value=s0.supplyTue||0;
-                    document.getElementById('dw-wed').value=s0.supplyWed||0;
-                    document.getElementById('dw-thu').value=s0.supplyThu||0;
-                    document.getElementById('dw-fri').value=s0.supplyFri||0;
-                    document.getElementById('dw-sat').value=s0.supplySat||0;
-                    document.getElementById('dw-sun').value=s0.supplySun||0;
-                }
-            }
-        });
+    document.getElementById('erp-loading').style.display='none';
+    document.getElementById('erp-ok').style.display='block';
+    agentData={agcd:a.agcd,dpcd:a.dpcd,agName:a.agName,branchCode:a.branchCode,publ:a.publ,edtn:a.edtn,publName:a.publName,edtnName:a.edtnName};
+    supplyData=[{baseSupply:a.baseSupply,supplyMon:a.supplyMon,supplyTue:a.supplyTue,supplyWed:a.supplyWed,supplyThu:a.supplyThu,supplyFri:a.supplyFri,supplySat:a.supplySat,supplySun:a.supplySun,publ:a.publ,edtn:a.edtn,supplyTypeCode:a.supplyTypeCode,droppointname:a.droppointname}];
+    document.getElementById('agent-name').value=a.agName||'';
+    document.getElementById('agent-code').value=a.agcd||'';
+    document.getElementById('agent-zone-disp').value=a.branchname||a.branchCode||'';
+    document.getElementById('agent-droppoint').value=a.droppointname||'';
+    document.getElementById('agent-publ-name').value=a.publName||'';
+    document.getElementById('agent-edtn-name').value=a.edtnName||'';
+    document.getElementById('agent-search').value=a.agName+' ('+a.agcd+')';
+    document.getElementById('old-supply').value=a.baseSupply||0;
+    document.getElementById('prev-old').textContent=a.baseSupply||'—';
+    document.getElementById('dw-mon').value=a.supplyMon||0;
+    document.getElementById('dw-tue').value=a.supplyTue||0;
+    document.getElementById('dw-wed').value=a.supplyWed||0;
+    document.getElementById('dw-thu').value=a.supplyThu||0;
+    document.getElementById('dw-fri').value=a.supplyFri||0;
+    document.getElementById('dw-sat').value=a.supplySat||0;
+    document.getElementById('dw-sun').value=a.supplySun||0;
 }
 // Close dropdown when clicking outside
 document.addEventListener('click',function(e){
@@ -241,6 +248,7 @@ function submitRequest(){
         baseSupply:current,
         incDec:selectedType,
         changedSupply:total,
+        unitCode:selectedBranchCode,
         reasonCode:document.getElementById('reason-select').value,
         changedSupplyDate:document.getElementById('eff-date').value||null,
         remarks:document.getElementById('remarks').value,

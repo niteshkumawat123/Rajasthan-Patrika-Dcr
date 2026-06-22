@@ -56,6 +56,7 @@ function openAuditModal(reqId){
             var effDate=r.changedSupplyDate?new Date(r.changedSupplyDate).toLocaleDateString('en-IN',{year:'numeric',month:'short',day:'2-digit'}):'-';
 
             var html=`
+            <div id="approval-bar-container" style="margin-bottom:16px;"></div>
             <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap;">
               <span class="status-pill ${statusCls}" style="font-size:11px;padding:5px 12px;">${statusLabel}</span>
               <span style="font-size:11px;color:var(--muted);">${dateStr} \u00b7 ${timeStr}</span>
@@ -95,7 +96,26 @@ function openAuditModal(reqId){
             document.getElementById('modal-body').innerHTML=html;
             document.getElementById('modal-actions').innerHTML='';
             document.getElementById('detail-modal').classList.add('active');
+            renderApprovalBar(r.reqId,'/Home/ApprovalBar');
         });
+}
+function renderApprovalBar(reqId,url){
+    fetch(url+'?reqId='+reqId).then(r=>r.json()).then(d=>{
+        if(!d||!d.requester){document.getElementById('approval-bar-container').innerHTML='';return;}
+        var getColor=function(s){if(s==='approved')return'#00b894';if(s==='rejected')return'#e74c3c';if(s==='pending')return'#f39c12';return'#bbb';};
+        var getPill=function(label,s,approver,date){
+            var bg=getColor(s);var tip=(s==='approved'&&approver)?'title="'+approver+(date?' | '+date:'')+'"':'';
+            return '<div style="flex:1;text-align:center;padding:8px 4px;background:'+bg+';color:#fff;font-size:11px;font-weight:700;border-radius:6px;cursor:default;position:relative;" '+tip+'>'+label+'<div style="font-size:9px;font-weight:400;opacity:0.85;margin-top:2px;">'+s.toUpperCase()+'</div></div>';
+        };
+        var barHtml='<div style="display:flex;gap:4px;align-items:stretch;">';
+        barHtml+=getPill('Requester','approved',d.requester.name,d.requester.date);
+        barHtml+='<div style="display:flex;align-items:center;color:#888;font-size:14px;">?</div>';
+        barHtml+=getPill('ZH',d.zh.status,d.zh.approver,d.zh.date);
+        barHtml+='<div style="display:flex;align-items:center;color:#888;font-size:14px;">?</div>';
+        barHtml+=getPill('HO',d.ho.status,d.ho.approver,d.ho.date);
+        barHtml+='</div>';
+        document.getElementById('approval-bar-container').innerHTML=barHtml;
+    });
 }
 </script>
 }

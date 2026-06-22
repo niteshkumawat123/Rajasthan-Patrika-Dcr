@@ -53,19 +53,19 @@ public class ZHController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> AgentLookup(string agcd, string dpcd, string droppointname)
+    public IActionResult AgentLookup(string agcd, string dpcd, string droppointname, string BranchCode, string PUBL, string EDTN, string PUBL_NAME, string EDTN_NAME, string agencyname)
     {
-        var user = GetUser();
-        var branchCodes = user.BranchDetails?.Select(b => b.BranchCode).Where(b => b != null).ToList();
-
-        var agent = await _dbService.GetAgentAsync(agcd, user.ComCode!, branchCodes);
-        if (agent == null)
-        {
-            return Json(new { found = false });
-        }
-        agent.Dpcd = dpcd;
-        var supplies = await _dbService.GetSupplyAsync(agent.Agcd!, dpcd!, user.ComCode!, branchCodes, droppointname);
-        return Json(new { found = true, agent, supplies });
+        var agent = new AgentLookupViewModel{
+           Agcd = agcd,
+           Dpcd = dpcd,
+           AgName = agencyname,
+           BranchCode = BranchCode,
+           PUBL = PUBL,
+           EDTN = EDTN,
+           PUBL_NAME = PUBL_NAME,
+           EDTN_NAME = EDTN_NAME
+        };
+        return Json(new { found = true, agent });
     }
 
     [HttpGet]
@@ -85,7 +85,6 @@ public class ZHController : Controller
         var user = GetUser();
         model.UserId = user.UserId;
         model.CompCode = user.ComCode;
-        model.UnitCode = user.BranchDetails.Select(x=>x.BranchCode).FirstOrDefault();
         model.ZoneCode = user.Zone;
         model.EmployeeCode = user.EmpCode;
 
@@ -151,6 +150,14 @@ public class ZHController : Controller
     {
         var trail = await _dbService.GetAuditTrailAsync(reqId);
         return Json(trail);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ApprovalBar(decimal reqId)
+    {
+        var data = await _dbService.GetRequestApprovalBarAsync(reqId);
+        if (data == null) return Json(new { });
+        return Json(data);
     }
 
     [HttpGet]

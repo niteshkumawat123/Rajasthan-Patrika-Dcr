@@ -53,11 +53,11 @@ public class HOController : Controller
 
     [HttpPost]
     public async Task<IActionResult> Approve(decimal reqId, string remarks, string agcd, string dpcd,
-        string publ, string edtn, string supplyTypeCode, decimal changedSupply, DateTime? changedSupplyDate)
+        string publ, string edtn, string supplyTypeCode, decimal changedSupply, DateTime? changedSupplyDate, string unitCode)
     {
         var user = GetUser();
         var success = await _dbService.HOApproveAsync(reqId, user.EmpCode!, remarks ?? "", user.ComCode!,
-            user.UnitCode!, agcd, dpcd, publ, edtn, supplyTypeCode, changedSupply, changedSupplyDate);
+            unitCode, agcd, dpcd, publ, edtn, supplyTypeCode, changedSupply, changedSupplyDate);
         if (success)
         {
             _ = Task.Run(async () =>
@@ -173,5 +173,13 @@ public class HOController : Controller
     {
         var trail = await _dbService.GetAuditTrailAsync(reqId);
         return Json(trail);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ApprovalBar(decimal reqId)
+    {
+        var data = await _dbService.GetRequestApprovalBarAsync(reqId);
+        if (data == null) return Json(new { });
+        return Json(data);
     }
 }
