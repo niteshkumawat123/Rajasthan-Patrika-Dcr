@@ -88,7 +88,7 @@ public class ZHController : Controller
         model.ZoneCode = user.Zone;
         model.EmployeeCode = user.EmpCode;
 
-        var hasPending = await _dbService.HasPendingRequestAsync(model.Agcd!, model.Dpcd!, user.ComCode!);
+        var hasPending = await _dbService.HasPendingRequestAsync(model.Agcd!, model.Dpcd!, user.ComCode!,model);
         if (hasPending)
             return Json(new { success = false, message = "A pending request already exists for this agency." });
 

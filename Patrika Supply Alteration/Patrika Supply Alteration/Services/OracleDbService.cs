@@ -909,17 +909,20 @@ public class OracleDbService
     }
 
     // Check if a pending request exists for the same agency
-    public async Task<bool> HasPendingRequestAsync(string agcd, string dpcd, string compCode)
+    public async Task<bool> HasPendingRequestAsync(string agcd, string dpcd, string compCode, SupplyRequestViewModel model)
     {
         using var conn = GetConnection();
         await conn.OpenAsync();
         var sql = @"SELECT COUNT(*) FROM APP_CIR_SUPPLY_REQ
-                    WHERE AGCD = :AGCD AND DPCD = :DPCD AND COMP_CODE = :COMP_CODE
+                    WHERE AGCD = :AGCD AND DPCD = :DPCD AND COMP_CODE = :COMP_CODE AND PUBL=:PUBL AND EDTN =:EDTN AND UNIT =:UNIT
                     AND STATUS IN ('PENDING_ZH','PENDING_HO')";
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("AGCD", agcd));
         cmd.Parameters.Add(new OracleParameter("DPCD", dpcd));
         cmd.Parameters.Add(new OracleParameter("COMP_CODE", compCode));
+        cmd.Parameters.Add(new OracleParameter("PUBL", model.Publ));
+        cmd.Parameters.Add(new OracleParameter("EDTN", model.Edtn));
+        cmd.Parameters.Add(new OracleParameter("UNIT", model.UnitCode));
         var result = await cmd.ExecuteScalarAsync();
         return Convert.ToInt32(result) > 0;
     }

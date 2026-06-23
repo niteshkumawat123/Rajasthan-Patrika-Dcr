@@ -88,7 +88,7 @@ public class HomeController : Controller
         model.EmployeeCode = user.EmpCode;
 
         // Check if there is already a pending request for this agency
-        var hasPending = await _dbService.HasPendingRequestAsync(model.Agcd!, model.Dpcd!, user.ComCode!);
+        var hasPending = await _dbService.HasPendingRequestAsync(model.Agcd!, model.Dpcd!, user.ComCode!,model);
         if (hasPending)
             return Json(new { success = false, message = "A pending request already exists for this agency. Please wait for approval or cancellation before submitting a new one." });
 
