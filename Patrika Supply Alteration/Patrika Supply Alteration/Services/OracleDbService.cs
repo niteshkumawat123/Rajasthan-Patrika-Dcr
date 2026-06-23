@@ -914,7 +914,7 @@ public class OracleDbService
         using var conn = GetConnection();
         await conn.OpenAsync();
         var sql = @"SELECT COUNT(*) FROM APP_CIR_SUPPLY_REQ
-                    WHERE AGCD = :AGCD AND DPCD = :DPCD AND COMP_CODE = :COMP_CODE AND PUBL=:PUBL AND EDTN =:EDTN AND UNIT =:UNIT
+                    WHERE AGCD = :AGCD AND DPCD = :DPCD AND COMP_CODE = :COMP_CODE AND PUBL=:PUBL AND EDTN =:EDTN AND UNIT_CODE =:UNIT
                     AND STATUS IN ('PENDING_ZH','PENDING_HO')";
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("AGCD", agcd));
