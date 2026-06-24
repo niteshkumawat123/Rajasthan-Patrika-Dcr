@@ -14,10 +14,7 @@
         <div class="card-title">Account Info</div>
         <div class="profile-row"><span>Employee ID</span><span style="font-family:'JetBrains Mono',monospace;">@Model?.EmpCode</span></div>
         <div class="profile-row"><span>Branch</span><span>@Model?.Branch</span></div>
-        <div class="profile-row"><span>Department</span><span>@Model?.Department</span></div>
-        <div class="profile-row"><span>Zone</span><span>@Model?.Zone</span></div>
-        <div class="profile-row"><span>Reporting To</span><span>@Model?.ReportingPersonName</span></div>
-        <div class="profile-row"><span>Status</span><span style="color:var(--green);">@(Model?.EmpCurrentStatus == "01" ? "Active" : "Inactive")</span></div>
+       
     </div>
     <a href="@Url.Action("Logout","Account")" class="btn btn-secondary" style="margin-top:4px;display:block;text-align:center;text-decoration:none;">&#x1F6AA; Logout</a>
     <div style="height:8px;"></div>

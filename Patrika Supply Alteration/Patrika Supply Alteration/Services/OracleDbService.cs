@@ -2020,6 +2020,8 @@ public class OracleDbService
             PublName = HasColumn(reader, "PUBL_NAME") ? reader["PUBL_NAME"]?.ToString() : null,
             EdtnName = HasColumn(reader, "EDTN_NAME") ? reader["EDTN_NAME"]?.ToString() : null,
             ChangedSupplyDate = HasColumn(reader, "CHANGED_SUPPLY_DATE") ? reader["CHANGED_SUPPLY_DATE"] as DateTime? : null,
+            UnitCode = HasColumn(reader, "UNIT_CODE") ? reader["UNIT_CODE"]?.ToString() : null,
+
 
 
 
