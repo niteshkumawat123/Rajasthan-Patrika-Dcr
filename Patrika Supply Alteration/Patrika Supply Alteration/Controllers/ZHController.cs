@@ -122,7 +122,9 @@ public class ZHController : Controller
         {
             _ = Task.Run(async () =>
             {
-                await _notifyService.NotifyAllHOAsync("Request Approved by ZH", $"Request #{reqId} has been approved by ZH ({user.EmpName}) and forwarded to HO for final approval.");
+                var branch = await _dbService.GetRequestBranchAsync(reqId);
+                if (!string.IsNullOrEmpty(branch))
+                    await _notifyService.NotifyAllHOAsync(branch, "Request Approved by ZH", $"Request #{reqId} has been approved by ZH ({user.EmpName}) and forwarded to HO for final approval.");
                 await _notifyService.NotifyRequestCreatorAsync(reqId, "Request Forwarded to HO", $"Your request #{reqId} has been approved by ZH and forwarded to HO for final approval.");
             });
         }

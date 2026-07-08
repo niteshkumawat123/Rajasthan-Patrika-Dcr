@@ -1,0 +1,121 @@
+@model List<SupplyRequestViewModel>
+<div class="topbar">
+    <a href="@Url.Action("Dashboard","ZH")" class="btn btn-secondary btn-sm" style="width:auto;padding:4px 8px;text-decoration:none;">&#x2190; Back</a>
+    <div style="font-size:15px;font-weight:800;">All Requests</div>
+    <div style="width:60px;"></div>
+</div>
+<div class="search-wrap"><input type="text" placeholder="&#x1F50D;  Search agency / zone..." oninput="filterList(this.value)"></div>
+<div class="scroll-area" id="history-list" style="padding-top:12px;gap:8px;">
+    @foreach (var req in Model)
+    {
+        <div class="req-item" data-search="@req.Agcd @req.AgName @req.Status" onclick="openAuditModal(@req.ReqId)">
+            <div class="req-info">
+                <div class="req-agent">@req.AgName</div>
+                <div class="req-meta">
+                    @if(!string.IsNullOrEmpty(req.BranchCode)){<span class="req-badge zone">@req.BranchCode</span>}
+                    <span style="font-size:11px;color:var(--muted);">@req.CreationDate?.ToString("dd MMM yyyy")</span>
+                    <span style="font-size:11px;color:var(--muted);">@req.BaseSupply &#x2192; @req.ChangedSupply
+                        @if(req.IncDec=="I"){<span style="color:var(--green);">&#x2191;</span>}else{<span style="color:var(--accent);">&#x2193;</span>}
+                    </span>
+                </div>
+                <div class="req-by">@(string.IsNullOrEmpty(req.Agcd) ? "" : req.Agcd) &middot; By @(string.IsNullOrEmpty(req.CreationBy) ? req.UserId : req.CreationBy)</div>
+            </div>
+            <div style="flex-shrink:0;display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <span class="status-pill @req.Status?.ToLower().Replace("_","-")">@req.Status</span>
+            </div>
+        </div>
+    }
+</div>
+<div class="bottom-nav">
+    <a class="nav-btn" href="@Url.Action("Dashboard","ZH")"><span class="nav-icon"><img src="/icons/home_icon.svg" width="20" height="20"></span>Home</a>
+    <a class="nav-btn" href="@Url.Action("NewRequest","ZH")"><span class="nav-icon"><img src="/icons/add_new_icon.svg" width="20" height="20"></span>New</a>
+    <a class="nav-btn active" href="@Url.Action("History","ZH")"><span class="nav-icon"><img src="/icons/history_icon.svg" width="20" height="20"></span>History</a>
+    <a class="nav-btn" href="@Url.Action("Index","Profile")"><span class="nav-icon"><img src="/icons/profile_icon.svg" width="20" height="20"></span>Profile</a>
+</div>
+@section Scripts {
+<script>
+function filterList(q){
+    q=q.toLowerCase();
+    document.querySelectorAll('.req-item').forEach(c=>{
+        c.style.display=c.dataset.search.toLowerCase().includes(q)?'':'none';
+    });
+}
+function openAuditModal(reqId){
+    fetch('/ZH/AuditTrail?reqId='+reqId)
+        .then(r=>r.json())
+        .then(data=>{
+            if(!data||data.length===0){showToast('No data found','error');return;}
+            var r=data[0];
+            var diff=(r.changedSupply||0)-(r.baseSupply||0);
+            var diffStr=(diff>0?'+':'')+diff;
+            var diffColor=diff>0?'var(--green)':'var(--accent)';
+            var statusLabel=(r.status||'').replace(/_/g,' ').toUpperCase();
+            var statusCls=(r.status||'').toLowerCase().replace(/_/g,'-');
+            var dateStr=r.creationDate?new Date(r.creationDate).toLocaleDateString('en-IN',{year:'numeric',month:'short',day:'2-digit'}):'';
+            var timeStr=r.creationDate?new Date(r.creationDate).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):'';
+            var effDate=r.changedSupplyDate?new Date(r.changedSupplyDate).toLocaleDateString('en-IN',{year:'numeric',month:'short',day:'2-digit'}):'-';
+
+            var html=`
+            <div id="approval-bar-container" style="margin-bottom:16px;"></div>
+            <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap;">
+              <span class="status-pill ${statusCls}" style="font-size:11px;padding:5px 12px;">${statusLabel}</span>
+              <span style="font-size:11px;color:var(--muted);">${dateStr} \u00b7 ${timeStr}</span>
+            </div>
+            <div class="supply-diff" style="margin-bottom:14px;">
+              <div style="text-align:center"><div class="supply-num">${r.baseSupply||0}</div><div class="supply-sub">Current</div></div>
+              <div class="arrow">${r.incDec==='I'?'\ud83d\udcc8':'\ud83d\udcc9'}</div>
+              <div style="text-align:center"><div class="supply-num" style="color:${diffColor}">${r.changedSupply||0}</div><div class="supply-sub">New</div></div>
+              <div style="text-align:center"><div class="supply-num" style="font-size:18px;color:${diffColor}">${diffStr}</div><div class="supply-sub">Diff</div></div>
+            </div>
+            <div style="font-size:12px;line-height:2;margin-bottom:12px;">
+              <span style="color:var(--muted)">Agency:</span> <b>${r.agName||''}</b> (${r.agcd||''})<br>
+              <span style="color:var(--muted)">Zone:</span> <b>${r.zoneCode||'-'}</b><br>
+              <span style="color:var(--muted)">Branch:</span> <b>${r.branchCode||'-'}</b><br>
+              <span style="color:var(--muted)">Effective Date:</span> <b>${effDate}</b><br>
+              <span style="color:var(--muted)">By:</span> ${r.submittedBy||''}
+            </div>
+            <div class="card-title" style="margin-top:14px;">Reason & Remarks</div>
+            <div class="detail-highlight-field" style="background:rgba(231,111,81,0.08);border:1.5px solid rgba(231,111,81,0.3);border-radius:10px;padding:10px 14px;">
+              <span class="detail-field-label">Reason</span>
+              <span class="detail-field-value">${r.reasonCode||'-'}</span>
+            </div>
+            <div class="detail-highlight-field remark-highlight" style="margin-top:8px;">
+              <span class="detail-field-label">Remarks</span>
+              <span class="detail-field-value">${r.remarks||'\u2014'}</span>
+            </div>`;
+
+            var zhRem='',hoRem='';
+            data.forEach(a=>{
+                if(a.approvalLevel&&a.approvalLevel.indexOf('ZH')>=0&&a.approverRemarks) zhRem=a.approverRemarks;
+                if(a.approvalLevel&&a.approvalLevel.indexOf('HO')>=0&&a.approverRemarks) hoRem=a.approverRemarks;
+            });
+            if(zhRem) html+=`<div style="font-size:12px;color:var(--muted);line-height:1.6;margin-top:8px;"><b style="color:var(--green);">ZH Remarks:</b> ${zhRem}</div>`;
+            if(hoRem) html+=`<div style="font-size:12px;color:var(--muted);line-height:1.6;margin-top:5px;"><b style="color:var(--accent);">HO Remarks:</b> ${hoRem}</div>`;
+
+            document.getElementById('modal-title').textContent='Request #REQ'+String(r.reqId).padStart(3,'0');
+            document.getElementById('modal-body').innerHTML=html;
+            document.getElementById('modal-actions').innerHTML='';
+            document.getElementById('detail-modal').classList.add('active');
+            renderApprovalBar(r.reqId,'/Home/ApprovalBar');
+        });
+}
+function renderApprovalBar(reqId,url){
+    fetch(url+'?reqId='+reqId).then(r=>r.json()).then(d=>{
+        if(!d||!d.requester){document.getElementById('approval-bar-container').innerHTML='';return;}
+        var getColor=function(s){if(s==='approved')return'#00b894';if(s==='rejected')return'#e74c3c';if(s==='pending')return'#f39c12';return'#bbb';};
+        var getPill=function(label,s,approver,date){
+            var bg=getColor(s);var tip=(s==='approved'&&approver)?'title="'+approver+(date?' | '+date:'')+'"':'';
+            return '<div style="flex:1;text-align:center;padding:8px 4px;background:'+bg+';color:#fff;font-size:11px;font-weight:700;border-radius:6px;cursor:default;position:relative;" '+tip+'>'+label+'<div style="font-size:9px;font-weight:400;opacity:0.85;margin-top:2px;">'+s.toUpperCase()+'</div></div>';
+        };
+        var barHtml='<div style="display:flex;gap:4px;align-items:stretch;">';
+        barHtml+=getPill('Requester','approved',d.requester.name,d.requester.date);
+        barHtml+='<div style="display:flex;align-items:center;color:#888;font-size:14px;">?</div>';
+        barHtml+=getPill('ZH',d.zh.status,d.zh.approver,d.zh.date);
+        barHtml+='<div style="display:flex;align-items:center;color:#888;font-size:14px;">?</div>';
+        barHtml+=getPill('HO',d.ho.status,d.ho.approver,d.ho.date);
+        barHtml+='</div>';
+        document.getElementById('approval-bar-container').innerHTML=barHtml;
+    });
+}
+</script>
+}

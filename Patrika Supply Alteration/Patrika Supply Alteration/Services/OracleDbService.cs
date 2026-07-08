@@ -564,7 +564,8 @@ public class OracleDbService
     {
         using var conn = GetConnection();
         await conn.OpenAsync();
-        using var cmd = new OracleCommand("SELECT EMAIL, SUPPLY_ALTERATION_PASSWORD FROM LOGIN WHERE HR_CODE = :EMPID", conn);
+        using var cmd = new OracleCommand("SELECT HEM.EMAIL, LL.SUPPLY_ALTERATION_PASSWORD FROM LOGIN LL INNER JOIN " +
+            " HR_EMP_MST HEM ON LL.HR_CODE= HEM.EMP_CODE WHERE LL.STATUS = 'A' AND  HR_CODE = :EMPID", conn);
         cmd.Parameters.Add(new OracleParameter("EMPID", empId));
         using var reader = await cmd.ExecuteReaderAsync();
         if (await reader.ReadAsync())
@@ -1304,13 +1305,19 @@ public class OracleDbService
                     int? zhSupSun = rdr["SUPPLY_SUN"] != DBNull.Value ? Convert.ToInt32(rdr["SUPPLY_SUN"]) : null;
                     rdr.Close();
 
-                    // Determine if ZH-only approval (increase <= 10%)
+                    // Determine if ZH-only approval (increase <= 10% or decrease <= 10%)
                     bool zhOnlyApproval = false;
                     if (incDec == "I" && baseSupply > 0)
                     {
                         var increaseAmount = changedSupply - baseSupply;
                         var tenPercent = baseSupply * 0.10m;
                         zhOnlyApproval = increaseAmount <= tenPercent;
+                    }
+                    else if (incDec == "D" && baseSupply > 0)
+                    {
+                        var decreaseAmount = baseSupply - changedSupply;
+                        var tenPercent = baseSupply * 0.10m;
+                        zhOnlyApproval = decreaseAmount <= tenPercent;
                     }
 
                     string zhToStatus = zhOnlyApproval ? "HO_APPROVED" : "PENDING_HO";
@@ -2077,6 +2084,26 @@ public class OracleDbService
         var sql = @"SELECT DISTINCT EMAIL_ID FROM APP_CIR_HO_APPROVAL_MAST 
                     WHERE IS_ACTIVE = 'Y' AND EMAIL_ID IS NOT NULL";
         using var cmd = new OracleCommand(sql, conn);
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            var email = reader["EMAIL_ID"]?.ToString();
+            if (!string.IsNullOrEmpty(email))
+                emails.Add(email);
+        }
+        return emails;
+    }
+
+    // Get HO user emails filtered by branch code from APP_CIR_HO_APPROVAL_MAST
+    public async Task<List<string>> GetHOEmailsByBranchAsync(string branchCode)
+    {
+        var emails = new List<string>();
+        using var conn = GetConnection();
+        await conn.OpenAsync();
+        var sql = @"SELECT DISTINCT EMAIL_ID FROM APP_CIR_HO_APPROVAL_MAST 
+                    WHERE BRANCH_CODE = :BRANCH_CODE AND IS_ACTIVE = 'Y' AND EMAIL_ID IS NOT NULL";
+        using var cmd = new OracleCommand(sql, conn);
+        cmd.Parameters.Add(new OracleParameter("BRANCH_CODE", branchCode));
         using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())
         {
