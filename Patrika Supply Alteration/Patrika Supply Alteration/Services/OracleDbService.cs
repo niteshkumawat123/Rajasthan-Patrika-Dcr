@@ -1,4 +1,4 @@
-using DCRSupplyApp.Models;
+ï»¿using DCRSupplyApp.Models;
 using Oracle.ManagedDataAccess.Client;
 using static Org.BouncyCastle.Crypto.Engines.SM2Engine;
 
@@ -217,7 +217,7 @@ public class OracleDbService
                     }
                 }
 
-                // If no rows found — employee is not an active executive
+                // If no rows found â€” employee is not an active executive
                 if (branchDetails != null && branchDetails.Count == 0)
                 {
                     return null;
@@ -412,7 +412,7 @@ public class OracleDbService
                     });
                 }
 
-                // If no rows found — employee is not an active executive
+                // If no rows found â€” employee is not an active executive
                 if (branchDetails.Count == 0)
                 {
                     return null;
@@ -506,7 +506,7 @@ public class OracleDbService
                     });
                 }
 
-                // If no rows found — employee is not an active executive
+                // If no rows found â€” employee is not an active executive
                 if (branchDetails.Count == 0)
                 {
                     return null;
@@ -617,7 +617,7 @@ public class OracleDbService
         using var conn = GetConnection();
         await conn.OpenAsync();
         var sql = @"SELECT
-                    COUNT(CASE WHEN STATUS = 'PENDING_ZH' THEN 1 END) AS PENDING,
+                    COUNT(CASE WHEN STATUS = 'PENDING_ZH' AND TRUNC(CHANGED_SUPPLY_DATE) >= TRUNC(SYSDATE) THEN 1 END) AS PENDING,
                     COUNT(CASE WHEN STATUS = 'HO_APPROVED' THEN 1 END) AS APPROVED,
                     COUNT(CASE WHEN STATUS IN ('REJECTED','ZH_REJECTED') THEN 1 END) AS REJECTED,
                     COUNT(CASE WHEN TRUNC(CREATION_DATE) = TRUNC(SYSDATE) THEN 1 END) AS TODAY
@@ -1039,8 +1039,8 @@ public class OracleDbService
 
         var sql = $@"
         SELECT
-            COUNT(CASE WHEN R.STATUS = 'PENDING_ZH' THEN 1 END) AS AWAITING_ME,
-            COUNT(CASE WHEN R.STATUS = 'PENDING_HO' THEN 1 END) AS AT_HO,
+            COUNT(CASE WHEN R.STATUS = 'PENDING_ZH' AND TRUNC(R.CREATION_DATE) = TRUNC(SYSDATE) THEN 1 END) AS AWAITING_ME,
+            COUNT(CASE WHEN R.STATUS = 'PENDING_HO' AND TRUNC(R.CREATION_DATE) = TRUNC(SYSDATE) THEN 1 END) AS AT_HO,
             COUNT(CASE WHEN AP.ZH_ACTION = 'APPROVED' AND AP.ZH_ACTION_BY = :EMP_CODE THEN 1 END) AS APPROVED,
             COUNT(CASE WHEN R.STATUS IN ('REJECTED', 'ZH_REJECTED') THEN 1 END) AS REJECTED
         FROM APP_CIR_SUPPLY_REQ R
@@ -1250,6 +1250,7 @@ public class OracleDbService
         LEFT JOIN CIR_EDTN_MAST CEM ON CEM.EDTN = R.EDTN
         WHERE R.STATUS = 'PENDING_ZH'
           AND R.COMP_CODE = :COMP_CODE
+          AND TRUNC(R.CREATION_DATE) = TRUNC(SYSDATE)
           AND R.UNIT_CODE IN ({string.Join(",", branchParams)})
         ORDER BY R.CREATION_DATE ASC";
 
@@ -1305,19 +1306,38 @@ public class OracleDbService
                     int? zhSupSun = rdr["SUPPLY_SUN"] != DBNull.Value ? Convert.ToInt32(rdr["SUPPLY_SUN"]) : null;
                     rdr.Close();
 
-                    // Determine if ZH-only approval (increase <= 10% or decrease <= 10%)
+                    // Determine if ZH-only approval
+                    // Increase: always goes to HO (zhOnlyApproval = false)
+                    // Decrease: dynamic rule from APP_CIR_SUPPLY_APPROVAL_CONFIG
                     bool zhOnlyApproval = false;
-                    if (incDec == "I" && baseSupply > 0)
+                    if (incDec == "D" && baseSupply > 0)
                     {
-                        var increaseAmount = changedSupply - baseSupply;
-                        var tenPercent = baseSupply * 0.10m;
-                        zhOnlyApproval = increaseAmount <= tenPercent;
-                    }
-                    else if (incDec == "D" && baseSupply > 0)
-                    {
+                        decimal configPercent = 10m;
+                        int configCopyLimit = 20;
+
+                        try
+                        {
+                            var sqlCfg = @"SELECT CONFIG_KEY, CONFIG_VALUE FROM APP_CIR_SUPPLY_APPROVAL_CONFIG WHERE IS_ACTIVE = 1";
+                            using var cmdCfg = new OracleCommand(sqlCfg, conn) { Transaction = txn };
+                            using var rdrCfg = await cmdCfg.ExecuteReaderAsync();
+                            while (await rdrCfg.ReadAsync())
+                            {
+                                var key = rdrCfg["CONFIG_KEY"]?.ToString() ?? "";
+                                var val = rdrCfg["CONFIG_VALUE"]?.ToString() ?? "0";
+                                if (key == "DECREASE_PERCENT") decimal.TryParse(val, out configPercent);
+                                else if (key == "DECREASE_COPY_LIMIT") int.TryParse(val, out configCopyLimit);
+                            }
+                            rdrCfg.Close();
+                        }
+                        catch { /* table may not exist yet, use defaults */ }
+
                         var decreaseAmount = baseSupply - changedSupply;
-                        var tenPercent = baseSupply * 0.10m;
-                        zhOnlyApproval = decreaseAmount <= tenPercent;
+                        var percentThreshold = baseSupply * (configPercent / 100m);
+
+                        if (decreaseAmount <= percentThreshold && percentThreshold <= configCopyLimit)
+                        {
+                            zhOnlyApproval = true;
+                        }
                     }
 
                     string zhToStatus = zhOnlyApproval ? "HO_APPROVED" : "PENDING_HO";
@@ -1449,7 +1469,7 @@ public class OracleDbService
         }
 
         var sql = $@"SELECT
-                    COUNT(CASE WHEN R.STATUS = 'PENDING_HO' THEN 1 END) AS AWAITING_HO,
+                    COUNT(CASE WHEN R.STATUS = 'PENDING_HO' AND TRUNC(R.CREATION_DATE) = TRUNC(SYSDATE) THEN 1 END) AS AWAITING_HO,
                     COUNT(CASE WHEN R.STATUS = 'HO_APPROVED' AND AP.HO_ACTION_BY = :EMP_CODE THEN 1 END) AS HO_APPROVED,
                     NVL(SUM(CASE WHEN R.INC_DEC = 'I' AND R.STATUS = 'HO_APPROVED' AND AP.HO_ACTION_BY = :EMP_CODE THEN (R.CHANGED_SUPPLY - R.BASE_SUPPLY) ELSE 0 END),0) AS TOTAL_INCREASED,
                     NVL(SUM(CASE WHEN R.INC_DEC = 'D' AND R.STATUS = 'HO_APPROVED' AND AP.HO_ACTION_BY = :EMP_CODE THEN (R.BASE_SUPPLY - R.CHANGED_SUPPLY) ELSE 0 END),0) AS TOTAL_DECREASED,
@@ -1514,6 +1534,7 @@ public class OracleDbService
                     LEFT JOIN CIR_PUBL_MAST CPM ON CPM.PUBL = R.PUBL
                     LEFT JOIN CIR_EDTN_MAST CEM ON CEM.EDTN = R.EDTN
                     WHERE R.STATUS = 'PENDING_HO' AND R.COMP_CODE = :COMP_CODE
+                    AND TRUNC(R.CREATION_DATE) = TRUNC(SYSDATE)
                     AND R.UNIT_CODE IN ({string.Join(",", branchParams)})
                     ORDER BY R.CREATION_DATE ASC";
         using var cmd = new OracleCommand(sql, conn);
@@ -2120,18 +2141,19 @@ public class OracleDbService
         var emails = new List<string>();
         using var conn = GetConnection();
         await conn.OpenAsync();
-        var sql = @"SELECT DISTINCT HEM.EMAIL 
+        var sql = @"SELECT DISTINCT HEM.OFFICIAL_EMAIL_ID 
                     FROM HR_EMP_MST HEM
                     INNER JOIN CIR_PLI_HIERARCHY_MAST CPHM ON CPHM.EMPLOYEE_CODE = HEM.EMP_CODE
                     WHERE CPHM.HIERARCHY_CODE = '4'
                     AND HEM.UNIT_CODE = :BRANCH_CODE
-                    AND HEM.EMAIL IS NOT NULL";
+                    AND HEM.POS_CODE NOT IN ('03','07')
+                    AND HEM.OFFICIAL_EMAIL_ID IS NOT NULL";
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("BRANCH_CODE", branchCode));
         using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())
         {
-            var email = reader["EMAIL"]?.ToString();
+            var email = reader["OFFICIAL_EMAIL_ID"]?.ToString();
             if (!string.IsNullOrEmpty(email))
                 emails.Add(email);
         }
@@ -2143,7 +2165,7 @@ public class OracleDbService
     {
         using var conn = GetConnection();
         await conn.OpenAsync();
-        var sql = @"SELECT EMAIL FROM HR_EMP_MST WHERE EMP_CODE = :EMP_CODE";
+        var sql = @"SELECT OFFICIAL_EMAIL_ID FROM HR_EMP_MST WHERE EMP_CODE = :EMP_CODE AND POS_CODE NOT IN ('03','07')";
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("EMP_CODE", empCode));
         var result = await cmd.ExecuteScalarAsync();
@@ -2172,6 +2194,22 @@ public class OracleDbService
         cmd.Parameters.Add(new OracleParameter("REQ_ID", reqId));
         var result = await cmd.ExecuteScalarAsync();
         return result?.ToString();
+    }
+
+    // Check if request was created today
+    public async Task<bool> IsRequestCreatedTodayAsync(decimal reqId)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            var sql = @"SELECT CASE WHEN TRUNC(CREATION_DATE) = TRUNC(SYSDATE) THEN 1 ELSE 0 END FROM APP_CIR_SUPPLY_REQ WHERE REQ_ID = :REQ_ID";
+            using var cmd = new OracleCommand(sql, conn);
+            cmd.Parameters.Add(new OracleParameter("REQ_ID", OracleDbType.Decimal) { Value = reqId });
+            var result = await cmd.ExecuteScalarAsync();
+            return result != null && Convert.ToInt32(result) == 1;
+        }
+        catch { return false; }
     }
 
     // Save push token to LOGIN table for a user

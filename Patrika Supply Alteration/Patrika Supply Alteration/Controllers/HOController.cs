@@ -56,6 +56,8 @@ public class HOController : Controller
         string publ, string edtn, string supplyTypeCode, decimal changedSupply, DateTime? changedSupplyDate, string unitCode)
     {
         var user = GetUser();
+        if (!await _dbService.IsRequestCreatedTodayAsync(reqId))
+            return Json(new { success = false, message = "Only today's requests can be approved. This request was not created today." });
         var success = await _dbService.HOApproveAsync(reqId, user.EmpCode!, remarks ?? "", user.ComCode!,
             unitCode, agcd, dpcd, publ, edtn, supplyTypeCode, changedSupply, changedSupplyDate);
         if (success)

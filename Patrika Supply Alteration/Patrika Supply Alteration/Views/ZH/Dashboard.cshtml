@@ -54,7 +54,9 @@
                     <div style="flex-shrink:0;display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
                         <span class="status-pill pending-zh">PENDING_ZH</span>
                         <div style="display:flex;flex-direction:row;gap:6px;">
-                            @{ var isZhBackDate = req.ChangedSupplyDate.HasValue && req.ChangedSupplyDate.Value.Date != DateTime.Today; }
+                            @{
+                                var isZhBackDate = req.CreationDate.HasValue && req.CreationDate.Value.Date != DateTime.Today;
+                            }
                             <button class="quick-approve-btn" onclick="event.stopPropagation();zhAction(@req.ReqId,'approve')" title="@(isZhBackDate ? "You cannot approve back date entry" : "Approve")" @(isZhBackDate ? "disabled" : "") style="@(isZhBackDate ? "opacity:0.4;cursor:not-allowed;" : "")">✅</button>
                             <button class="quick-approve-btn" onclick="event.stopPropagation();zhAction(@req.ReqId,'reject')" title="Reject" style="color:var(--accent);background:rgba(231,111,81,0.15);border-color:rgba(231,111,81,0.4);">✖</button>
                         </div>

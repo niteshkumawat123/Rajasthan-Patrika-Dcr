@@ -117,6 +117,8 @@ public class ZHController : Controller
     public async Task<IActionResult> Approve(decimal reqId, string remarks)
     {
         var user = GetUser();
+        if (!await _dbService.IsRequestCreatedTodayAsync(reqId))
+            return Json(new { success = false, message = "Only today's requests can be approved. This request was not created today." });
         var success = await _dbService.ZHApproveRejectAsync(reqId, "APPROVED", user.EmpCode!, remarks ?? "", user.ComCode!);
         if (success)
         {
