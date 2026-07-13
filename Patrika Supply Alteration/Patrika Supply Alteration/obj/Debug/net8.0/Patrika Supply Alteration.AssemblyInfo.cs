@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Patrika Supply Alteration")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3bc1f5b7ab5576a6f7432b12749412b9a3b6940b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b6a34ae3ac37794ef8b56d06f024ef164f771da8")]
 [assembly: System.Reflection.AssemblyProductAttribute("Patrika Supply Alteration")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Patrika Supply Alteration")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

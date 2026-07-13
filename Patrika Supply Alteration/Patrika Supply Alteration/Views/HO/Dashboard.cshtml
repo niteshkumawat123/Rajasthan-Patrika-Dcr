@@ -57,7 +57,7 @@
                         <span class="status-pill pending-ho">PENDING_HO</span>
                         <div style="display:flex;flex-direction:row;gap:6px;">
                             @{
-                                var isHoBackDate = req.CreationDate.HasValue && req.CreationDate.Value.Date != DateTime.Today;
+                            var isHoBackDate =  req.CreationDate.HasValue && req.CreationDate.Value.Date != DateTime.Now.Date; 
                             }
                             <button class="quick-approve-btn" onclick="event.stopPropagation();hoApprove(@req.ReqId,'@req.Agcd','@req.Dpcd','@req.Publ','@req.Edtn','@req.SupplyTypeCode',@(req.ChangedSupply??0),'@req.ChangedSupplyDate?.ToString("yyyy-MM-dd")','@req.UnitCode')" title="@(isHoBackDate ? "You cannot approve back date entry" : "Approve & Push ERP")" @(isHoBackDate ? "disabled" : "") style="@(isHoBackDate ? "opacity:0.4;cursor:not-allowed;" : "")">✅</button>
                             <button class="quick-approve-btn" style="background:rgba(231,76,60,0.1);" onclick="event.stopPropagation();hoReject(@req.ReqId)" title="Reject">❌</button>
@@ -109,7 +109,7 @@ function loadFiltered(status){
             let statusCls=(req.status||'').toLowerCase().replace(/_/g,'-');
             let dateStr=req.creationDate?new Date(req.creationDate).toLocaleDateString('en-IN',{year:'numeric',month:'short',day:'2-digit'}):'';
             let showActions=(status==='awaiting');
-            let isBackDate=req.changedSupplyDate?new Date(req.changedSupplyDate).toDateString()!==new Date().toDateString():false;
+            let isBackDate=req.creationDate?new Date(req.creationDate).toDateString()!==new Date().toDateString():false;
             html+=`<div class="req-item" onclick="openAuditModal(${req.reqId})" style="cursor:pointer;">
                 <div class="req-icon ${isInc?'increase':'decrease'}">${isInc?'📈':'📉'}</div>
                 <div class="req-info">
@@ -135,10 +135,6 @@ function loadFiltered(status){
 }
 
 function hoApprove(reqId,agcd,dpcd,publ,edtn,stc,cs,csd,unitCode){
-    debugger;
-    if(csd && new Date(csd).toDateString()!==new Date().toDateString()){
-        showToast('You cannot approve back date entry','error');return;
-    }
     hoReqData={reqId,agcd,dpcd,publ,edtn,supplyTypeCode:stc,changedSupply:cs,changedSupplyDate:csd,unitCode:unitCode};
     hoActionType='approve';
     document.getElementById('remarks-modal-title').textContent='Approve & Push to ERP';
