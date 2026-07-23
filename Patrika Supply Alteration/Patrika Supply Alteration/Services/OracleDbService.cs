@@ -915,7 +915,8 @@ public class OracleDbService
         using var conn = GetConnection();
         await conn.OpenAsync();
         var sql = @"SELECT COUNT(*) FROM APP_CIR_SUPPLY_REQ
-                    WHERE AGCD = :AGCD AND DPCD = :DPCD AND COMP_CODE = :COMP_CODE AND PUBL=:PUBL AND EDTN =:EDTN AND UNIT_CODE =:UNIT
+                    WHERE AGCD = :AGCD AND DPCD = :DPCD AND COMP_CODE = :COMP_CODE AND
+                    PUBL=:PUBL AND EDTN =:EDTN AND UNIT_CODE =:UNIT AND TRUNC(CHANGED_SUPPLY_DATE) = TRUNC(:CHANGED_SUPPLY_DATE)
                     AND STATUS IN ('PENDING_ZH','PENDING_HO')";
         using var cmd = new OracleCommand(sql, conn);
         cmd.Parameters.Add(new OracleParameter("AGCD", agcd));
@@ -924,6 +925,7 @@ public class OracleDbService
         cmd.Parameters.Add(new OracleParameter("PUBL", model.Publ));
         cmd.Parameters.Add(new OracleParameter("EDTN", model.Edtn));
         cmd.Parameters.Add(new OracleParameter("UNIT", model.UnitCode));
+        cmd.Parameters.Add(new OracleParameter("CHANGED_SUPPLY_DATE", model.ChangedSupplyDate));
         var result = await cmd.ExecuteScalarAsync();
         return Convert.ToInt32(result) > 0;
     }
@@ -1307,34 +1309,49 @@ public class OracleDbService
                     rdr.Close();
 
                     // Determine if ZH-only approval
-                    // Increase: always goes to HO (zhOnlyApproval = false)
-                    // Decrease: dynamic rule from APP_CIR_SUPPLY_APPROVAL_CONFIG
+                    // Both increase and decrease use dynamic rules from APP_CIR_SUPPLY_APPROVAL_CONFIG
                     bool zhOnlyApproval = false;
-                    if (incDec == "D" && baseSupply > 0)
+
+                    // Read config values once for both cases
+                    decimal configIncreasePercent = 10m;
+                    int configIncreaseCopyLimit = 20;
+                    decimal configDecreasePercent = 10m;
+                    int configDecreaseCopyLimit = 20;
+
+                    try
                     {
-                        decimal configPercent = 10m;
-                        int configCopyLimit = 20;
-
-                        try
+                        var sqlCfg = @"SELECT CONFIG_KEY, CONFIG_VALUE FROM APP_CIR_SUPPLY_APPROVAL_CONFIG WHERE IS_ACTIVE = 1";
+                        using var cmdCfg = new OracleCommand(sqlCfg, conn) { Transaction = txn };
+                        using var rdrCfg = await cmdCfg.ExecuteReaderAsync();
+                        while (await rdrCfg.ReadAsync())
                         {
-                            var sqlCfg = @"SELECT CONFIG_KEY, CONFIG_VALUE FROM APP_CIR_SUPPLY_APPROVAL_CONFIG WHERE IS_ACTIVE = 1";
-                            using var cmdCfg = new OracleCommand(sqlCfg, conn) { Transaction = txn };
-                            using var rdrCfg = await cmdCfg.ExecuteReaderAsync();
-                            while (await rdrCfg.ReadAsync())
-                            {
-                                var key = rdrCfg["CONFIG_KEY"]?.ToString() ?? "";
-                                var val = rdrCfg["CONFIG_VALUE"]?.ToString() ?? "0";
-                                if (key == "DECREASE_PERCENT") decimal.TryParse(val, out configPercent);
-                                else if (key == "DECREASE_COPY_LIMIT") int.TryParse(val, out configCopyLimit);
-                            }
-                            rdrCfg.Close();
+                            var key = rdrCfg["CONFIG_KEY"]?.ToString() ?? "";
+                            var val = rdrCfg["CONFIG_VALUE"]?.ToString() ?? "0";
+                            if (key == "INCREASE_PERCENT") decimal.TryParse(val, out configIncreasePercent);
+                            else if (key == "INCREASE_COPY_LIMIT") int.TryParse(val, out configIncreaseCopyLimit);
+                            else if (key == "DECREASE_PERCENT") decimal.TryParse(val, out configDecreasePercent);
+                            else if (key == "DECREASE_COPY_LIMIT") int.TryParse(val, out configDecreaseCopyLimit);
                         }
-                        catch { /* table may not exist yet, use defaults */ }
+                        rdrCfg.Close();
+                    }
+                    catch { /* table may not exist yet, use defaults */ }
 
+                    if (incDec == "I" && baseSupply > 0)
+                    {
+                        var increaseAmount = changedSupply - baseSupply;
+                        var percentThreshold = baseSupply * (configIncreasePercent / 100m);
+
+                        if (increaseAmount <= percentThreshold || increaseAmount <= configIncreaseCopyLimit)
+                        {
+                            zhOnlyApproval = true;
+                        }
+                    }
+                    else if (incDec == "D" && baseSupply > 0)
+                    {
                         var decreaseAmount = baseSupply - changedSupply;
-                        var percentThreshold = baseSupply * (configPercent / 100m);
+                        var percentThreshold = baseSupply * (configDecreasePercent / 100m);
 
-                        if (decreaseAmount <= percentThreshold && percentThreshold <= configCopyLimit)
+                        if (decreaseAmount <= percentThreshold || decreaseAmount <= configDecreaseCopyLimit)
                         {
                             zhOnlyApproval = true;
                         }
